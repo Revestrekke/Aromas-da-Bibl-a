@@ -688,6 +688,10 @@
       display: block;
     }
 
+    .route-section:not(.active-page) {
+      display: none !important;
+    }
+
     .mobile-menu {
       display: none;
     }
@@ -749,21 +753,21 @@
 
       <div class="nav-label">Plano executivo</div>
       <nav class="nav-list">
-        <a class="nav-link active" href="#visao"><i data-lucide="layout-dashboard"></i>Visão Geral</a>
-        <a class="nav-link" href="#produto"><i data-lucide="package"></i>Produto</a>
-        <a class="nav-link" href="#mercado"><i data-lucide="store"></i>Mercado</a>
-        <a class="nav-link" href="#modelo"><i data-lucide="network"></i>Modelo</a>
-        <a class="nav-link" href="#financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
-        <a class="nav-link" href="#marketing"><i data-lucide="megaphone"></i>Marketing</a>
-        <a class="nav-link" href="#operacoes"><i data-lucide="factory"></i>Operações</a>
-        <a class="nav-link" href="#roadmap"><i data-lucide="map"></i>Roadmap</a>
+        <a class="nav-link active" href="/"><i data-lucide="layout-dashboard"></i>Visão Geral</a>
+        <a class="nav-link" href="/produto"><i data-lucide="package"></i>Produto</a>
+        <a class="nav-link" href="/mercado"><i data-lucide="store"></i>Mercado</a>
+        <a class="nav-link" href="/modelo"><i data-lucide="network"></i>Modelo</a>
+        <a class="nav-link" href="/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
+        <a class="nav-link" href="/marketing"><i data-lucide="megaphone"></i>Marketing</a>
+        <a class="nav-link" href="/operacoes"><i data-lucide="factory"></i>Operações</a>
+        <a class="nav-link" href="/roadmap"><i data-lucide="map"></i>Roadmap</a>
       </nav>
 
       <div class="nav-label">Sistema futuro</div>
       <nav class="nav-list">
-        <a class="nav-link" href="#sistema"><i data-lucide="database"></i>Módulos</a>
-        <a class="nav-link" href="#indicadores"><i data-lucide="activity"></i>Indicadores</a>
-        <a class="nav-link" href="#gestao"><i data-lucide="table-properties"></i>Gestão</a>
+        <a class="nav-link" href="/sistema"><i data-lucide="database"></i>Módulos</a>
+        <a class="nav-link" href="/indicadores"><i data-lucide="activity"></i>Indicadores</a>
+        <a class="nav-link" href="/gestao"><i data-lucide="table-properties"></i>Gestão</a>
       </nav>
 
       <div class="sidebar-card">
@@ -782,7 +786,7 @@
           <button class="btn mobile-menu" id="menuButton" type="button" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
           <span class="status-pill"><span class="status-dot"></span><span id="apiStatus">Backend online</span></span>
           <button class="btn" type="button" onclick="window.print()"><i data-lucide="printer"></i>Imprimir</button>
-          <a class="btn primary" href="#sistema"><i data-lucide="rocket"></i>Ver evolução</a>
+          <a class="btn primary" href="/sistema" data-route-link><i data-lucide="rocket"></i>Ver evolução</a>
         </div>
       </header>
 
@@ -1155,13 +1159,59 @@
       sidebar.classList.toggle("open");
     });
 
-    document.querySelectorAll(".nav-link").forEach((link) => {
-      link.addEventListener("click", () => {
-        document.querySelectorAll(".nav-link").forEach((item) => item.classList.remove("active"));
-        link.classList.add("active");
-        sidebar.classList.remove("open");
+    const routes = {
+      "/": { title: "Dashboard Aromas da Bíblia", label: "Visão Geral", sections: ["visao", "indicadores"] },
+      "/visao": { title: "Visão Geral | Aromas da Bíblia", label: "Visão Geral", sections: ["visao", "indicadores"] },
+      "/produto": { title: "Produto | Aromas da Bíblia", label: "Produto", sections: ["produto"] },
+      "/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
+      "/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
+      "/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
+      "/marketing": { title: "Marketing | Aromas da Bíblia", label: "Marketing", sections: ["marketing"] },
+      "/operacoes": { title: "Operações | Aromas da Bíblia", label: "Operações", sections: ["operacoes"] },
+      "/roadmap": { title: "Roadmap | Aromas da Bíblia", label: "Roadmap", sections: ["roadmap"] },
+      "/sistema": { title: "Sistema Futuro | Aromas da Bíblia", label: "Sistema Futuro", sections: ["sistema"] },
+      "/indicadores": { title: "Indicadores | Aromas da Bíblia", label: "Indicadores", sections: ["indicadores"] },
+      "/gestao": { title: "Gestão Operacional | Aromas da Bíblia", label: "Gestão Operacional", sections: ["gestao"] }
+    };
+
+    const routeSectionIds = [...new Set(Object.values(routes).flatMap((route) => route.sections))];
+    routeSectionIds.forEach((id) => document.getElementById(id)?.classList.add("route-section"));
+
+    function normalizePath(pathname) {
+      const path = pathname.replace(/\/+$/, "") || "/";
+      return routes[path] ? path : "/";
+    }
+
+    function renderRoute(pathname, options = {}) {
+      const path = normalizePath(pathname);
+      const route = routes[path];
+
+      routeSectionIds.forEach((id) => document.getElementById(id)?.classList.remove("active-page"));
+      route.sections.forEach((id) => document.getElementById(id)?.classList.add("active-page"));
+
+      document.title = route.title;
+      document.querySelector("h1").textContent = route.label;
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.classList.toggle("active", normalizePath(new URL(link.href).pathname) === path);
+      });
+
+      sidebar.classList.remove("open");
+      if (!options.skipScroll) window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.querySelectorAll(".nav-link, [data-route-link]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        const url = new URL(link.href);
+        if (url.origin !== window.location.origin) return;
+
+        event.preventDefault();
+        history.pushState({}, "", url.pathname);
+        renderRoute(url.pathname);
       });
     });
+
+    window.addEventListener("popstate", () => renderRoute(window.location.pathname, { skipScroll: true }));
+    renderRoute(window.location.pathname, { skipScroll: true });
 
     fetch("/api/health")
       .then((response) => response.json())
