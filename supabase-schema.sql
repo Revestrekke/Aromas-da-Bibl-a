@@ -72,9 +72,20 @@ create table if not exists financeiro (
   created_at timestamptz default now()
 );
 
+create table if not exists custos (
+  id text primary key,
+  item text not null,
+  categoria text,
+  valor_unitario numeric(10,2) default 0,
+  tipo text default 'Variável',
+  observacoes text,
+  created_at timestamptz default now()
+);
+
 alter table produtos enable row level security;
 alter table clientes enable row level security;
 alter table pedidos enable row level security;
 alter table estoque enable row level security;
 alter table campanhas enable row level security;
 alter table financeiro enable row level security;
+alter table custos enable row level security;

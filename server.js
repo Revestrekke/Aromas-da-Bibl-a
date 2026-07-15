@@ -122,6 +122,14 @@ const fallbackData = {
     { id: 'fin-001', mes: 'Julho', receita: 6800, custos: 2584, lucro: 4216, pedidos: 97 },
     { id: 'fin-002', mes: 'Agosto', receita: 9200, custos: 3496, lucro: 5704, pedidos: 132 },
     { id: 'fin-003', mes: 'Setembro', receita: 12400, custos: 4712, lucro: 7688, pedidos: 177 }
+  ],
+  custos: [
+    { id: 'custo-001', item: 'Base para home spray', categoria: 'Matéria-prima', valor_unitario: 8.4, tipo: 'Variável' },
+    { id: 'custo-002', item: 'Essência lavanda/camomila/musk', categoria: 'Fragrância', valor_unitario: 6.8, tipo: 'Variável' },
+    { id: 'custo-003', item: 'Frasco âmbar 200 ml', categoria: 'Embalagem', valor_unitario: 5.2, tipo: 'Variável' },
+    { id: 'custo-004', item: 'Válvula gatilho preta', categoria: 'Embalagem', valor_unitario: 2.9, tipo: 'Variável' },
+    { id: 'custo-005', item: 'Rótulo e acabamento', categoria: 'Identidade visual', valor_unitario: 3.2, tipo: 'Variável' },
+    { id: 'custo-006', item: 'Reserva operacional', categoria: 'Operação', valor_unitario: 4.0, tipo: 'Rateio' }
   ]
 };
 
@@ -199,16 +207,18 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.get('/api/dashboard', async (_req, res) => {
-  const [produtos, pedidos, estoque, financeiro, campanhas] = await Promise.all([
+  const [produtos, pedidos, estoque, financeiro, custos, campanhas] = await Promise.all([
     listTable('produtos', 'nome'),
     listTable('pedidos', 'created_at'),
     listTable('estoque', 'item'),
     listTable('financeiro', 'created_at'),
+    listTable('custos', 'created_at'),
     listTable('campanhas', 'created_at')
   ]);
 
   const receitaProjetada = financeiro.data.reduce((sum, item) => sum + Number(item.receita || 0), 0);
   const custosProjetados = financeiro.data.reduce((sum, item) => sum + Number(item.custos || 0), 0);
+  const custoUnitario = custos.data.reduce((sum, item) => sum + Number(item.valor_unitario || 0), 0);
   const pedidosMes = pedidos.data.reduce((sum, item) => sum + Number(item.quantidade || 1), 0);
   const estoqueCritico = estoque.data.filter((item) => Number(item.quantidade) <= Number(item.minimo)).length;
   const margemBruta = receitaProjetada > 0 ? Math.round(((receitaProjetada - custosProjetados) / receitaProjetada) * 100) : 0;
@@ -223,7 +233,8 @@ app.get('/api/dashboard', async (_req, res) => {
       produtosAtivos: produtos.data.length,
       pedidosMes,
       campanhasAtivas: campanhas.data.length,
-      estoqueCritico
+      estoqueCritico,
+      custoUnitario
     },
     proximosModulos: ['Produtos', 'Pedidos', 'Clientes', 'Financeiro', 'Estoque', 'Campanhas']
   });
@@ -237,12 +248,12 @@ app.get('/api/system', async (_req, res) => {
   res.json(Object.fromEntries(entries));
 });
 
-app.get('/api/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro)', async (req, res) => {
+app.get('/api/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', async (req, res) => {
   const result = await listTable(req.params.table);
   res.json(result);
 });
 
-app.post('/api/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro)', async (req, res) => {
+app.post('/api/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {});
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
 });

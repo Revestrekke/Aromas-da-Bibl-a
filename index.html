@@ -758,6 +758,7 @@
         <a class="nav-link" href="/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/modelo"><i data-lucide="network"></i>Modelo</a>
         <a class="nav-link" href="/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
+        <a class="nav-link" href="/custos"><i data-lucide="calculator"></i>Custos</a>
         <a class="nav-link" href="/marketing"><i data-lucide="megaphone"></i>Marketing</a>
         <a class="nav-link" href="/operacoes"><i data-lucide="factory"></i>Operações</a>
         <a class="nav-link" href="/roadmap"><i data-lucide="map"></i>Roadmap</a>
@@ -954,6 +955,48 @@
         </div>
       </section>
 
+      <section class="section panel" id="custos">
+        <div class="panel-header">
+          <div>
+            <h2>Custos</h2>
+            <p>Composição por unidade, margem, preço sugerido e ponto de equilíbrio.</p>
+          </div>
+          <span class="chip">Precificação</span>
+        </div>
+
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="coins"></i></div>
+            <div><div class="metric-value" id="costUnitMetric">R$ 0</div><div class="metric-label">Custo unitário</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="tag"></i></div>
+            <div><div class="metric-value" id="priceMetric">R$ 69,90</div><div class="metric-label">Preço sugerido</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="percent"></i></div>
+            <div><div class="metric-value" id="marginMetric">0%</div><div class="metric-label">Margem bruta</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="scale"></i></div>
+            <div><div class="metric-value" id="breakEvenMetric">0 un</div><div class="metric-label">Ponto de equilíbrio</div></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="table-wrap" id="costsTable"></div>
+          <div class="panel chart-card" style="margin-top:0;">
+            <div class="panel-header">
+              <div>
+                <h3>Participação no custo</h3>
+                <p>Itens que mais pesam na formação do preço.</p>
+              </div>
+            </div>
+            <canvas id="costsPageChart"></canvas>
+          </div>
+        </div>
+      </section>
+
       <section class="section panel" id="marketing">
         <div class="panel-header">
           <div>
@@ -1130,12 +1173,14 @@
               <button class="tab-btn" type="button" data-table-tab="clientes">Clientes</button>
               <button class="tab-btn" type="button" data-table-tab="estoque">Estoque</button>
               <button class="tab-btn" type="button" data-table-tab="campanhas">Campanhas</button>
+              <button class="tab-btn" type="button" data-table-tab="custos">Custos</button>
             </div>
             <div class="table-wrap data-table active" id="table-produtos"></div>
             <div class="table-wrap data-table" id="table-pedidos"></div>
             <div class="table-wrap data-table" id="table-clientes"></div>
             <div class="table-wrap data-table" id="table-estoque"></div>
             <div class="table-wrap data-table" id="table-campanhas"></div>
+            <div class="table-wrap data-table" id="table-custos"></div>
           </div>
         </div>
       </section>
@@ -1166,6 +1211,7 @@
       "/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
       "/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
+      "/custos": { title: "Custos | Aromas da Bíblia", label: "Custos", sections: ["custos"] },
       "/marketing": { title: "Marketing | Aromas da Bíblia", label: "Marketing", sections: ["marketing"] },
       "/operacoes": { title: "Operações | Aromas da Bíblia", label: "Operações", sections: ["operacoes"] },
       "/roadmap": { title: "Roadmap | Aromas da Bíblia", label: "Roadmap", sections: ["roadmap"] },
@@ -1196,6 +1242,9 @@
       });
 
       sidebar.classList.remove("open");
+      if (path === "/custos" && window.systemData?.custos) {
+        window.setTimeout(() => renderCostsPage(window.systemData.custos), 50);
+      }
       if (!options.skipScroll) window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -1270,12 +1319,20 @@
           ["leads", "Leads"],
           ["conversao", "Conversão"]
         ]
+      },
+      custos: {
+        columns: [
+          ["item", "Item"],
+          ["categoria", "Categoria"],
+          ["valor_unitario", "Valor unitário"],
+          ["tipo", "Tipo"]
+        ]
       }
     };
 
     function formatValue(key, value) {
       if (value === null || value === undefined || value === "") return "-";
-      if (["preco", "custo", "total", "receita", "custos", "lucro"].includes(key)) {
+      if (["preco", "custo", "total", "receita", "custos", "lucro", "valor_unitario"].includes(key)) {
         return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
       }
       if (key === "conversao") return `${value}%`;
@@ -1313,6 +1370,63 @@
       target.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
     }
 
+    let costsPageChart;
+
+    function renderCostsPage(payload) {
+      const rows = payload?.data || [];
+      const price = 69.9;
+      const fixedCosts = 1500;
+      const totalCost = rows.reduce((sum, item) => sum + Number(item.valor_unitario || 0), 0);
+      const margin = price > 0 ? Math.round(((price - totalCost) / price) * 100) : 0;
+      const contribution = Math.max(price - totalCost, 1);
+      const breakEven = Math.ceil(fixedCosts / contribution);
+
+      document.getElementById("costUnitMetric").textContent = totalCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      document.getElementById("priceMetric").textContent = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      document.getElementById("marginMetric").textContent = `${margin}%`;
+      document.getElementById("breakEvenMetric").textContent = `${breakEven} un`;
+
+      const target = document.getElementById("costsTable");
+      const body = rows.map((row) => `
+        <tr>
+          <td>${formatValue("item", row.item)}</td>
+          <td>${formatValue("categoria", row.categoria)}</td>
+          <td>${formatValue("valor_unitario", row.valor_unitario)}</td>
+          <td>${formatValue("tipo", row.tipo)}</td>
+        </tr>
+      `).join("");
+
+      target.innerHTML = `
+        <table>
+          <thead><tr><th>Item</th><th>Categoria</th><th>Valor unitário</th><th>Tipo</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>
+      `;
+
+      if (costsPageChart) costsPageChart.destroy();
+      costsPageChart = new Chart(document.getElementById("costsPageChart"), {
+        type: "bar",
+        data: {
+          labels: rows.map((item) => item.item),
+          datasets: [{
+            label: "Valor unitário",
+            data: rows.map((item) => Number(item.valor_unitario || 0)),
+            backgroundColor: [brandColors.navy, brandColors.gold, brandColors.sage, brandColors.clay, brandColors.olive, "#9f7d56"],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { display: false } },
+            y: { grid: { color: "rgba(74,64,55,.10)" }, ticks: { callback: (value) => `R$ ${value}` } }
+          }
+        }
+      });
+    }
+
     async function loadSystemData() {
       const chip = document.getElementById("dataSourceChip");
       chip.textContent = "Carregando dados";
@@ -1320,6 +1434,7 @@
       try {
         const response = await fetch("/api/system");
         const system = await response.json();
+        window.systemData = system;
         const source = system.produtos?.source === "supabase" ? "Supabase" : "Dados iniciais";
 
         chip.textContent = source;
@@ -1328,6 +1443,8 @@
         renderTable("clientes", system.clientes);
         renderTable("estoque", system.estoque);
         renderTable("campanhas", system.campanhas);
+        renderTable("custos", system.custos);
+        renderCostsPage(system.custos);
 
         document.getElementById("systemProducts").textContent = system.produtos?.data?.length || 0;
         document.getElementById("systemOrders").textContent = system.pedidos?.data?.length || 0;
