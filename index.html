@@ -584,6 +584,110 @@
       font-size: 12px;
     }
 
+    .ops-grid {
+      display: grid;
+      grid-template-columns: minmax(320px, .72fr) minmax(0, 1.28fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      min-height: 40px;
+      padding: 9px 10px;
+      border: 1px solid rgba(74, 64, 55, .20);
+      border-radius: var(--radius);
+      background: #fffdf7;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 82px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: rgba(23, 59, 95, .55);
+      box-shadow: 0 0 0 3px rgba(23, 59, 95, .08);
+    }
+
+    .inline-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .notice {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      background: rgba(136, 144, 122, .12);
+      color: var(--olive);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .notice.warn {
+      background: rgba(170, 103, 66, .12);
+      color: var(--clay);
+    }
+
+    .mini-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      min-height: 34px;
+      padding: 7px 11px;
+      border: 1px solid rgba(178, 138, 81, .28);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tab-btn.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fffaf0;
+    }
+
+    .data-table {
+      display: none;
+    }
+
+    .data-table.active {
+      display: block;
+    }
+
     .mobile-menu {
       display: none;
     }
@@ -601,7 +705,8 @@
       .sidebar.open { transform: translateX(0); }
       .mobile-menu { display: inline-flex; }
       .dashboard-grid,
-      .two-col { grid-template-columns: 1fr; }
+      .two-col,
+      .ops-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 900px) {
@@ -627,6 +732,7 @@
       .hero,
       .hero img { min-height: 390px; }
       .hero-content h2 { font-size: 28px; }
+      .inline-fields { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -657,6 +763,7 @@
       <nav class="nav-list">
         <a class="nav-link" href="#sistema"><i data-lucide="database"></i>Módulos</a>
         <a class="nav-link" href="#indicadores"><i data-lucide="activity"></i>Indicadores</a>
+        <a class="nav-link" href="#gestao"><i data-lucide="table-properties"></i>Gestão</a>
       </nav>
 
       <div class="sidebar-card">
@@ -925,6 +1032,109 @@
           <div class="system-item"><strong>Relatórios</strong><span>Visão executiva para decidir produção, compras e ações comerciais.</span></div>
         </div>
       </section>
+
+      <section class="section panel" id="gestao">
+        <div class="panel-header">
+          <div>
+            <h2>Gestão Operacional</h2>
+            <p>Primeira camada prática do sistema: cadastrar produto, ler módulos e preparar persistência no Supabase.</p>
+          </div>
+          <span class="chip" id="dataSourceChip">Carregando dados</span>
+        </div>
+
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="box"></i></div>
+            <div><div class="metric-value" id="systemProducts">0</div><div class="metric-label">Produtos cadastrados</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="receipt-text"></i></div>
+            <div><div class="metric-value" id="systemOrders">0</div><div class="metric-label">Pedidos em carteira</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="users"></i></div>
+            <div><div class="metric-value" id="systemCustomers">0</div><div class="metric-label">Clientes e parceiros</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
+            <div><div class="metric-value" id="systemStockAlerts">0</div><div class="metric-label">Alertas de estoque</div></div>
+          </div>
+        </div>
+
+        <div class="ops-grid">
+          <div class="panel" style="margin-top:0;">
+            <div class="panel-header">
+              <div>
+                <h3>Novo produto</h3>
+                <p>Quando a tabela existir no Supabase, este cadastro passa a persistir no banco.</p>
+              </div>
+            </div>
+            <form class="form-grid" id="productForm">
+              <div class="field">
+                <label for="productName">Nome do aroma</label>
+                <input id="productName" name="nome" required placeholder="Ex.: Renovo">
+              </div>
+              <div class="field">
+                <label for="productReference">Referência bíblica</label>
+                <input id="productReference" name="referencia" placeholder="Ex.: Isaías 40:31">
+              </div>
+              <div class="field">
+                <label for="productDescription">Descrição</label>
+                <textarea id="productDescription" name="descricao" placeholder="Resumo do aroma, uso e intenção da fragrância."></textarea>
+              </div>
+              <div class="inline-fields">
+                <div class="field">
+                  <label for="productCost">Custo</label>
+                  <input id="productCost" name="custo" type="number" min="0" step="0.01" placeholder="26.50">
+                </div>
+                <div class="field">
+                  <label for="productPrice">Preço</label>
+                  <input id="productPrice" name="preco" type="number" min="0" step="0.01" placeholder="69.90">
+                </div>
+              </div>
+              <div class="inline-fields">
+                <div class="field">
+                  <label for="productStock">Estoque</label>
+                  <input id="productStock" name="estoque" type="number" min="0" step="1" placeholder="30">
+                </div>
+                <div class="field">
+                  <label for="productStatus">Status</label>
+                  <select id="productStatus" name="status">
+                    <option>Planejado</option>
+                    <option>Protótipo</option>
+                    <option>Ativo</option>
+                    <option>Pausado</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar produto</button>
+              <div class="notice" id="formNotice">Pronto para receber dados.</div>
+            </form>
+          </div>
+
+          <div class="panel" style="margin-top:0;">
+            <div class="panel-header">
+              <div>
+                <h3>Dados do sistema</h3>
+                <p>Tabelas operacionais que serão conectadas ao Supabase.</p>
+              </div>
+              <button class="btn" type="button" id="refreshSystem"><i data-lucide="refresh-cw"></i>Atualizar</button>
+            </div>
+            <div class="mini-tabs">
+              <button class="tab-btn active" type="button" data-table-tab="produtos">Produtos</button>
+              <button class="tab-btn" type="button" data-table-tab="pedidos">Pedidos</button>
+              <button class="tab-btn" type="button" data-table-tab="clientes">Clientes</button>
+              <button class="tab-btn" type="button" data-table-tab="estoque">Estoque</button>
+              <button class="tab-btn" type="button" data-table-tab="campanhas">Campanhas</button>
+            </div>
+            <div class="table-wrap data-table active" id="table-produtos"></div>
+            <div class="table-wrap data-table" id="table-pedidos"></div>
+            <div class="table-wrap data-table" id="table-clientes"></div>
+            <div class="table-wrap data-table" id="table-estoque"></div>
+            <div class="table-wrap data-table" id="table-campanhas"></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -963,6 +1173,174 @@
       .catch(() => {
         document.getElementById("apiStatus").textContent = "Modo visual";
       });
+
+    const tableDefinitions = {
+      produtos: {
+        columns: [
+          ["nome", "Produto"],
+          ["referencia", "Referência"],
+          ["preco", "Preço"],
+          ["estoque", "Estoque"],
+          ["status", "Status"]
+        ]
+      },
+      pedidos: {
+        columns: [
+          ["id", "Pedido"],
+          ["cliente", "Cliente"],
+          ["produto", "Produto"],
+          ["quantidade", "Qtd."],
+          ["total", "Total"],
+          ["status", "Status"]
+        ]
+      },
+      clientes: {
+        columns: [
+          ["nome", "Nome"],
+          ["tipo", "Tipo"],
+          ["contato", "Canal"],
+          ["telefone", "Telefone"],
+          ["status", "Status"]
+        ]
+      },
+      estoque: {
+        columns: [
+          ["item", "Item"],
+          ["categoria", "Categoria"],
+          ["quantidade", "Qtd."],
+          ["minimo", "Mínimo"],
+          ["unidade", "Unidade"]
+        ]
+      },
+      campanhas: {
+        columns: [
+          ["nome", "Campanha"],
+          ["canal", "Canal"],
+          ["periodo", "Período"],
+          ["leads", "Leads"],
+          ["conversao", "Conversão"]
+        ]
+      }
+    };
+
+    function formatValue(key, value) {
+      if (value === null || value === undefined || value === "") return "-";
+      if (["preco", "custo", "total", "receita", "custos", "lucro"].includes(key)) {
+        return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      }
+      if (key === "conversao") return `${value}%`;
+      if (Array.isArray(value)) return value.join(", ");
+      return String(value);
+    }
+
+    function statusClass(value) {
+      const text = String(value || "").toLowerCase();
+      if (text.includes("ativo") || text.includes("pago") || text.includes("protótipo") || text.includes("prototipo")) return "ok";
+      if (text.includes("manual") || text.includes("pendente") || text.includes("negociação") || text.includes("negociacao")) return "warn";
+      return "";
+    }
+
+    function renderTable(tableName, payload) {
+      const target = document.getElementById(`table-${tableName}`);
+      const rows = payload?.data || [];
+      const columns = tableDefinitions[tableName].columns;
+
+      if (!rows.length) {
+        target.innerHTML = `<div class="notice warn">Nenhum registro encontrado em ${tableName}.</div>`;
+        return;
+      }
+
+      const head = columns.map(([, label]) => `<th>${label}</th>`).join("");
+      const body = rows.map((row) => {
+        const cells = columns.map(([key]) => {
+          const value = formatValue(key, row[key]);
+          if (key === "status") return `<td><span class="status ${statusClass(value)}">${value}</span></td>`;
+          return `<td>${value}</td>`;
+        }).join("");
+        return `<tr>${cells}</tr>`;
+      }).join("");
+
+      target.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    async function loadSystemData() {
+      const chip = document.getElementById("dataSourceChip");
+      chip.textContent = "Carregando dados";
+
+      try {
+        const response = await fetch("/api/system");
+        const system = await response.json();
+        const source = system.produtos?.source === "supabase" ? "Supabase" : "Dados iniciais";
+
+        chip.textContent = source;
+        renderTable("produtos", system.produtos);
+        renderTable("pedidos", system.pedidos);
+        renderTable("clientes", system.clientes);
+        renderTable("estoque", system.estoque);
+        renderTable("campanhas", system.campanhas);
+
+        document.getElementById("systemProducts").textContent = system.produtos?.data?.length || 0;
+        document.getElementById("systemOrders").textContent = system.pedidos?.data?.length || 0;
+        document.getElementById("systemCustomers").textContent = system.clientes?.data?.length || 0;
+        document.getElementById("systemStockAlerts").textContent = (system.estoque?.data || [])
+          .filter((item) => Number(item.quantidade) <= Number(item.minimo)).length;
+      } catch (error) {
+        chip.textContent = "Erro ao carregar";
+        document.getElementById("formNotice").className = "notice warn";
+        document.getElementById("formNotice").textContent = "Não foi possível carregar os dados do sistema.";
+      }
+    }
+
+    document.querySelectorAll("[data-table-tab]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-table-tab]").forEach((item) => item.classList.remove("active"));
+        document.querySelectorAll(".data-table").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(`table-${button.dataset.tableTab}`).classList.add("active");
+      });
+    });
+
+    document.getElementById("refreshSystem").addEventListener("click", loadSystemData);
+
+    document.getElementById("productForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("formNotice");
+      const formData = new FormData(event.currentTarget);
+      const payload = Object.fromEntries(formData.entries());
+
+      payload.custo = Number(payload.custo || 0);
+      payload.preco = Number(payload.preco || 0);
+      payload.estoque = Number(payload.estoque || 0);
+      payload.tipo = "Home Spray";
+      payload.volume = "200 ml";
+
+      notice.className = "notice";
+      notice.textContent = "Salvando produto...";
+
+      try {
+        const response = await fetch("/api/produtos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (result.source === "supabase") {
+          notice.textContent = "Produto cadastrado no Supabase.";
+          event.currentTarget.reset();
+        } else {
+          notice.className = "notice warn";
+          notice.textContent = "Produto recebido. Crie a tabela no Supabase para persistir definitivamente.";
+        }
+
+        await loadSystemData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = "Falha ao cadastrar produto.";
+      }
+    });
+
+    loadSystemData();
 
     Chart.defaults.font.family = "Inter, Arial, sans-serif";
     Chart.defaults.color = "#756b5d";
