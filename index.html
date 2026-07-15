@@ -1,1261 +1,1036 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aromas da Bíblia — Plano de Negócios e Estratégia de Lançamento</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-<style>
-/* ============ TOKENS ============ */
-:root{
-  --creme:#F4EFE6;
-  --bege:#E8DFD1;
-  --azul:#173B5F;
-  --dourado:#B6925E;
-  --terracota:#B96F42;
-  --salvia:#9A9A83;
-  --marrom:#4A4037;
-  --branco:#FFFDF8;
-  --font-display:'Cormorant Garamond', 'Playfair Display', serif;
-  --font-alt:'Playfair Display', serif;
-  --font-body:'Inter', 'Manrope', sans-serif;
-  --shadow-soft: 0 10px 30px rgba(74,64,55,0.08);
-  --radius: 14px;
-}
-*{box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{
-  margin:0;
-  background:var(--creme);
-  color:var(--marrom);
-  font-family:var(--font-body);
-  font-weight:400;
-  line-height:1.65;
-  -webkit-font-smoothing:antialiased;
-}
-h1,h2,h3,h4{
-  font-family:var(--font-display);
-  color:var(--azul);
-  font-weight:600;
-  margin:0 0 .4em 0;
-  letter-spacing:.01em;
-}
-h1{font-size:clamp(2.6rem,6vw,4.6rem); font-weight:600;}
-h2{font-size:clamp(1.9rem,3.4vw,2.7rem); letter-spacing:.03em;}
-h3{font-size:1.5rem;}
-p{margin:0 0 1em 0;}
-a{color:inherit;}
-.eyebrow{
-  font-family:var(--font-body);
-  text-transform:uppercase;
-  letter-spacing:.22em;
-  font-size:.72rem;
-  color:var(--terracota);
-  font-weight:600;
-  display:block;
-  margin-bottom:.9em;
-}
-.section-head{max-width:760px; margin:0 auto 3rem auto; text-align:center;}
-.section-head p{color:var(--marrom); opacity:.85;}
-section{
-  padding:6rem 6vw;
-  max-width:1240px;
-  margin:0 auto;
-  scroll-margin-top:90px;
-}
-.section-alt{background:var(--bege);}
-.wrap-alt{background:var(--bege);}
-.container-inner{max-width:1240px; margin:0 auto; padding:6rem 6vw;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aromas da Bíblia | Dashboard de Negócios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root {
+      --paper: #f7f1e8;
+      --surface: #fffaf0;
+      --surface-2: #efe5d4;
+      --ink: #243142;
+      --muted: #756b5d;
+      --navy: #173b5f;
+      --gold: #b28a51;
+      --sage: #88907a;
+      --olive: #666d4f;
+      --clay: #aa6742;
+      --line: rgba(74, 64, 55, .16);
+      --shadow: 0 18px 48px rgba(46, 38, 28, .10);
+      --radius: 8px;
+      --font-display: "Cormorant Garamond", Georgia, serif;
+      --font-body: "Inter", Arial, sans-serif;
+    }
 
-/* Arch motif — echoes the logo */
-.arch-frame{
-  position:relative;
-  border:1px solid rgba(182,146,94,.5);
-  border-radius:130px 130px 14px 14px;
-  padding:3rem 2.4rem;
-  background:var(--branco);
-}
-.hairline{
-  height:1px;
-  width:70px;
-  background:linear-gradient(90deg,var(--dourado),transparent);
-  margin:0 auto 1.4rem auto;
-}
-.hairline.left{margin:0 0 1.4rem 0;}
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--font-body);
+      line-height: 1.5;
+    }
 
-/* ============ NAV ============ */
-header.topnav{
-  position:fixed; top:0; left:0; right:0; z-index:1000;
-  background:rgba(244,239,230,.92);
-  backdrop-filter:blur(10px);
-  border-bottom:1px solid rgba(182,146,94,.35);
-  transition:box-shadow .3s ease;
-}
-.nav-inner{
-  max-width:1400px; margin:0 auto;
-  display:flex; align-items:center; justify-content:space-between;
-  padding:.7rem 2.4vw;
-}
-.brand-mini{display:flex; align-items:center; gap:.7rem;}
-.brand-mini img{height:38px; width:auto;}
-.brand-mini span{font-family:var(--font-display); color:var(--azul); font-size:1.2rem; letter-spacing:.04em; font-weight:600;}
-nav.links{display:flex; gap:1.5rem; flex-wrap:wrap;}
-nav.links a{
-  font-size:.78rem; text-transform:uppercase; letter-spacing:.09em;
-  text-decoration:none; color:var(--marrom); opacity:.7;
-  padding:.3rem 0; border-bottom:2px solid transparent;
-  transition:all .25s ease; white-space:nowrap;
-}
-nav.links a:hover, nav.links a.active{opacity:1; color:var(--terracota); border-bottom-color:var(--terracota);}
-.print-btn{
-  background:var(--azul); color:var(--branco); border:none;
-  padding:.6rem 1.3rem; border-radius:30px; font-family:var(--font-body);
-  font-size:.76rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
-  display:flex; align-items:center; gap:.5rem; transition:background .2s ease;
-}
-.print-btn:hover{background:var(--terracota);}
-.burger{display:none; background:none; border:none; cursor:pointer; color:var(--azul);}
-@media(max-width:980px){
-  nav.links{display:none; position:absolute; top:100%; left:0; right:0; background:var(--branco); flex-direction:column; padding:1rem 2rem; box-shadow:var(--shadow-soft); gap:.9rem;}
-  nav.links.open{display:flex;}
-  .burger{display:block;}
-}
+    button, input, select { font: inherit; }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
 
-/* ============ COVER ============ */
-.cover{
-  min-height:100svh; display:flex; align-items:center; justify-content:center;
-  position:relative; overflow:hidden; text-align:center; padding:8vh 6vw;
-}
-.cover::before{
-  content:""; position:absolute; inset:0;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(182,146,94,.14), transparent 45%),
-    radial-gradient(circle at 85% 80%, rgba(23,59,95,.08), transparent 50%);
-}
-.cover .arch-bg{
-  position:absolute; top:6%; left:50%; transform:translateX(-50%);
-  width:min(560px,70vw); height:70%;
-  border:1px solid rgba(182,146,94,.28);
-  border-radius:280px 280px 0 0;
-}
-.cover .arch-bg::after{
-  content:""; position:absolute; inset:18px;
-  border:1px solid rgba(23,59,95,.12);
-  border-radius:260px 260px 0 0;
-}
-.cover-content{position:relative; z-index:2; max-width:760px;}
-.cover-content img.logo-hero{width:150px; height:auto; margin-bottom:1.6rem;}
-.cover-content .subtitle{
-  font-family:var(--font-alt); font-style:italic; color:var(--terracota);
-  font-size:1.25rem; margin-top:.3rem;
-}
-.cover-content .tagline{max-width:480px; margin:1.3rem auto; opacity:.85;}
-.cover-meta{
-  display:flex; gap:2.4rem; justify-content:center; flex-wrap:wrap;
-  margin:2.2rem 0; font-size:.85rem; letter-spacing:.03em;
-}
-.cover-meta div{border-left:2px solid var(--dourado); padding-left:.7rem; text-align:left;}
-.cover-meta b{display:block; color:var(--azul); font-family:var(--font-display); font-size:1.1rem;}
-.btn-primary{
-  display:inline-block; margin-top:1rem; background:var(--azul); color:var(--branco);
-  text-decoration:none; padding:.95rem 2.3rem; border-radius:34px; font-size:.85rem;
-  letter-spacing:.08em; text-transform:uppercase; transition:background .25s ease, transform .25s ease;
-}
-.btn-primary:hover{background:var(--terracota); transform:translateY(-2px);}
-.scroll-cue{position:absolute; bottom:2.4rem; left:50%; transform:translateX(-50%); opacity:.5; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase;}
+    .app-shell {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
 
-/* ============ CARDS / GRID ============ */
-.grid{display:grid; gap:1.6rem;}
-.grid-2{grid-template-columns:repeat(2,1fr);}
-.grid-3{grid-template-columns:repeat(3,1fr);}
-.grid-4{grid-template-columns:repeat(4,1fr);}
-@media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 20px 18px;
+      background: #fdf7ec;
+      border-right: 1px solid var(--line);
+    }
 
-.card{
-  background:var(--branco); border:1px solid rgba(182,146,94,.28);
-  border-radius:var(--radius); padding:2rem 1.8rem; box-shadow:var(--shadow-soft);
-  transition:transform .3s ease, box-shadow .3s ease;
-}
-.card:hover{transform:translateY(-4px); box-shadow:0 16px 34px rgba(74,64,55,.12);}
-.card .icon{color:var(--terracota); margin-bottom:.9rem;}
-.card h3{margin-bottom:.5rem;}
-.card small{color:var(--salvia);}
+    .brand {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
 
-.kpi-card{
-  background:var(--branco); border-radius:var(--radius); padding:1.6rem;
-  border:1px solid rgba(182,146,94,.3); text-align:center; box-shadow:var(--shadow-soft);
-}
-.kpi-card .num{font-family:var(--font-display); font-size:2.2rem; color:var(--azul); font-weight:600;}
-.kpi-card .label{font-size:.75rem; text-transform:uppercase; letter-spacing:.07em; color:var(--marrom); opacity:.75;}
+    .brand-logo {
+      width: 54px;
+      height: 54px;
+      object-fit: cover;
+      border: 1px solid rgba(178, 138, 81, .34);
+      border-radius: 50%;
+      background: var(--surface);
+    }
 
-/* Product card */
-.product-card{
-  background:var(--branco); border-radius:20px; overflow:hidden;
-  border:1px solid rgba(182,146,94,.3); box-shadow:var(--shadow-soft);
-}
-.product-visual{
-  height:230px; display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(160deg,var(--bege),var(--creme));
-  position:relative;
-}
-.bottle{width:56px; height:150px; position:relative;}
-.bottle .cap{width:34px; height:22px; background:#1c1c1c; border-radius:6px 6px 3px 3px; position:absolute; top:-18px; left:11px;}
-.bottle .body{width:56px; height:132px; background:linear-gradient(160deg,#8a5a2b,#5c3a19); border-radius:10px 10px 16px 16px; position:relative; box-shadow:inset -6px 0 10px rgba(0,0,0,.25);}
-.bottle .label{position:absolute; top:38%; left:8%; width:84%; height:46%; background:var(--branco); border-radius:4px; opacity:.92;}
-.product-body{padding:1.8rem;}
-.product-body .verse{font-family:var(--font-alt); font-style:italic; color:var(--azul); font-size:1.02rem; border-left:3px solid var(--dourado); padding-left:.9rem; margin:.9rem 0;}
-.tag-row{display:flex; gap:.5rem; flex-wrap:wrap; margin:.8rem 0;}
-.tag{background:var(--bege); color:var(--marrom); font-size:.72rem; padding:.32rem .8rem; border-radius:20px; letter-spacing:.02em;}
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      line-height: 1;
+      color: var(--navy);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
 
-/* Tables */
-.table-wrap{overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow-soft); border:1px solid rgba(182,146,94,.3);}
-table{width:100%; border-collapse:collapse; background:var(--branco); min-width:760px;}
-th,td{padding:.85rem 1rem; text-align:left; border-bottom:1px solid rgba(182,146,94,.2); font-size:.88rem;}
-th{background:var(--azul); color:var(--branco); font-weight:500; letter-spacing:.03em; font-size:.76rem; text-transform:uppercase; position:sticky; top:0;}
-tr:nth-child(even) td{background:rgba(232,223,209,.35);}
-td input{
-  width:100px; padding:.4rem .5rem; border:1px solid rgba(182,146,94,.4);
-  border-radius:6px; font-family:var(--font-body); font-size:.85rem; background:var(--creme);
-}
-.calc-cell{font-weight:600; color:var(--azul);}
-.badge{padding:.25rem .7rem; border-radius:20px; font-size:.72rem; font-weight:600; letter-spacing:.02em;}
-.badge.low{background:#e4ece0; color:#4f7a3c;}
-.badge.mid{background:#f6e8cf; color:#9a6c1c;}
-.badge.high{background:#f4dcd4; color:#a13d24;}
+    .brand-subtitle {
+      margin-top: 5px;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
 
-/* SWOT */
-.swot-grid{display:grid; grid-template-columns:1fr 1fr; gap:1.4rem;}
-.swot-card{border-radius:var(--radius); padding:1.8rem; color:var(--branco);}
-.swot-card ul{margin:0; padding-left:1.2rem;}
-.swot-card li{margin-bottom:.4rem;}
-.swot-f{background:var(--azul);}
-.swot-w{background:var(--terracota);}
-.swot-o{background:var(--salvia);}
-.swot-t{background:var(--marrom);}
-@media(max-width:760px){.swot-grid{grid-template-columns:1fr;}}
+    .nav-label {
+      margin: 22px 8px 10px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
 
-/* Timeline / Gantt */
-.gantt{display:flex; flex-direction:column; gap:.9rem;}
-.gantt-row{display:grid; grid-template-columns:220px 1fr; gap:1rem; align-items:center;}
-.gantt-label{font-size:.85rem; font-weight:600; color:var(--azul);}
-.gantt-track{background:var(--bege); border-radius:20px; height:14px; position:relative;}
-.gantt-bar{position:absolute; top:0; bottom:0; border-radius:20px; background:linear-gradient(90deg,var(--dourado),var(--terracota));}
-@media(max-width:760px){.gantt-row{grid-template-columns:1fr;}}
+    .nav-list {
+      display: grid;
+      gap: 5px;
+    }
 
-.checklist-block{background:var(--branco); border-radius:var(--radius); padding:1.6rem 1.8rem; border:1px solid rgba(182,146,94,.3); margin-bottom:1.2rem;}
-.checklist-block h4{color:var(--azul); font-family:var(--font-display); font-size:1.25rem; margin-bottom:.8rem;}
-.check-item{display:flex; align-items:flex-start; gap:.6rem; padding:.35rem 0; font-size:.92rem;}
-.check-item input{margin-top:.28rem; width:16px; height:16px; accent-color:var(--terracota);}
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 11px;
+      color: #473f34;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 600;
+    }
 
-/* Canvas / BMC */
-.bmc{display:grid; grid-template-columns:repeat(5,1fr); grid-template-rows:auto auto; gap:.8rem;}
-.bmc .block{background:var(--branco); border:1px solid rgba(182,146,94,.3); border-radius:10px; padding:1.1rem; font-size:.82rem;}
-.bmc .block h4{font-size:.95rem; margin-bottom:.5rem;}
-.bmc .b1{grid-column:1/3; grid-row:1/2;}
-.bmc .b2{grid-column:3/4; grid-row:1/3;}
-.bmc .b3{grid-column:4/6; grid-row:1/2;}
-.bmc .b4{grid-column:1/2; grid-row:2/3;}
-.bmc .b5{grid-column:2/3; grid-row:2/3;}
-.bmc .b6{grid-column:4/5; grid-row:2/3;}
-.bmc .b7{grid-column:5/6; grid-row:2/3;}
-.bmc .b8{grid-column:1/6; grid-row:3/4;}
-.bmc .b9{grid-column:1/6; grid-row:4/5;}
-@media(max-width:980px){.bmc{grid-template-columns:1fr 1fr;} .bmc .block{grid-column:auto!important; grid-row:auto!important;}}
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--navy);
+      background: rgba(178, 138, 81, .10);
+      border-color: rgba(178, 138, 81, .22);
+    }
 
-.compare-table td.check{color:var(--azul); font-weight:700; text-align:center;}
-.compare-table td.cross{color:var(--salvia); text-align:center;}
+    .nav-link i,
+    .metric-icon,
+    .btn i { width: 18px; height: 18px; }
 
-.chart-box{background:var(--branco); border-radius:var(--radius); padding:1.6rem; border:1px solid rgba(182,146,94,.3); box-shadow:var(--shadow-soft);}
-.chart-box canvas{max-height:320px;}
+    .sidebar-card {
+      margin-top: 20px;
+      padding: 14px;
+      border: 1px solid rgba(178, 138, 81, .28);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #fffaf0, #f3eadb);
+    }
 
-.callout{
-  background:var(--bege); border-left:3px solid var(--terracota); padding:1.2rem 1.6rem;
-  border-radius:0 10px 10px 0; font-size:.9rem; margin:1.6rem 0;
-}
-.pill-input{display:flex; align-items:center; gap:.6rem; background:var(--branco); border:1px solid rgba(182,146,94,.4); border-radius:30px; padding:.5rem 1.1rem;}
-.pill-input input{border:none; background:transparent; width:80px; font-family:var(--font-body); font-size:.9rem;}
+    .sidebar-card strong {
+      display: block;
+      color: var(--navy);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
 
-footer{
-  background:var(--azul); color:var(--branco); text-align:center; padding:3.4rem 6vw 2.4rem;
-}
-footer img{height:44px; margin-bottom:1rem; opacity:.9;}
-footer .tagline{font-family:var(--font-alt); font-style:italic; opacity:.85;}
-footer small{display:block; opacity:.55; margin-top:1.4rem; max-width:640px; margin-left:auto; margin-right:auto; font-size:.75rem; line-height:1.6;}
+    .sidebar-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-.back-top{
-  position:fixed; bottom:1.8rem; right:1.8rem; background:var(--azul); color:var(--branco);
-  width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-  border:none; cursor:pointer; box-shadow:var(--shadow-soft); opacity:0; pointer-events:none; transition:opacity .3s ease, background .2s ease; z-index:900;
-}
-.back-top.show{opacity:1; pointer-events:auto;}
-.back-top:hover{background:var(--terracota);}
+    main {
+      min-width: 0;
+      padding: 22px;
+    }
 
-.reveal{opacity:0; transform:translateY(24px); transition:opacity .7s ease, transform .7s ease;}
-.reveal.in{opacity:1; transform:translateY(0);}
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 0 20px;
+      background: rgba(247, 241, 232, .88);
+      backdrop-filter: blur(12px);
+    }
 
-[data-tooltip]{position:relative; cursor:help; border-bottom:1px dotted var(--dourado);}
-[data-tooltip]:hover::after{
-  content:attr(data-tooltip); position:absolute; bottom:130%; left:50%; transform:translateX(-50%);
-  background:var(--marrom); color:var(--branco); padding:.5rem .8rem; border-radius:6px; font-size:.72rem;
-  width:max-content; max-width:220px; z-index:20; box-shadow:var(--shadow-soft);
-}
+    .page-kicker {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
 
-.clear-btn{
-  background:transparent; border:1px solid var(--terracota); color:var(--terracota);
-  padding:.55rem 1.2rem; border-radius:30px; font-size:.78rem; cursor:pointer; letter-spacing:.04em;
-}
-.clear-btn:hover{background:var(--terracota); color:var(--branco);}
+    h1, h2, h3 {
+      margin: 0;
+      color: var(--navy);
+      line-height: 1.05;
+    }
 
-a:focus-visible, button:focus-visible, input:focus-visible{
-  outline:2px solid var(--terracota); outline-offset:2px;
-}
+    h1 {
+      margin-top: 4px;
+      font-family: var(--font-display);
+      font-size: 34px;
+      letter-spacing: .02em;
+    }
 
-/* ============ PRINT ============ */
-@media print{
-  header.topnav, .back-top, .print-btn, .burger, .scroll-cue, .btn-primary{display:none!important;}
-  body{background:#fff;}
-  section{padding:1.2cm 0; page-break-inside:avoid;}
-  .cover{min-height:auto; padding:1cm 0;}
-  .reveal{opacity:1!important; transform:none!important;}
-  .card:hover{transform:none; box-shadow:none;}
-}
-</style>
+    h2 {
+      font-family: var(--font-display);
+      font-size: 28px;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .status-pill,
+    .btn,
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 7px 11px;
+      border: 1px solid rgba(178, 138, 81, .28);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #4f8f61;
+      box-shadow: 0 0 0 4px rgba(79, 143, 97, .14);
+    }
+
+    .btn {
+      cursor: pointer;
+      border-radius: var(--radius);
+    }
+
+    .btn.primary {
+      color: #fffaf0;
+      background: var(--navy);
+      border-color: var(--navy);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(320px, .75fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .hero {
+      min-height: 430px;
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius);
+      border: 1px solid rgba(178, 138, 81, .28);
+      background: #dbcab3;
+      box-shadow: var(--shadow);
+    }
+
+    .hero img {
+      width: 100%;
+      height: 100%;
+      min-height: 430px;
+      object-fit: cover;
+      object-position: 50% 45%;
+    }
+
+    .hero-content {
+      position: absolute;
+      inset: auto 0 0;
+      display: grid;
+      gap: 14px;
+      padding: 34px;
+      color: #fffaf0;
+      background: linear-gradient(0deg, rgba(23, 59, 95, .92), rgba(23, 59, 95, .08));
+    }
+
+    .hero-content h2 {
+      color: #fffaf0;
+      max-width: 620px;
+      font-size: 40px;
+    }
+
+    .hero-content p {
+      max-width: 720px;
+      margin: 0;
+      color: rgba(255, 250, 240, .88);
+      font-size: 15px;
+    }
+
+    .hero-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero-chips .chip {
+      background: rgba(255, 250, 240, .12);
+      color: #fffaf0;
+      border-color: rgba(255, 250, 240, .24);
+    }
+
+    .panel {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 250, 240, .82);
+      box-shadow: 0 12px 28px rgba(46, 38, 28, .06);
+    }
+
+    .panel + .panel { margin-top: 18px; }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .panel-header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .product-preview {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .product-preview img {
+      width: 110px;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 1px solid rgba(178, 138, 81, .25);
+    }
+
+    .verse {
+      margin: 0;
+      color: var(--navy);
+      font-family: var(--font-display);
+      font-size: 25px;
+      line-height: 1.12;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .metric {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 12px;
+      align-items: center;
+      min-height: 94px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .metric-icon {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      color: var(--navy);
+      background: rgba(178, 138, 81, .13);
+    }
+
+    .metric-value {
+      color: var(--navy);
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .metric-label {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .section {
+      margin-top: 18px;
+      scroll-margin-top: 96px;
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .module-card {
+      min-height: 180px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .module-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 10px;
+      color: var(--navy);
+      font-weight: 800;
+    }
+
+    .module-title i {
+      width: 19px;
+      height: 19px;
+      color: var(--gold);
+    }
+
+    .module-card p {
+      margin: 0 0 11px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .list li {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      color: #4a4037;
+      font-size: 13px;
+    }
+
+    .list li::before {
+      content: "";
+      flex: 0 0 auto;
+      width: 6px;
+      height: 6px;
+      margin-top: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    th {
+      color: var(--muted);
+      background: rgba(178, 138, 81, .08);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(136, 144, 122, .14);
+      color: var(--olive);
+    }
+
+    .status.warn {
+      color: var(--clay);
+      background: rgba(170, 103, 66, .13);
+    }
+
+    .status.ok {
+      color: #3f7a53;
+      background: rgba(63, 122, 83, .13);
+    }
+
+    .chart-card {
+      min-height: 320px;
+    }
+
+    .chart-card canvas {
+      width: 100% !important;
+      max-height: 265px;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .roadmap-step {
+      position: relative;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .step-badge {
+      display: inline-flex;
+      margin-bottom: 10px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      color: var(--navy);
+      background: rgba(23, 59, 95, .08);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .system-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .system-item {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .system-item strong {
+      display: block;
+      color: var(--navy);
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+
+    .system-item span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .mobile-menu {
+      display: none;
+    }
+
+    @media (max-width: 1180px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 280px;
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform .2s ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-menu { display: inline-flex; }
+      .dashboard-grid,
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      main { padding: 14px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .top-actions { justify-content: flex-start; }
+      .metrics,
+      .module-grid,
+      .roadmap,
+      .system-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-content { padding: 24px; }
+      .hero-content h2 { font-size: 32px; }
+    }
+
+    @media (max-width: 620px) {
+      .metrics,
+      .module-grid,
+      .roadmap,
+      .system-strip { grid-template-columns: 1fr; }
+      .product-preview { grid-template-columns: 84px 1fr; }
+      .product-preview img { width: 84px; }
+      h1 { font-size: 28px; }
+      .hero,
+      .hero img { min-height: 390px; }
+      .hero-content h2 { font-size: 28px; }
+    }
+  </style>
 </head>
 <body>
-
-<button class="back-top" id="backTop" aria-label="Voltar ao topo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
-
-<header class="topnav">
-  <div class="nav-inner">
-    <div class="brand-mini">
-      <img src="assets/logo-aromas-da-biblia.jpeg" alt="Logotipo Aromas da Bíblia">
-      <span>Aromas da Bíblia</span>
-    </div>
-    <nav class="links" id="navLinks">
-      <a href="#visao-geral">Visão Geral</a>
-      <a href="#marca">Marca</a>
-      <a href="#produtos">Produtos</a>
-      <a href="#mercado">Mercado</a>
-      <a href="#publico">Público</a>
-      <a href="#operacao">Operação</a>
-      <a href="#custos">Custos</a>
-      <a href="#vendas">Vendas</a>
-      <a href="#marketing">Marketing</a>
-      <a href="#cronograma">Cronograma</a>
-      <a href="#riscos">Riscos</a>
-      <a href="#proximos-passos">Próximos Passos</a>
-    </nav>
-    <button class="print-btn" onclick="window.print()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
-      Imprimir / PDF
-    </button>
-    <button class="burger" id="burgerBtn" aria-label="Abrir menu">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-    </button>
-  </div>
-</header>
-
-<!-- ============ CAPA ============ -->
-<section class="cover" id="capa">
-  <div class="arch-bg"></div>
-  <div class="cover-content reveal">
-    <img class="logo-hero" src="assets/logo-aromas-da-biblia.jpeg" alt="Logotipo Aromas da Bíblia">
-    <h1>Aromas da Bíblia</h1>
-    <div class="subtitle">Plano de Negócios e Estratégia de Lançamento</div>
-    <p class="tagline">Home sprays inspirados em momentos de fé, leitura e descanso.</p>
-    <div class="cover-meta">
-      <div><b>Julho de 2026</b>Data do documento</div>
-      <div><b>20 de agosto de 2026</b>Lançamento teste — retiro evangélico</div>
-    </div>
-    <a href="#visao-geral" class="btn-primary">Conhecer o projeto</a>
-  </div>
-  <div class="scroll-cue">Role para explorar ↓</div>
-</section>
-
-<!-- ============ VISÃO GERAL / RESUMO EXECUTIVO ============ -->
-<section id="visao-geral">
-  <div class="section-head reveal">
-    <span class="eyebrow">Resumo Executivo</span>
-    <h2>Uma marca de aromatização para casa, nascida da fé</h2>
-    <p>Aromas da Bíblia é uma marca brasileira de aromatização para ambientes que une perfumaria, casa, bem-estar e inspiração cristã. O primeiro produto será um home spray de 100&nbsp;ml, apresentado em frasco âmbar com mini gatilho preto e identidade visual premium.</p>
-    <p>O lançamento inicial ocorrerá em um retiro evangélico de três dias, utilizado como teste de mercado para validar fragrâncias, preço, apresentação, mensagem, aceitação do público e potencial de recompra. Após a validação presencial, a marca será estruturada para vendas online e entregas em todo o Brasil.</p>
-  </div>
-  <div class="grid grid-3 reveal">
-    <div class="kpi-card"><div class="num">100 ml</div><div class="label">Produto inicial — Home Spray</div></div>
-    <div class="kpi-card"><div class="num">3</div><div class="label">Fragrâncias iniciais</div></div>
-    <div class="kpi-card"><div class="num">3 dias</div><div class="label">Evento de teste</div></div>
-    <div class="kpi-card"><div class="num">20/08</div><div class="label">Data de lançamento</div></div>
-    <div class="kpi-card"><div class="num">Presencial</div><div class="label">Canal inicial de venda</div></div>
-    <div class="kpi-card"><div class="num">Nacional</div><div class="label">Expansão — e-commerce</div></div>
-  </div>
-</section>
-
-<!-- ============ MARCA ============ -->
-<section id="marca" class="section-alt">
-  <div class="section-head reveal">
-    <span class="eyebrow">Identidade da Marca</span>
-    <h2>Propósito, missão, visão e valores</h2>
-    <p>A marca não promete cura, milagres, bênçãos, prosperidade ou qualquer efeito espiritual. Os produtos são aromatizadores criados para acompanhar momentos de leitura da Bíblia, oração, devocional, descanso e contemplação.</p>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card">
-      <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div>
-      <h3>Propósito</h3>
-      <p>Criar aromas que acompanhem momentos de pausa, fé, leitura, oração e descanso.</p>
-    </div>
-    <div class="card">
-      <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2 3 7l9 5 9-5-9-5z"/><path d="M3 17l9 5 9-5M3 12l9 5 9-5"/></svg></div>
-      <h3>Missão</h3>
-      <p>Desenvolver produtos aromáticos elegantes, seguros e acessíveis, inspirados em mensagens e narrativas bíblicas.</p>
-    </div>
-    <div class="card">
-      <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
-      <h3>Visão</h3>
-      <p>Tornar-se uma marca brasileira reconhecida em produtos para casa, presentes e experiências aromáticas inspiradas na fé cristã.</p>
-    </div>
-    <div class="card">
-      <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-4.5-9.5-9C.7 8.2 3 4 7 4c2 0 3.6 1.2 5 3 1.4-1.8 3-3 5-3 4 0 6.3 4.2 4.5 8-2.5 4.5-9.5 9-9.5 9z"/></svg></div>
-      <h3>Valores</h3>
-      <p>Respeito à fé, transparência, qualidade, beleza, acolhimento e responsabilidade — sem promessas espirituais ou terapêuticas.</p>
-    </div>
-  </div>
-  <div class="callout reveal" style="margin-top:2.4rem;">
-    <strong>Frase institucional:</strong> "Aromas para momentos de fé, leitura e descanso." O produto é apresentado como parte de um momento de cuidado, desaceleração e conexão com a fé, sem atribuir poder espiritual ao aroma.
-  </div>
-</section>
-
-<!-- ============ PRODUTOS ============ -->
-<section id="produtos">
-  <div class="section-head reveal">
-    <span class="eyebrow">Linha de Lançamento</span>
-    <h2>Três fragrâncias, três narrativas</h2>
-    <p>Frasco âmbar de 100&nbsp;ml, mini gatilho borrifador preto e rótulo fosco em tons claros — uma embalagem apropriada para presente.</p>
-  </div>
-  <div class="grid grid-3 reveal">
-    <div class="product-card">
-      <div class="product-visual"><div class="bottle"><div class="cap"></div><div class="body"><div class="label"></div></div></div></div>
-      <div class="product-body">
-        <span class="eyebrow" style="margin-bottom:.2rem;">Produto 01</span>
-        <h3>Paz</h3>
-        <div class="tag-row"><span class="tag">Lavanda</span><span class="tag">Camomila</span><span class="tag">Musk suave</span><span class="tag">Fundo amadeirado</span></div>
-        <p><em>Delicado, confortável, limpo e relaxante.</em></p>
-        <div class="verse">"Deixo-vos a paz, a minha paz vos dou." — João 14:27</div>
-        <p>Uma fragrância delicada para acompanhar momentos de leitura, oração e descanso.</p>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img class="brand-logo" src="assets/logo-aromas.jpeg" alt="Logo Aromas da Bíblia">
+        <div>
+          <div class="brand-title">Aromas</div>
+          <div class="brand-subtitle">da Bíblia</div>
+        </div>
       </div>
-    </div>
-    <div class="product-card">
-      <div class="product-visual"><div class="bottle"><div class="cap"></div><div class="body"><div class="label"></div></div></div></div>
-      <div class="product-body">
-        <span class="eyebrow" style="margin-bottom:.2rem;">Produto 02</span>
-        <h3>Jardim do Éden</h3>
-        <div class="tag-row"><span class="tag">Chá branco</span><span class="tag">Folhas verdes</span><span class="tag">Capim-limão</span><span class="tag">Flores brancas</span></div>
-        <p><em>Verde, luminoso, fresco e natural.</em></p>
-        <div class="verse">"O Senhor Deus plantou um jardim no Éden." — Gênesis 2:8</div>
-        <p>Um aroma fresco e envolvente inspirado na beleza, na natureza e no início da criação.</p>
+
+      <div class="nav-label">Plano executivo</div>
+      <nav class="nav-list">
+        <a class="nav-link active" href="#visao"><i data-lucide="layout-dashboard"></i>Visão Geral</a>
+        <a class="nav-link" href="#produto"><i data-lucide="package"></i>Produto</a>
+        <a class="nav-link" href="#mercado"><i data-lucide="store"></i>Mercado</a>
+        <a class="nav-link" href="#modelo"><i data-lucide="network"></i>Modelo</a>
+        <a class="nav-link" href="#financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
+        <a class="nav-link" href="#marketing"><i data-lucide="megaphone"></i>Marketing</a>
+        <a class="nav-link" href="#operacoes"><i data-lucide="factory"></i>Operações</a>
+        <a class="nav-link" href="#roadmap"><i data-lucide="map"></i>Roadmap</a>
+      </nav>
+
+      <div class="nav-label">Sistema futuro</div>
+      <nav class="nav-list">
+        <a class="nav-link" href="#sistema"><i data-lucide="database"></i>Módulos</a>
+        <a class="nav-link" href="#indicadores"><i data-lucide="activity"></i>Indicadores</a>
+      </nav>
+
+      <div class="sidebar-card">
+        <strong>Status do projeto</strong>
+        <p>Dashboard conectado ao backend. Próxima etapa: tabelas reais no Supabase.</p>
       </div>
-    </div>
-    <div class="product-card">
-      <div class="product-visual"><div class="bottle"><div class="cap"></div><div class="body"><div class="label"></div></div></div></div>
-      <div class="product-body">
-        <span class="eyebrow" style="margin-bottom:.2rem;">Produto 03</span>
-        <h3>Mansidão</h3>
-        <div class="tag-row"><span class="tag">Flor de algodão</span><span class="tag">Baunilha suave</span><span class="tag">Íris</span><span class="tag">Madeira clara</span></div>
-        <p><em>Acolhedor, delicado, confortável e elegante.</em></p>
-        <div class="verse">"Bem-aventurados os mansos, porque herdarão a terra." — Mateus 5:5</div>
-        <p>Uma fragrância suave para momentos de silêncio, leveza e contemplação.</p>
-      </div>
-    </div>
-  </div>
-  <div class="callout reveal">As combinações aromáticas são referências iniciais e deverão ser validadas por testes com essências compatíveis com home spray.</div>
+    </aside>
 
-  <div class="section-head reveal" style="margin-top:5rem;">
-    <span class="eyebrow">Diferenciais</span>
-    <h2>Por que Aromas da Bíblia é diferente</h2>
-  </div>
-  <div class="grid grid-3 reveal">
-    <div class="card"><h3>01 · Identidade cristã sofisticada</h3><p>Design premium sem apelo infantil ou de lembrancinha artesanal.</p></div>
-    <div class="card"><h3>02 · Produto presenteável</h3><p>Embalagem pensada para ser dada de presente em qualquer ocasião.</p></div>
-    <div class="card"><h3>03 · Fragrâncias com narrativa</h3><p>Cada aroma carrega um conceito e uma história bíblica.</p></div>
-    <div class="card"><h3>04 · Versículo em cada produto</h3><p>Mensagem impressa que reforça o propósito de cada fragrância.</p></div>
-    <div class="card"><h3>05 · Design premium e acolhedor</h3><p>Estética botânica, minimalista e elegante.</p></div>
-    <div class="card"><h3>06 · Potencial de expansão</h3><p>Base para múltiplas categorias de produtos para casa.</p></div>
-  </div>
+    <main>
+      <header class="topbar">
+        <div>
+          <div class="page-kicker">Plano de negócios operacional</div>
+          <h1>Dashboard Aromas da Bíblia</h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn mobile-menu" id="menuButton" type="button" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+          <span class="status-pill"><span class="status-dot"></span><span id="apiStatus">Backend online</span></span>
+          <button class="btn" type="button" onclick="window.print()"><i data-lucide="printer"></i>Imprimir</button>
+          <a class="btn primary" href="#sistema"><i data-lucide="rocket"></i>Ver evolução</a>
+        </div>
+      </header>
 
-  <div class="table-wrap reveal" style="margin-top:2.6rem;">
-    <table class="compare-table">
-      <thead><tr><th>Critério</th><th>Aromatizador comum</th><th>Lembrancinha religiosa</th><th>Aromas da Bíblia</th></tr></thead>
-      <tbody>
-        <tr><td>Qualidade visual</td><td class="cross">Básica</td><td class="cross">Artesanal simples</td><td class="check">Premium</td></tr>
-        <tr><td>História do produto</td><td class="cross">Ausente</td><td class="cross">Genérica</td><td class="check">Narrativa própria</td></tr>
-        <tr><td>Possibilidade de presente</td><td class="cross">Limitada</td><td class="check">Sim</td><td class="check">Sim, elevada</td></tr>
-        <tr><td>Identidade de marca</td><td class="cross">Fraca</td><td class="cross">Inexistente</td><td class="check">Consistente</td></tr>
-        <tr><td>Expansão de linha</td><td class="cross">Baixa</td><td class="cross">Baixa</td><td class="check">Alta</td></tr>
-        <tr><td>Potencial de recompra</td><td class="cross">Médio</td><td class="cross">Baixo</td><td class="check">Alto</td></tr>
-        <tr><td>Venda online</td><td class="check">Sim</td><td class="cross">Raro</td><td class="check">Planejada</td></tr>
-        <tr><td>Experiência emocional</td><td class="cross">Baixa</td><td class="check">Média</td><td class="check">Elevada</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+      <section class="dashboard-grid section" id="visao">
+        <div class="hero">
+          <img src="assets/produto-paz.png" alt="Home spray Paz Aromas da Bíblia">
+          <div class="hero-content">
+            <div class="hero-chips">
+              <span class="chip">Home Spray 200 ml</span>
+              <span class="chip">Lavanda · Camomila · Musk</span>
+              <span class="chip">João 14:27</span>
+            </div>
+            <h2>Um negócio de aromas para casa, fé, leitura e descanso.</h2>
+            <p>A primeira versão apresenta o plano de negócios como painel executivo. A próxima etapa transforma estes blocos em cadastros, relatórios, pedidos, estoque e CRM conectados ao Supabase.</p>
+          </div>
+        </div>
 
-<!-- ============ MERCADO ============ -->
-<section id="mercado" class="section-alt">
-  <div class="section-head reveal">
-    <span class="eyebrow">Análise de Mercado</span>
-    <h2>Onde a marca se posiciona</h2>
-    <p>Uma leitura qualitativa dos mercados que se cruzam na proposta de valor da marca.</p>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card"><h3>Aromatização</h3><p>Ambientes, casa e bem-estar.</p></div>
-    <div class="card"><h3>Presentes</h3><p>Datas comemorativas e ocasiões especiais.</p></div>
-    <div class="card"><h3>Produtos cristãos</h3><p>Livrarias, igrejas e eventos de fé.</p></div>
-    <div class="card"><h3>Decoração</h3><p>Objetos que compõem ambientes acolhedores.</p></div>
-    <div class="card"><h3>Bem-estar</h3><p>Rituais de pausa, descanso e contemplação.</p></div>
-    <div class="card"><h3>E-commerce</h3><p>Expansão nacional após validação presencial.</p></div>
-    <div class="card"><h3>Produtos artesanais premium</h3><p>Produção cuidadosa em pequena escala.</p></div>
-  </div>
-  <div class="grid grid-2 reveal" style="margin-top:2.6rem;">
-    <div class="arch-frame">
-      <h3 style="color:var(--azul);">Oportunidades</h3>
-      <ul>
-        <li>Poucas marcas unem perfumaria para casa e identidade cristã com design sofisticado.</li>
-        <li>Produtos aromáticos possuem potencial de recompra.</li>
-        <li>A marca pode vender tanto por fragrância quanto por significado.</li>
-        <li>Datas comemorativas aumentam o potencial de kits.</li>
-        <li>Igrejas e eventos podem gerar vendas em volume.</li>
-        <li>O retiro permite validação direta com o consumidor.</li>
-      </ul>
-    </div>
-    <div class="arch-frame">
-      <h3 style="color:var(--terracota);">Desafios</h3>
-      <ul>
-        <li>Necessidade de fragrâncias de boa qualidade.</li>
-        <li>Padronização da produção.</li>
-        <li>Regularização do produto e do negócio.</li>
-        <li>Cuidados com transporte de líquidos.</li>
-        <li>Dependência de embalagem e fornecedores.</li>
-        <li>Custo de frete no e-commerce.</li>
-        <li>Construção de confiança em uma marca nova.</li>
-      </ul>
-    </div>
-  </div>
+        <div>
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Produto principal</h3>
+                <p>Primeiro SKU validável para lançamento.</p>
+              </div>
+              <span class="status ok">Protótipo</span>
+            </div>
+            <div class="product-preview">
+              <img src="assets/rotulo-paz.png" alt="Rótulo Paz">
+              <div>
+                <p class="verse">"Deixo-vos a paz, a minha paz vos dou."</p>
+                <p class="muted">Paz · João 14:27 · Aromatizador de ambientes com posicionamento premium e presenteável.</p>
+              </div>
+            </div>
+          </div>
 
-  <div class="section-head reveal" style="margin-top:5rem;">
-    <span class="eyebrow">Modelo de Negócio</span>
-    <h2>Business Model Canvas</h2>
-  </div>
-  <div class="bmc reveal">
-    <div class="block b1"><h4>Parceiros principais</h4>Fornecedores de essências e frascos, gráfica de rótulos, organizadores de retiros e eventos, igrejas parceiras, revendedores.</div>
-    <div class="block b2"><h4>Atividades principais</h4>Formulação e teste de fragrâncias, produção artesanal, controle de qualidade, vendas presenciais, gestão de conteúdo e comunicação, expansão de canais.</div>
-    <div class="block b3"><h4>Proposta de valor</h4>Aromas para casa com identidade cristã sofisticada, narrativa bíblica em cada produto, embalagem premium e presenteável, sem promessas espirituais.</div>
-    <div class="block b4"><h4>Recursos principais</h4>Identidade visual, fórmulas de fragrância, fornecedores confiáveis, estoque, canais digitais.</div>
-    <div class="block b5"><h4>Relacionamento com clientes</h4>Atendimento próximo via WhatsApp e Instagram, experiência presencial em eventos, programa de recompra.</div>
-    <div class="block b6"><h4>Canais</h4>Retiro e eventos, Instagram, WhatsApp, loja virtual, marketplaces, revendedores, igrejas, lojas de presentes, livrarias cristãs.</div>
-    <div class="block b7"><h4>Segmentos de clientes</h4>Mulheres cristãs, consumidoras de produtos para casa, compradores de presentes, igrejas e organizadores de eventos.</div>
-    <div class="block b8"><h4>Estrutura de custos</h4>Matéria-prima (essências, frascos, gatilhos), embalagem e rótulos, taxas de eventos, frete de fornecedores, taxas de pagamento, marketing.</div>
-    <div class="block b9"><h4>Fontes de receita</h4>Home sprays, difusores, velas, sachês, kits, personalização para eventos, atacado, assinaturas ou caixas temáticas.</div>
-  </div>
-</section>
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Proposta de valor</h3>
+                <p>Perfumaria de ambiente com narrativa bíblica sofisticada.</p>
+              </div>
+            </div>
+            <ul class="list">
+              <li>Acompanha momentos de leitura, oração e descanso.</li>
+              <li>Embalagem premium pensada para presente cristão.</li>
+              <li>Produto escalável para kits, assinatura e revenda.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-<!-- ============ PÚBLICO ============ -->
-<section id="publico">
-  <div class="section-head reveal">
-    <span class="eyebrow">Público-Alvo</span>
-    <h2>Quatro perfis de cliente</h2>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card">
-      <h3>Mulher cristã, 25 a 55 anos</h3>
-      <ul style="padding-left:1.1rem; font-size:.88rem;">
-        <li>Participa de cultos, retiros e eventos</li>
-        <li>Gosta de produtos para casa</li>
-        <li>Compra presentes com significado</li>
-        <li>Usa redes sociais</li>
-        <li>Valoriza beleza, mensagem e praticidade</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Consumidora de produtos para casa</h3>
-      <ul style="padding-left:1.1rem; font-size:.88rem;">
-        <li>Busca fragrâncias agradáveis</li>
-        <li>Gosta de velas, difusores e decoração</li>
-        <li>Compra mesmo sem forte vínculo religioso</li>
-        <li>Valoriza embalagem e identidade visual</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Comprador de presentes</h3>
-      <ul style="padding-left:1.1rem; font-size:.88rem;">
-        <li>Aniversários, Dia das Mães, Natal</li>
-        <li>Células, líderes, professoras</li>
-        <li>Busca produto bonito e pronto para presentear</li>
-        <li>Preço acessível</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Igrejas, retiros e eventos</h3>
-      <ul style="padding-left:1.1rem; font-size:.88rem;">
-        <li>Kits personalizados</li>
-        <li>Brindes e lembranças</li>
-        <li>Presentes para palestrantes</li>
-        <li>Produtos para congressos e encontros</li>
-      </ul>
-    </div>
-  </div>
-</section>
+      <section class="metrics" id="indicadores">
+        <div class="metric">
+          <div class="metric-icon"><i data-lucide="wallet"></i></div>
+          <div><div class="metric-value">R$ 18,5k</div><div class="metric-label">Receita mensal provável</div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon"><i data-lucide="percent"></i></div>
+          <div><div class="metric-value">62%</div><div class="metric-label">Margem bruta estimada</div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon"><i data-lucide="shopping-bag"></i></div>
+          <div><div class="metric-value">128</div><div class="metric-label">Pedidos/mês simulados</div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-icon"><i data-lucide="boxes"></i></div>
+          <div><div class="metric-value">4</div><div class="metric-label">SKUs planejados</div></div>
+        </div>
+      </section>
 
-<!-- ============ OPERAÇÃO ============ -->
-<section id="operacao" class="section-alt">
-  <div class="section-head reveal">
-    <span class="eyebrow">Produção e Operação</span>
-    <h2>Do insumo ao frasco pronto</h2>
-  </div>
-  <div class="grid grid-4 reveal" id="fluxoOperacao">
-    <!-- populated by JS -->
-  </div>
+      <section class="section panel" id="produto">
+        <div class="panel-header">
+          <div>
+            <h2>Produto</h2>
+            <p>Linha de aromas, inspiração bíblica, diferenciais, embalagens, preço e margem.</p>
+          </div>
+          <span class="chip">Fase 1</span>
+        </div>
+        <div class="module-grid">
+          <article class="module-card">
+            <div class="module-title"><i data-lucide="spray-can"></i>Linha de aromas</div>
+            <p>Começar com a linha Home Spray e expandir para difusores, sachês e kits devocionais.</p>
+            <ul class="list"><li>Paz</li><li>Graça</li><li>Esperança</li><li>Renovo</li></ul>
+          </article>
+          <article class="module-card">
+            <div class="module-title"><i data-lucide="book-open"></i>Inspiração bíblica</div>
+            <p>Cada fragrância carrega um versículo e uma intenção de uso, sem prometer efeito espiritual.</p>
+            <ul class="list"><li>João 14:27</li><li>Salmos de descanso</li><li>Textos de consolo</li></ul>
+          </article>
+          <article class="module-card">
+            <div class="module-title"><i data-lucide="badge-dollar-sign"></i>Preço e margem</div>
+            <p>Simulação inicial para orientar validação comercial e compra de insumos.</p>
+            <ul class="list"><li>Preço sugerido: R$ 69,90</li><li>Custo estimado: R$ 26,50</li><li>Margem bruta: 62%</li></ul>
+          </article>
+        </div>
+      </section>
 
-  <div class="grid grid-2 reveal" style="margin-top:3rem;">
-    <div class="checklist-block">
-      <h4>Checklist de qualidade</h4>
-      <div id="qualityChecklist"></div>
-    </div>
-    <div class="arch-frame">
-      <h3 style="color:var(--terracota);">Alertas de segurança</h3>
-      <ul>
-        <li>Não aplicar diretamente sobre pele.</li>
-        <li>Não ingerir.</li>
-        <li>Manter fora do alcance de crianças e animais.</li>
-        <li>Evitar contato com olhos.</li>
-        <li>Testar em pequena área antes de aplicar sobre tecidos.</li>
-        <li>Manter longe de calor e chama.</li>
-        <li>Verificar regras legais e regulatórias antes da comercialização nacional.</li>
-      </ul>
-    </div>
-  </div>
-</section>
+      <section class="section two-col" id="mercado">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Mercado</h2>
+              <p>Onde a marca pode entrar primeiro.</p>
+            </div>
+          </div>
+          <div class="module-grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="module-card"><div class="module-title"><i data-lucide="church"></i>Público cristão</div><p>Consumidores que valorizam objetos de casa conectados à fé.</p></div>
+            <div class="module-card"><div class="module-title"><i data-lucide="gift"></i>Presentes</div><p>Produto com forte apelo para datas especiais, gratidão e visitas.</p></div>
+            <div class="module-card"><div class="module-title"><i data-lucide="handshake"></i>Parcerias</div><p>Igrejas, eventos, livrarias cristãs, conferências e ministérios.</p></div>
+            <div class="module-card"><div class="module-title"><i data-lucide="scan-search"></i>Concorrência</div><p>Diferenciação por narrativa, estética premium e fragrâncias suaves.</p></div>
+          </div>
+        </div>
+        <div class="panel chart-card">
+          <div class="panel-header">
+            <div>
+              <h3>Oportunidade por canal</h3>
+              <p>Prioridade de validação comercial.</p>
+            </div>
+          </div>
+          <canvas id="marketChart"></canvas>
+        </div>
+      </section>
 
-<!-- ============ CUSTOS ============ -->
-<section id="custos">
-  <div class="section-head reveal">
-    <span class="eyebrow">Estrutura de Custos</span>
-    <h2>Planilha de custos por unidade</h2>
-    <p>Edite as quantidades e valores abaixo — os cálculos de custo unitário, margem e ponto de equilíbrio são atualizados automaticamente.</p>
-  </div>
-  <div class="callout reveal">Todos os números desta seção são estimativas de referência e devem ser substituídos pelos valores reais informados pelos fornecedores.</div>
+      <section class="section panel" id="modelo">
+        <div class="panel-header">
+          <div>
+            <h2>Modelo de Negócio</h2>
+            <p>Canais planejados para vender agora e evoluir depois.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Canal</th><th>Como funciona</th><th>Prioridade</th><th>Indicador</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Venda direta</td><td>Instagram, WhatsApp e catálogo simples.</td><td><span class="status ok">Alta</span></td><td>Conversão por conversa</td></tr>
+              <tr><td>Kits</td><td>Combos de fragrâncias e embalagem presenteável.</td><td><span class="status ok">Alta</span></td><td>Ticket médio</td></tr>
+              <tr><td>Assinatura</td><td>Envio mensal de aromas e devocionais.</td><td><span class="status">Média</span></td><td>Recorrência</td></tr>
+              <tr><td>Revenda</td><td>Igrejas, lojas cristãs e eventos.</td><td><span class="status ok">Alta</span></td><td>Margem por parceiro</td></tr>
+              <tr><td>Influenciadores</td><td>Parcerias com criadores cristãos e casa.</td><td><span class="status">Média</span></td><td>CAC e leads</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-  <div class="table-wrap reveal">
-    <table id="costTable">
-      <thead>
-        <tr><th>Item</th><th>Categoria</th><th>Qtd. comprada</th><th>Valor total (R$)</th><th>Frete (R$)</th><th>Uso por unidade</th><th>Custo/unidade (R$)</th><th>Fornecedor</th></tr>
-      </thead>
-      <tbody id="costTableBody"></tbody>
-    </table>
-  </div>
+      <section class="section two-col" id="financeiro">
+        <div class="panel chart-card">
+          <div class="panel-header">
+            <div>
+              <h2>Financeiro</h2>
+              <p>Cenários conservador, provável e otimista.</p>
+            </div>
+          </div>
+          <canvas id="financeChart"></canvas>
+        </div>
+        <div class="panel chart-card">
+          <div class="panel-header">
+            <div>
+              <h3>Composição do custo</h3>
+              <p>Estimativa por unidade.</p>
+            </div>
+          </div>
+          <canvas id="costChart"></canvas>
+        </div>
+      </section>
 
-  <div class="grid grid-4 reveal" style="margin-top:2.4rem;">
-    <div class="kpi-card"><div class="num" id="kpiMateriaPrima">R$ 0,00</div><div class="label">Matéria-prima / frasco</div></div>
-    <div class="kpi-card"><div class="num" id="kpiEmbalagem">R$ 0,00</div><div class="label">Embalagem / frasco</div></div>
-    <div class="kpi-card"><div class="num" id="kpiRateio">R$ 0,00</div><div class="label">Rateio equip. + frete</div></div>
-    <div class="kpi-card"><div class="num" id="kpiPerdas">0%</div><div class="label">Percentual de perdas</div></div>
-  </div>
+      <section class="section panel" id="marketing">
+        <div class="panel-header">
+          <div>
+            <h2>Marketing</h2>
+            <p>Posicionamento, canais e campanhas com foco em validação.</p>
+          </div>
+        </div>
+        <div class="module-grid">
+          <article class="module-card"><div class="module-title"><i data-lucide="gem"></i>Posicionamento</div><p>Aroma premium para momentos de fé, leitura, descanso e cuidado com a casa.</p></article>
+          <article class="module-card"><div class="module-title"><i data-lucide="messages-square"></i>Canais</div><p>Instagram, WhatsApp, marketplace, site próprio e revendedores cristãos.</p></article>
+          <article class="module-card"><div class="module-title"><i data-lucide="calendar-heart"></i>Campanhas</div><p>Dia das Mães, Natal, batismos, congressos, células, devocionais e kits de gratidão.</p></article>
+        </div>
+      </section>
 
-  <div class="grid grid-2 reveal" style="margin-top:1.6rem;">
-    <div class="card">
-      <h3>Percentual estimado de perdas</h3>
-      <div class="pill-input"><input type="number" id="perdaPct" value="5" min="0" max="50" step="1"> <span>%</span></div>
-    </div>
-    <div class="card">
-      <h3>Custo total unitário e margem</h3>
-      <p>Custo total unitário: <span class="calc-cell" id="custoTotalUnit">R$ 0,00</span></p>
-      <p>Preço sugerido: 
-        <select id="precoSugerido" style="padding:.4rem .7rem; border-radius:6px; border:1px solid rgba(182,146,94,.4); font-family:var(--font-body);">
-          <option value="29.90">R$ 29,90</option>
-          <option value="34.90" selected>R$ 34,90</option>
-          <option value="39.90">R$ 39,90</option>
-          <option value="44.90">R$ 44,90</option>
-        </select>
-      </p>
-      <p>Margem bruta: <span class="calc-cell" id="margemBruta">0%</span> · Lucro por unidade: <span class="calc-cell" id="lucroUnit">R$ 0,00</span></p>
-    </div>
-  </div>
+      <section class="section panel" id="operacoes">
+        <div class="panel-header">
+          <div>
+            <h2>Operações</h2>
+            <p>Base operacional para transformar o plano em rotina de gestão.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Área</th><th>Controle necessário</th><th>Status atual</th><th>Próximo passo</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Produção</td><td>Lotes, fórmulas, testes e descanso.</td><td><span class="status warn">Manual</span></td><td>Criar tabela de lotes</td></tr>
+              <tr><td>Fornecedores</td><td>Insumos, frascos, válvulas, rótulos.</td><td><span class="status warn">Manual</span></td><td>Cadastro no Supabase</td></tr>
+              <tr><td>Estoque</td><td>Produto final e matéria-prima.</td><td><span class="status warn">Manual</span></td><td>Alertas de mínimo</td></tr>
+              <tr><td>Logística</td><td>Prazo, frete, envio e rastreio.</td><td><span class="status">Planejado</span></td><td>Integrar pedidos</td></tr>
+              <tr><td>Pedidos</td><td>Cliente, pagamento, entrega e histórico.</td><td><span class="status">Planejado</span></td><td>Criar CRM simples</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-  <div class="section-head reveal" style="margin-top:4rem;">
-    <span class="eyebrow">Projeção por lote</span>
-    <h2>Comparativo por quantidade produzida</h2>
-  </div>
-  <div class="table-wrap reveal">
-    <table>
-      <thead><tr><th>Qtd. produzida</th><th>Investimento estimado</th><th>Receita</th><th>Lucro bruto</th><th>Unid. p/ recuperar investimento</th></tr></thead>
-      <tbody id="lotTableBody"></tbody>
-    </table>
-  </div>
+      <section class="section panel" id="roadmap">
+        <div class="panel-header">
+          <div>
+            <h2>Roadmap</h2>
+            <p>Próximos 30, 60 e 90 dias.</p>
+          </div>
+        </div>
+        <div class="roadmap">
+          <article class="roadmap-step">
+            <span class="step-badge">30 dias</span>
+            <h3>Lançamento mínimo viável</h3>
+            <ul class="list"><li>Fechar fórmula e embalagem</li><li>Produzir lote piloto</li><li>Fotografar produto</li><li>Vender primeiros kits</li></ul>
+          </article>
+          <article class="roadmap-step">
+            <span class="step-badge">60 dias</span>
+            <h3>Validação comercial</h3>
+            <ul class="list"><li>Medir recompra</li><li>Testar revendedores</li><li>Organizar pedidos</li><li>Revisar preço e margem</li></ul>
+          </article>
+          <article class="roadmap-step">
+            <span class="step-badge">90 dias</span>
+            <h3>Sistema interno</h3>
+            <ul class="list"><li>Conectar Supabase</li><li>Cadastrar produtos</li><li>Controlar estoque</li><li>Relatórios por mês</li></ul>
+          </article>
+        </div>
+      </section>
 
-  <div class="section-head reveal" style="margin-top:4rem;">
-    <span class="eyebrow">Cenários Financeiros</span>
-    <h2>Conservador, realista e otimista</h2>
-  </div>
-  <div class="grid grid-3 reveal" id="scenarioCards"></div>
-
-  <div class="grid grid-2 reveal" style="margin-top:2.4rem;">
-    <div class="chart-box"><h3>Custo por categoria</h3><canvas id="chartCostCategory"></canvas></div>
-    <div class="chart-box"><h3>Receita por cenário</h3><canvas id="chartScenarioRevenue"></canvas></div>
-  </div>
-  <div class="grid grid-2 reveal" style="margin-top:1.6rem;">
-    <div class="chart-box"><h3>Lucro por quantidade vendida</h3><canvas id="chartProfitByQty"></canvas></div>
-    <div class="chart-box"><h3>Ponto de equilíbrio</h3><canvas id="chartBreakeven"></canvas></div>
-  </div>
-
-  <div class="section-head reveal" style="margin-top:4rem;">
-    <span class="eyebrow">Estratégia de Preços</span>
-    <h2>Metodologia de precificação</h2>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card"><h3>Preço mínimo</h3><p>Custo total + taxas + margem mínima.</p></div>
-    <div class="card"><h3>Preço estratégico</h3><p>Alinhado ao valor percebido, apresentação e posicionamento.</p></div>
-    <div class="card"><h3>Preço de evento</h3><p>Preço especial para incentivar a experimentação no retiro.</p></div>
-    <div class="card"><h3>Preço online</h3><p>Considera embalagem de transporte, taxa de plataforma, meios de pagamento, marketing, perdas e subsídio de frete.</p></div>
-  </div>
-  <div class="grid grid-3 reveal" style="margin-top:1.6rem;">
-    <div class="card"><h3>Ofertas de evento</h3><p>1 unidade · 2 unidades com desconto · Kit com as 3 fragrâncias</p></div>
-    <div class="card"><h3>Ofertas presenteáveis</h3><p>Home spray + marcador de Bíblia · Kit presenteável embalado</p></div>
-    <div class="card"><h3>Condição institucional</h3><p>Condição especial para igrejas, líderes e organizadores de eventos</p></div>
-  </div>
-</section>
-
-<!-- ============ VENDAS (RETIRO) ============ -->
-<section id="vendas" class="section-alt">
-  <div class="section-head reveal">
-    <span class="eyebrow">Plano de Vendas no Retiro</span>
-    <h2>20 de agosto de 2026</h2>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card"><h3>Objetivos</h3><ul style="padding-left:1.1rem; font-size:.86rem;"><li>Validar aceitação</li><li>Identificar fragrância preferida</li><li>Testar preço</li><li>Obter feedback</li></ul></div>
-    <div class="card"><h3>Conteúdo &amp; contato</h3><ul style="padding-left:1.1rem; font-size:.86rem;"><li>Gerar conteúdo</li><li>Captar contatos</li><li>Criar primeiras avaliações</li><li>Testar apresentação da mesa</li></ul></div>
-    <div class="card"><h3>Estrutura da exposição</h3><ul style="padding-left:1.1rem; font-size:.86rem;"><li>Toalha bege ou off-white</li><li>Bandejas de madeira</li><li>Elementos botânicos</li><li>Iluminação quente</li></ul></div>
-    <div class="card"><h3>Identificação &amp; pagamento</h3><ul style="padding-left:1.1rem; font-size:.86rem;"><li>Provadores e tiras olfativas</li><li>Placas de preço</li><li>QR Code Instagram</li><li>QR Code Pix</li></ul></div>
+      <section class="section panel" id="sistema">
+        <div class="panel-header">
+          <div>
+            <h2>Fase 2: Sistema</h2>
+            <p>Os módulos abaixo já aparecem no dashboard e depois viram funções reais.</p>
+          </div>
+          <span class="chip">Supabase-ready</span>
+        </div>
+        <div class="system-strip">
+          <div class="system-item"><strong>Produtos</strong><span>Nome, referência bíblica, descrição, custo, preço, estoque e imagens.</span></div>
+          <div class="system-item"><strong>Financeiro</strong><span>Custos fixos, variáveis, vendas, lucro, margem e relatórios mensais.</span></div>
+          <div class="system-item"><strong>Pedidos</strong><span>Cliente, produto, status, pagamento, entrega e histórico.</span></div>
+          <div class="system-item"><strong>CRM</strong><span>Clientes, igrejas parceiras, revendedores, leads e follow-ups.</span></div>
+          <div class="system-item"><strong>Estoque</strong><span>Insumos, frascos, essências, embalagens e alertas de baixo estoque.</span></div>
+          <div class="system-item"><strong>Campanhas</strong><span>Calendário, conteúdos, datas cristãs, leads e conversão por canal.</span></div>
+          <div class="system-item"><strong>Indicadores</strong><span>Ticket médio, CAC, taxa de recompra, lucro líquido e produtos mais vendidos.</span></div>
+          <div class="system-item"><strong>Relatórios</strong><span>Visão executiva para decidir produção, compras e ações comerciais.</span></div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <div class="arch-frame reveal" style="margin-top:2.6rem;">
-    <h3 style="color:var(--azul);">Roteiro de abordagem</h3>
-    <p style="font-family:var(--font-alt); font-style:italic; font-size:1.15rem; color:var(--marrom);">"Conheça a Aromas da Bíblia. São fragrâncias para casa pensadas para acompanhar momentos de leitura, oração e descanso. Temos três aromas neste primeiro lançamento: Paz, Jardim do Éden e Mansidão."</p>
-  </div>
+  <script>
+    const brandColors = {
+      navy: "#173b5f",
+      gold: "#b28a51",
+      sage: "#88907a",
+      clay: "#aa6742",
+      olive: "#666d4f",
+      paper: "#fffaf0"
+    };
 
-  <div class="section-head reveal" style="margin-top:3.2rem;">
-    <span class="eyebrow">Pesquisa pós-compra</span>
-    <h2>O que perguntamos ao cliente</h2>
-  </div>
-  <div class="grid grid-2 reveal">
-    <ul style="padding-left:1.2rem;">
-      <li>Qual aroma preferiu?</li>
-      <li>Como avalia a embalagem?</li>
-      <li>Quanto pagaria?</li>
-      <li>Compraria novamente?</li>
-    </ul>
-    <ul style="padding-left:1.2rem;">
-      <li>Compraria para presente?</li>
-      <li>Qual produto gostaria de ver no futuro?</li>
-      <li>Autorização para receber novidades</li>
-    </ul>
-  </div>
+    lucide.createIcons();
 
-  <div class="section-head reveal" style="margin-top:4rem;">
-    <span class="eyebrow">Indicadores do Teste</span>
-    <h2>Painel de KPIs do evento</h2>
-    <p>Preencha os campos após o evento — os dados ficam salvos neste dispositivo.</p>
-  </div>
-  <div class="grid grid-4 reveal" id="kpiPanel"></div>
-  <div style="text-align:center; margin-top:1.6rem;"><button class="clear-btn" id="clearKpi">Limpar dados dos KPIs</button></div>
-</section>
-
-<!-- ============ MARKETING ============ -->
-<section id="marketing">
-  <div class="section-head reveal">
-    <span class="eyebrow">Marketing e Comunicação</span>
-    <h2>Plano de conteúdo</h2>
-  </div>
-  <div class="grid grid-3 reveal">
-    <div class="card"><h3>Pilares de conteúdo</h3><div class="tag-row"><span class="tag">Produto</span><span class="tag">Fé e inspiração</span><span class="tag">Bastidores</span><span class="tag">Casa</span><span class="tag">Devocional</span><span class="tag">Fragrâncias</span><span class="tag">Depoimentos</span><span class="tag">Presentes</span><span class="tag">Lançamentos</span></div></div>
-    <div class="card"><h3>Chamadas sugeridas</h3><ul style="padding-left:1.1rem; font-size:.86rem;"><li>"Um aroma para acompanhar seu momento de pausa."</li><li>"Sua casa também pode guardar memórias."</li><li>"Aromas inspirados em fé, leitura e descanso."</li><li>"Respire, desacelere e permaneça."</li><li>"Um presente com aroma e significado."</li></ul></div>
-    <div class="card"><h3>Fases de expansão</h3><p>Presencial + WhatsApp → Instagram com catálogo → Loja virtual → Marketplaces e revendedores → Atacado para igrejas e lojas.</p></div>
-  </div>
-
-  <div class="section-head reveal" style="margin-top:3.4rem;">
-    <span class="eyebrow">Calendário — 15 dias antes do evento</span>
-    <h2>Contagem regressiva de conteúdo</h2>
-  </div>
-  <div class="gantt reveal" id="marketingCalendar"></div>
-
-  <div class="section-head reveal" style="margin-top:4rem;">
-    <span class="eyebrow">E-commerce e Expansão Nacional</span>
-    <h2>O que é preciso para vender online</h2>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card"><h3>Apresentação</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Fotografias profissionais</li><li>Página de produto</li><li>Descrição olfativa</li></ul></div>
-    <div class="card"><h3>Logística</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Embalagem para transporte</li><li>Teste de vazamento</li><li>Cálculo de frete</li></ul></div>
-    <div class="card"><h3>Operação</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Meios de pagamento</li><li>Atendimento</li><li>Controle de estoque</li></ul></div>
-    <div class="card"><h3>Confiança</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Política de trocas</li><li>Nota fiscal e lote</li><li>Avaliações e recompra</li></ul></div>
-  </div>
-
-  <div class="section-head reveal" style="margin-top:4rem;">
-    <span class="eyebrow">Roadmap de Produtos</span>
-    <h2>Do lançamento à coleção completa</h2>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card"><h3>Lançamento inicial</h3><div class="tag-row"><span class="tag">Paz</span><span class="tag">Jardim do Éden</span><span class="tag">Mansidão</span></div></div>
-    <div class="card"><h3>Próxima expansão</h3><div class="tag-row"><span class="tag">Refúgio</span><span class="tag">Gratidão</span><span class="tag">Alegria</span><span class="tag">Descanso</span></div></div>
-    <div class="card"><h3>Coleção Lugares da Bíblia</h3><div class="tag-row"><span class="tag">Cedros do Líbano</span><span class="tag">Betânia</span><span class="tag">Galileia</span><span class="tag">Olival</span><span class="tag">Deserto</span></div></div>
-    <div class="card"><h3>Novas categorias</h3><div class="tag-row"><span class="tag">Difusores</span><span class="tag">Velas</span><span class="tag">Águas para tecidos</span><span class="tag">Sachês</span><span class="tag">Sabonetes</span><span class="tag">Kits devocionais</span></div></div>
-  </div>
-</section>
-
-<!-- ============ CRONOGRAMA ============ -->
-<section id="cronograma" class="section-alt">
-  <div class="section-head reveal">
-    <span class="eyebrow">Cronograma até 20 de Agosto</span>
-    <h2>15 de julho a 20 de agosto de 2026</h2>
-    <p>Marque as tarefas concluídas — o progresso é salvo automaticamente neste dispositivo.</p>
-  </div>
-  <div class="gantt reveal" id="ganttChart" style="margin-bottom:3rem;"></div>
-  <div id="chronogramChecklists"></div>
-  <div style="text-align:center; margin-top:1.6rem;"><button class="clear-btn" id="clearChrono">Limpar progresso do cronograma</button></div>
-</section>
-
-<!-- ============ RISCOS ============ -->
-<section id="riscos">
-  <div class="section-head reveal">
-    <span class="eyebrow">Análise SWOT</span>
-    <h2>Forças, fraquezas, oportunidades e ameaças</h2>
-  </div>
-  <div class="swot-grid reveal">
-    <div class="swot-card swot-f"><h3>Forças</h3><ul><li>Conceito diferenciado</li><li>Identidade emocional</li><li>Produto presenteável</li><li>Baixo volume físico</li><li>Potencial de recompra</li><li>Possibilidade de expansão</li></ul></div>
-    <div class="swot-card swot-w"><h3>Fraquezas</h3><ul><li>Marca nova</li><li>Produção inicialmente artesanal</li><li>Capital limitado</li><li>Pouco histórico de vendas</li><li>Dependência de fornecedores</li></ul></div>
-    <div class="swot-card swot-o"><h3>Oportunidades</h3><ul><li>Eventos cristãos</li><li>E-commerce</li><li>Presentes</li><li>Datas comemorativas</li><li>Kits personalizados</li><li>Revenda</li><li>Coleções temáticas</li></ul></div>
-    <div class="swot-card swot-t"><h3>Ameaças</h3><ul><li>Concorrentes com preço baixo</li><li>Problemas de vazamento</li><li>Variação de frete</li><li>Essências de qualidade inconsistente</li><li>Restrições regulatórias</li><li>Uso inadequado de alegações espirituais</li></ul></div>
-  </div>
-
-  <div class="section-head reveal" style="margin-top:4rem;">
-    <span class="eyebrow">Riscos e Contingências</span>
-    <h2>Mapa de riscos do lançamento</h2>
-  </div>
-  <div class="table-wrap reveal">
-    <table>
-      <thead><tr><th>Risco</th><th>Probabilidade</th><th>Impacto</th><th>Prevenção</th><th>Plano de resposta</th></tr></thead>
-      <tbody id="riskTableBody"></tbody>
-    </table>
-  </div>
-</section>
-
-<!-- ============ PRÓXIMOS PASSOS ============ -->
-<section id="proximos-passos" class="section-alt">
-  <div class="section-head reveal">
-    <span class="eyebrow">Próximos Passos</span>
-    <h2>Plano pós-evento</h2>
-  </div>
-  <div class="grid grid-4 reveal">
-    <div class="card"><h3>Primeiras 48 horas</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Conferir vendas</li><li>Organizar feedback</li><li>Identificar aroma campeão</li><li>Publicar agradecimento</li><li>Solicitar avaliações</li></ul></div>
-    <div class="card"><h3>Primeira semana</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Ajustar fragrâncias</li><li>Revisar preço</li><li>Recalcular custos</li><li>Fotografar produtos</li><li>Criar catálogo</li><li>Contatar revendedores</li></ul></div>
-    <div class="card"><h3>Primeiro mês</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Abrir vendas online</li><li>Criar kits</li><li>Testar anúncios</li><li>Organizar estoque</li><li>Planejar segundo lote</li></ul></div>
-    <div class="card"><h3>Primeiros 90 dias</h3><ul style="padding-left:1.1rem; font-size:.85rem;"><li>Validar recompra</li><li>Lançar nova fragrância</li><li>Estruturar fornecedores</li><li>Avaliar formalização</li><li>Criar loja virtual</li><li>Desenvolver difusores ou velas</li></ul></div>
-  </div>
-</section>
-
-<footer>
-  <img src="assets/logo-aromas-da-biblia.jpeg" alt="Logotipo Aromas da Bíblia">
-  <div class="tagline">"Aromas para momentos de fé, leitura e descanso."</div>
-  <p style="opacity:.75; margin-top:.6rem;">Plano de Negócios — Julho de 2026</p>
-  <small>Documento estratégico em desenvolvimento. Custos, fornecedores, fórmulas, requisitos legais e projeções financeiras devem ser validados antes da produção e comercialização.</small>
-</footer>
-
-<script>
-/* ============ NAV ACTIVE STATE + MOBILE MENU ============ */
-const navLinks = document.querySelectorAll('nav.links a');
-const sections = document.querySelectorAll('section[id]');
-function setActiveNav(){
-  let current = '';
-  sections.forEach(s=>{
-    const rect = s.getBoundingClientRect();
-    if(rect.top <= 120 && rect.bottom >= 120) current = s.id;
-  });
-  navLinks.forEach(a=>{
-    a.classList.toggle('active', a.getAttribute('href') === '#'+current);
-  });
-}
-window.addEventListener('scroll', ()=>{
-  setActiveNav();
-  document.getElementById('backTop').classList.toggle('show', window.scrollY > 800);
-}, {passive:true});
-setActiveNav();
-
-const burger = document.getElementById('burgerBtn');
-const navEl = document.getElementById('navLinks');
-burger.addEventListener('click', ()=> navEl.classList.toggle('open'));
-navLinks.forEach(a=> a.addEventListener('click', ()=> navEl.classList.remove('open')));
-
-document.getElementById('backTop').addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
-
-/* ============ SCROLL REVEAL ============ */
-const revealEls = document.querySelectorAll('.reveal');
-const io = new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
-},{threshold:.12});
-revealEls.forEach(el=> io.observe(el));
-
-/* ============ OPERATION FLOW ============ */
-const flowSteps = ["Compra de matéria-prima","Conferência dos insumos","Teste das fragrâncias","Preparação da base","Maceração ou descanso","Teste de estabilidade","Envase","Teste do mini gatilho","Limpeza do frasco","Aplicação do rótulo","Controle de lote","Embalagem","Armazenamento","Venda"];
-document.getElementById('fluxoOperacao').innerHTML = flowSteps.map((s,i)=>`
-  <div class="card"><span class="eyebrow">Etapa ${String(i+1).padStart(2,'0')}</span><h3 style="font-size:1.15rem;">${s}</h3></div>
-`).join('');
-
-const qualityItems = ["Aparência do líquido","Odor","Homogeneidade","Vazamento","Funcionamento do gatilho","Fixação do rótulo","Volume correto","Identificação de lote","Data de fabricação","Orientações de uso","Advertências"];
-document.getElementById('qualityChecklist').innerHTML = qualityItems.map((q,i)=>`
-  <label class="check-item"><input type="checkbox" data-key="quality-${i}"> ${q}</label>
-`).join('');
-
-/* ============ COST TABLE ============ */
-const costItems = [
- ["Frasco âmbar 100 ml","Embalagem"],
- ["Mini gatilho preto","Embalagem"],
- ["Base para home spray","Matéria-prima"],
- ["Essência Paz","Matéria-prima"],
- ["Essência Jardim do Éden","Matéria-prima"],
- ["Essência Mansidão","Matéria-prima"],
- ["Água deionizada","Matéria-prima"],
- ["Fixador / solubilizante","Matéria-prima"],
- ["Rótulo frontal","Embalagem"],
- ["Rótulo traseiro","Embalagem"],
- ["Lacre","Embalagem"],
- ["Tag com versículo","Embalagem"],
- ["Cordão ou fita","Embalagem"],
- ["Saquinho ou caixa","Embalagem"],
- ["Sacola de venda","Embalagem"],
- ["Material de teste","Equipamento"],
- ["Luvas","Equipamento"],
- ["Funil","Equipamento"],
- ["Becker / jarra medidora","Equipamento"],
- ["Proveta","Equipamento"],
- ["Balança","Equipamento"],
- ["Etiquetas de lote","Embalagem"],
- ["Material de exposição","Evento"],
- ["Taxa do evento","Evento"],
- ["Frete dos fornecedores","Frete"],
- ["Perdas estimadas","Perdas"],
- ["Taxas de pagamento","Taxas"],
-];
-const defaultVals = {qty:1, total:0, freight:0, use:1};
-const tbody = document.getElementById('costTableBody');
-costItems.forEach((item,i)=>{
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td>${item[0]}</td>
-    <td>${item[1]}</td>
-    <td><input type="number" min="0" step="1" value="${defaultVals.qty}" data-row="${i}" data-field="qty"></td>
-    <td><input type="number" min="0" step="0.01" value="${defaultVals.total}" data-row="${i}" data-field="total"></td>
-    <td><input type="number" min="0" step="0.01" value="${defaultVals.freight}" data-row="${i}" data-field="freight"></td>
-    <td><input type="number" min="0" step="0.01" value="${defaultVals.use}" data-row="${i}" data-field="use"></td>
-    <td class="calc-cell" data-unit-cost="${i}">R$ 0,00</td>
-    <td><input type="text" placeholder="—" data-row="${i}" data-field="supplier" style="width:120px;"></td>
-  `;
-  tbody.appendChild(tr);
-});
-
-const fmt = (n)=> 'R$ ' + (isFinite(n)?n:0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
-
-function recalcCosts(){
-  let materiaPrima = 0, embalagem = 0, equipFreight = 0;
-  costItems.forEach((item,i)=>{
-    const qty = parseFloat(document.querySelector(`[data-row="${i}"][data-field="qty"]`).value) || 0;
-    const total = parseFloat(document.querySelector(`[data-row="${i}"][data-field="total"]`).value) || 0;
-    const freight = parseFloat(document.querySelector(`[data-row="${i}"][data-field="freight"]`).value) || 0;
-    const use = parseFloat(document.querySelector(`[data-row="${i}"][data-field="use"]`).value) || 0;
-    const unitPurchaseCost = qty > 0 ? (total + freight) / qty : 0;
-    const costPerUnit = unitPurchaseCost * use;
-    document.querySelector(`[data-unit-cost="${i}"]`).textContent = fmt(costPerUnit);
-    if(item[1] === 'Matéria-prima') materiaPrima += costPerUnit;
-    else if(item[1] === 'Embalagem') embalagem += costPerUnit;
-    else if(item[1] === 'Equipamento' || item[1] === 'Frete' || item[1] === 'Evento') equipFreight += costPerUnit;
-  });
-  const perdaPct = parseFloat(document.getElementById('perdaPct').value) || 0;
-  const subtotal = materiaPrima + embalagem + equipFreight;
-  const custoTotalUnit = subtotal * (1 + perdaPct/100);
-
-  document.getElementById('kpiMateriaPrima').textContent = fmt(materiaPrima);
-  document.getElementById('kpiEmbalagem').textContent = fmt(embalagem);
-  document.getElementById('kpiRateio').textContent = fmt(equipFreight);
-  document.getElementById('kpiPerdas').textContent = perdaPct + '%';
-  document.getElementById('custoTotalUnit').textContent = fmt(custoTotalUnit);
-
-  const preco = parseFloat(document.getElementById('precoSugerido').value) || 0;
-  const lucro = preco - custoTotalUnit;
-  const margem = preco > 0 ? (lucro/preco*100) : 0;
-  document.getElementById('margemBruta').textContent = margem.toFixed(1) + '%';
-  document.getElementById('lucroUnit').textContent = fmt(lucro);
-
-  renderLotTable(custoTotalUnit, preco);
-  renderScenarios(custoTotalUnit, preco);
-  renderCharts(materiaPrima, embalagem, equipFreight, custoTotalUnit, preco);
-}
-document.getElementById('costTable').addEventListener('input', recalcCosts);
-document.getElementById('perdaPct').addEventListener('input', recalcCosts);
-document.getElementById('precoSugerido').addEventListener('change', recalcCosts);
-
-/* ============ LOT TABLE ============ */
-function renderLotTable(custoUnit, preco){
-  const qtys = [30,60,90,120];
-  const lotBody = document.getElementById('lotTableBody');
-  lotBody.innerHTML = qtys.map(q=>{
-    const invest = custoUnit * q;
-    const receita = preco * q;
-    const lucro = receita - invest;
-    const unidsRecuperar = preco > custoUnit ? Math.ceil(invest / (preco - custoUnit)) : 0;
-    return `<tr><td>${q} unidades</td><td>${fmt(invest)}</td><td>${fmt(receita)}</td><td class="calc-cell">${fmt(lucro)}</td><td>${unidsRecuperar} un.</td></tr>`;
-  }).join('');
-}
-
-/* ============ SCENARIOS ============ */
-function renderScenarios(custoUnit, precoBase){
-  const estoque = 90;
-  const scenarios = [
-    {name:'Conservador', pct:0.4, precoMult:0.9, perdaExtra:0.10, color:'var(--salvia)'},
-    {name:'Realista', pct:0.7, precoMult:1.0, perdaExtra:0.05, color:'var(--dourado)'},
-    {name:'Otimista', pct:1.0, precoMult:1.1, perdaExtra:0.02, color:'var(--terracota)'},
-  ];
-  const box = document.getElementById('scenarioCards');
-  box.innerHTML = scenarios.map(sc=>{
-    const vendidas = Math.round(estoque * sc.pct);
-    const precoMedio = precoBase * sc.precoMult;
-    const custoAjustado = custoUnit * (1 + sc.perdaExtra);
-    const receita = vendidas * precoMedio;
-    const custos = estoque * custoAjustado;
-    const lucro = receita - custos;
-    const margem = receita>0 ? (lucro/receita*100) : 0;
-    return `<div class="card"><h3 style="color:${sc.color};">${sc.name}</h3>
-      <p>Receita: <b>${fmt(receita)}</b></p>
-      <p>Custos: <b>${fmt(custos)}</b></p>
-      <p>Lucro bruto: <b>${fmt(lucro)}</b></p>
-      <p>Margem: <b>${margem.toFixed(1)}%</b></p>
-      <p>Estoque restante: <b>${estoque - vendidas} un.</b></p>
-    </div>`;
-  }).join('');
-  window.__scenarioData = scenarios.map(sc=>{
-    const vendidas = Math.round(estoque * sc.pct);
-    const precoMedio = precoBase * sc.precoMult;
-    const receita = vendidas * precoMedio;
-    return {name:sc.name, receita};
-  });
-}
-
-/* ============ CHARTS ============ */
-let chartCat, chartRev, chartProfit, chartBreak;
-function renderCharts(materiaPrima, embalagem, equipFreight, custoUnit, preco){
-  const azul='#173B5F', dourado='#B6925E', terracota='#B96F42', salvia='#9A9A83';
-
-  if(chartCat) chartCat.destroy();
-  chartCat = new Chart(document.getElementById('chartCostCategory'), {
-    type:'doughnut',
-    data:{ labels:['Matéria-prima','Embalagem','Equip./Frete/Evento'], datasets:[{data:[materiaPrima,embalagem,equipFreight], backgroundColor:[azul,dourado,terracota]}] },
-    options:{plugins:{legend:{position:'bottom', labels:{font:{family:'Inter'}}}}}
-  });
-
-  const sd = window.__scenarioData || [];
-  if(chartRev) chartRev.destroy();
-  chartRev = new Chart(document.getElementById('chartScenarioRevenue'), {
-    type:'bar',
-    data:{ labels:sd.map(s=>s.name), datasets:[{label:'Receita (R$)', data:sd.map(s=>s.receita), backgroundColor:[salvia,dourado,terracota]}] },
-    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
-  });
-
-  const qtys=[10,30,60,90,120];
-  const lucros = qtys.map(q=> (preco-custoUnit)*q );
-  if(chartProfit) chartProfit.destroy();
-  chartProfit = new Chart(document.getElementById('chartProfitByQty'), {
-    type:'line',
-    data:{ labels:qtys.map(q=>q+' un.'), datasets:[{label:'Lucro acumulado (R$)', data:lucros, borderColor:azul, backgroundColor:'rgba(23,59,95,0.12)', fill:true, tension:.35}] },
-    options:{plugins:{legend:{display:false}}}
-  });
-
-  const fixos = 30*custoUnit;
-  const margContrib = preco-custoUnit>0? preco-custoUnit : 1;
-  const pe = Math.ceil(fixos/margContrib);
-  const range = Array.from({length:8},(_,i)=> Math.max(0,pe-4+i));
-  if(chartBreak) chartBreak.destroy();
-  chartBreak = new Chart(document.getElementById('chartBreakeven'), {
-    type:'bar',
-    data:{ labels:range.map(r=>r+' un.'), datasets:[
-      {label:'Receita', data:range.map(r=>r*preco), backgroundColor:'rgba(182,146,94,.65)'},
-      {label:'Custo', data:range.map(r=>r*custoUnit + fixos*0), backgroundColor:'rgba(23,59,95,.55)'}
-    ]},
-    options:{plugins:{legend:{position:'bottom'}}}
-  });
-}
-
-/* ============ MARKETING CALENDAR (15 dias) ============ */
-const marketingDays = ["Apresentação da marca","História do projeto","Divulgação dos três aromas","Bastidores da produção","Detalhes da embalagem","Versículos","Contagem regressiva","Data e local do evento","Demonstração de uso","Convite para experimentar","Reforço de fragrâncias","Depoimentos antecipados","Últimos preparativos","Lembrete final","Dia do evento"];
-document.getElementById('marketingCalendar').innerHTML = marketingDays.map((d,i)=>`
-  <div class="gantt-row"><div class="gantt-label">Dia ${i+1} — ${d}</div><div class="gantt-track"><div class="gantt-bar" style="left:${(i/15*100)}%; width:${100/15}%;"></div></div></div>
-`).join('');
-
-/* ============ GANTT CRONOGRAMA ============ */
-const ganttData = [
-  {label:"15–17 jul · Definições iniciais", start:0, len:3},
-  {label:"18–22 jul · Compras iniciais", start:3, len:5},
-  {label:"23–28 jul · Testes de fragrância", start:8, len:6},
-  {label:"29 jul–2 ago · Lote definitivo", start:14, len:5},
-  {label:"3–8 ago · Produção do lote", start:19, len:6},
-  {label:"9–13 ago · Etiquetagem e divulgação", start:25, len:5},
-  {label:"14–17 ago · Preparação da mesa", start:30, len:4},
-  {label:"18–19 ago · Conferência final", start:34, len:2},
-  {label:"20 ago · Evento", start:36, len:1},
-];
-const totalDays = 37;
-document.getElementById('ganttChart').innerHTML = ganttData.map(g=>`
-  <div class="gantt-row"><div class="gantt-label">${g.label}</div><div class="gantt-track"><div class="gantt-bar" style="left:${g.start/totalDays*100}%; width:${g.len/totalDays*100}%;"></div></div></div>
-`).join('');
-
-/* Checklists by phase, with localStorage */
-const chronogramPhases = [
- {title:"15 a 17 de julho", tasks:["Confirmar taxa e regras do evento","Definir quantidade inicial","Finalizar identidade visual provisória","Listar fornecedores"]},
- {title:"18 a 22 de julho", tasks:["Comprar amostras de essências","Comprar frascos para teste","Comprar base e materiais iniciais","Criar primeiras propostas de rótulo"]},
- {title:"23 a 28 de julho", tasks:["Fazer testes das três fragrâncias","Avaliar intensidade","Avaliar estabilidade","Coletar opiniões","Definir fórmulas finais"]},
- {title:"29 de julho a 2 de agosto", tasks:["Comprar lote definitivo","Aprovar rótulos","Encomendar impressão","Definir embalagem","Criar Instagram e WhatsApp comercial"]},
- {title:"3 a 8 de agosto", tasks:["Produzir o lote","Identificar lotes","Deixar produto em descanso","Testar vazamentos","Testar gatilhos"]},
- {title:"9 a 13 de agosto", tasks:["Etiquetar","Aplicar lacres","Montar tags","Preparar kits","Fotografar produtos","Iniciar divulgação"]},
- {title:"14 a 17 de agosto", tasks:["Montar material da mesa","Produzir placas","Criar QR Codes","Separar estoque","Conferir meios de pagamento","Treinar abordagem"]},
- {title:"18 e 19 de agosto", tasks:["Conferência final","Transporte","Teste dos provadores","Separação de troco","Revisão do estoque"]},
- {title:"20 de agosto", tasks:["Montagem","Exposição","Vendas","Pesquisa com clientes","Registro de fotos e vídeos","Controle das vendas por fragrância"]},
-];
-const chronoContainer = document.getElementById('chronogramChecklists');
-chronogramPhases.forEach((phase,pi)=>{
-  const block = document.createElement('div');
-  block.className='checklist-block reveal in';
-  block.innerHTML = `<h4>${phase.title}</h4>` + phase.tasks.map((t,ti)=>`
-    <label class="check-item"><input type="checkbox" data-key="chrono-${pi}-${ti}"> ${t}</label>
-  `).join('');
-  chronoContainer.appendChild(block);
-});
-
-/* ============ RISK TABLE ============ */
-const risks = [
- ["Atraso dos frascos","Média","Alto"],
- ["Atraso dos rótulos","Média","Médio"],
- ["Essência rejeitada","Baixa","Alto"],
- ["Vazamento","Média","Alto"],
- ["Gatilho com defeito","Baixa","Médio"],
- ["Taxa inesperada no evento","Baixa","Médio"],
- ["Baixa venda","Média","Alto"],
- ["Estoque insuficiente","Média","Médio"],
- ["Problemas de transporte","Baixa","Médio"],
- ["Custo acima do planejado","Média","Alto"],
- ["Rótulo com erro","Baixa","Médio"],
- ["Falta de autorização ou adequação regulatória","Baixa","Alto"],
-];
-const riskPrevention = {
- "Atraso dos frascos":"Comprar com antecedência e ter fornecedor reserva.",
- "Atraso dos rótulos":"Aprovar arte cedo e confirmar prazo da gráfica.",
- "Essência rejeitada":"Testar com antecedência em pequenos lotes.",
- "Vazamento":"Testar gatilhos e vedação antes do envase final.",
- "Gatilho com defeito":"Inspecionar cada unidade antes da montagem.",
- "Taxa inesperada no evento":"Confirmar todas as regras por escrito com antecedência.",
- "Baixa venda":"Testar preço e abordagem antes do evento.",
- "Estoque insuficiente":"Manter reserva de segurança de 10 a 15%.",
- "Problemas de transporte":"Embalar com proteção extra e checar rota.",
- "Custo acima do planejado":"Revisar cotações e manter margem de segurança.",
- "Rótulo com erro":"Revisar arte final com dupla checagem.",
- "Falta de autorização ou adequação regulatória":"Consultar exigências antes da venda em maior escala.",
-};
-const riskResponse = {
- "Atraso dos frascos":"Reduzir lote inicial ou adiar itens não críticos.",
- "Atraso dos rótulos":"Usar rótulo provisório simplificado, se necessário.",
- "Essência rejeitada":"Reformular com fornecedor alternativo.",
- "Vazamento":"Retirar unidade de venda e repor por outra testada.",
- "Gatilho com defeito":"Substituir por unidade reserva no local.",
- "Taxa inesperada no evento":"Ajustar preço ou renegociar condição.",
- "Baixa venda":"Ativar oferta especial no local.",
- "Estoque insuficiente":"Direcionar reservas via WhatsApp para entrega posterior.",
- "Problemas de transporte":"Ter plano B de transporte e contato do organizador.",
- "Custo acima do planejado":"Revisar preço final ou reduzir escopo.",
- "Rótulo com erro":"Reimprimir com fornecedor de resposta rápida.",
- "Falta de autorização ou adequação regulatória":"Buscar orientação antes de escalar a venda.",
-};
-function riskBadge(level){
-  const cls = level==='Alto'?'high': level==='Média'?'mid':'low';
-  return `<span class="badge ${cls}">${level}</span>`;
-}
-document.getElementById('riskTableBody').innerHTML = risks.map(r=>`
-  <tr><td>${r[0]}</td><td>${riskBadge(r[1])}</td><td>${riskBadge(r[2])}</td><td>${riskPrevention[r[0]]}</td><td>${riskResponse[r[0]]}</td></tr>
-`).join('');
-
-/* ============ KPI PANEL ============ */
-const kpiList = [
- {key:'unidLevadas', label:'Unidades levadas'},
- {key:'unidVendidas', label:'Unidades vendidas'},
- {key:'ticketMedio', label:'Ticket médio (R$)'},
- {key:'receitaTotal', label:'Receita total (R$)'},
- {key:'lucroBruto', label:'Lucro bruto (R$)'},
- {key:'aromaVendido', label:'Aroma mais vendido'},
- {key:'aromaExperimentado', label:'Aroma mais experimentado'},
- {key:'pctRecompra', label:'% recompra declarada'},
- {key:'contatos', label:'Contatos captados'},
- {key:'seguidores', label:'Seguidores conquistados'},
- {key:'avaliacao', label:'Avaliação média'},
- {key:'kitsVendidos', label:'Kits vendidos'},
-];
-const kpiPanel = document.getElementById('kpiPanel');
-kpiPanel.innerHTML = kpiList.map(k=>`
-  <div class="kpi-card">
-    <input type="text" id="kpi-${k.key}" placeholder="—" style="width:100%; text-align:center; border:none; background:transparent; font-family:var(--font-display); font-size:1.5rem; color:var(--azul);">
-    <div class="label">${k.label}</div>
-  </div>
-`).join('');
-
-/* ============ LOCALSTORAGE PERSISTENCE ============ */
-const STORAGE_KEY = 'aromasBiblia_v1';
-function loadStorage(){
-  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch(e){ return {}; }
-}
-function saveStorage(data){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-function initPersistence(){
-  const data = loadStorage();
-  document.querySelectorAll('input[type="checkbox"][data-key]').forEach(cb=>{
-    if(data[cb.dataset.key]) cb.checked = true;
-    cb.addEventListener('change', ()=>{
-      const d = loadStorage();
-      d[cb.dataset.key] = cb.checked;
-      saveStorage(d);
+    const sidebar = document.getElementById("sidebar");
+    document.getElementById("menuButton").addEventListener("click", () => {
+      sidebar.classList.toggle("open");
     });
-  });
-  kpiList.forEach(k=>{
-    const el = document.getElementById('kpi-'+k.key);
-    if(data['kpi-'+k.key]) el.value = data['kpi-'+k.key];
-    el.addEventListener('input', ()=>{
-      const d = loadStorage();
-      d['kpi-'+k.key] = el.value;
-      saveStorage(d);
+
+    document.querySelectorAll(".nav-link").forEach((link) => {
+      link.addEventListener("click", () => {
+        document.querySelectorAll(".nav-link").forEach((item) => item.classList.remove("active"));
+        link.classList.add("active");
+        sidebar.classList.remove("open");
+      });
     });
-  });
-}
 
-document.getElementById('clearKpi').addEventListener('click', ()=>{
-  const d = loadStorage();
-  kpiList.forEach(k=>{ delete d['kpi-'+k.key]; document.getElementById('kpi-'+k.key).value=''; });
-  saveStorage(d);
-});
-document.getElementById('clearChrono').addEventListener('click', ()=>{
-  const d = loadStorage();
-  document.querySelectorAll('input[type="checkbox"][data-key^="chrono-"]').forEach(cb=>{
-    delete d[cb.dataset.key]; cb.checked = false;
-  });
-  saveStorage(d);
-});
+    fetch("/api/health")
+      .then((response) => response.json())
+      .then((data) => {
+        document.getElementById("apiStatus").textContent = data.supabase
+          ? "Backend + Supabase"
+          : "Backend online";
+      })
+      .catch(() => {
+        document.getElementById("apiStatus").textContent = "Modo visual";
+      });
 
-/* ============ INIT ============ */
-recalcCosts();
-initPersistence();
-if(window.lucide) lucide.createIcons();
-</script>
+    Chart.defaults.font.family = "Inter, Arial, sans-serif";
+    Chart.defaults.color = "#756b5d";
+
+    new Chart(document.getElementById("marketChart"), {
+      type: "bar",
+      data: {
+        labels: ["WhatsApp", "Instagram", "Igrejas", "Livrarias", "Eventos"],
+        datasets: [{
+          label: "Potencial",
+          data: [92, 86, 78, 64, 72],
+          backgroundColor: [brandColors.navy, brandColors.gold, brandColors.sage, brandColors.olive, brandColors.clay],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, max: 100, grid: { color: "rgba(74,64,55,.10)" } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById("financeChart"), {
+      type: "line",
+      data: {
+        labels: ["Mês 1", "Mês 2", "Mês 3", "Mês 4", "Mês 5", "Mês 6"],
+        datasets: [
+          { label: "Conservador", data: [4200, 5800, 7200, 8400, 9800, 11200], borderColor: brandColors.sage, backgroundColor: "rgba(136,144,122,.12)", tension: .35, fill: true },
+          { label: "Provável", data: [6800, 9200, 12400, 15000, 18500, 21800], borderColor: brandColors.navy, backgroundColor: "rgba(23,59,95,.10)", tension: .35, fill: true },
+          { label: "Otimista", data: [9000, 14000, 19800, 26000, 33500, 42000], borderColor: brandColors.gold, backgroundColor: "rgba(178,138,81,.14)", tension: .35, fill: true }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { boxWidth: 10, usePointStyle: true } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.raw.toLocaleString("pt-BR")}` } }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: "rgba(74,64,55,.10)" }, ticks: { callback: (value) => `R$ ${value / 1000}k` } }
+        }
+      }
+    });
+
+    new Chart(document.getElementById("costChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["Essência e base", "Frasco e válvula", "Rótulo", "Embalagem", "Reserva operacional"],
+        datasets: [{
+          data: [34, 28, 14, 12, 12],
+          backgroundColor: [brandColors.navy, brandColors.gold, brandColors.sage, brandColors.clay, brandColors.olive],
+          borderColor: "#fffaf0",
+          borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 10, usePointStyle: true } } },
+        cutout: "62%"
+      }
+    });
+  </script>
 </body>
 </html>
