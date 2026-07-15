@@ -10,8 +10,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+const supabaseAnonKey =
+  process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
 const supabase =
   supabaseUrl && supabaseServiceRoleKey
@@ -34,7 +36,8 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/config', (_req, res) => {
   res.json({
     supabaseUrl: supabaseUrl || null,
-    supabaseAnonKey: supabaseAnonKey || null
+    supabaseAnonKey: supabaseAnonKey || null,
+    supabasePublishableKey: supabaseAnonKey || null
   });
 });
 
