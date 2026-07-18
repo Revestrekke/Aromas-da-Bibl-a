@@ -1278,6 +1278,78 @@ async function receiveAccountReceivable(receivableId, payload = {}, user = null)
   };
 }
 
+async function payAccountPayable(payableId, payload = {}, user = null) {
+  const paidAt = payload.paid_at || new Date().toISOString().slice(0, 10);
+  const paymentMethod = payload.payment_method || 'manual';
+
+  if (!supabase) {
+    const payable = fallbackData.accounts_payable.find((item) => String(item.id) === String(payableId));
+    if (!payable) return { validationError: { status: 404, error: 'Conta a pagar nao encontrada.' } };
+    return {
+      source: 'fallback',
+      data: {
+        payable: { ...payable, paid_at: paidAt, payment_method: paymentMethod, status: 'paid' },
+        cashFlow: { source_id: payable.id, entry_date: paidAt, status: 'realized' }
+      }
+    };
+  }
+
+  const { data: before, error: beforeError } = await supabase
+    .from('accounts_payable')
+    .select('*')
+    .eq('id', payableId)
+    .maybeSingle();
+
+  if (beforeError) return { validationError: { status: 400, error: publicError(beforeError) } };
+  if (!before) return { validationError: { status: 404, error: 'Conta a pagar nao encontrada.' } };
+  if (before.status === 'paid') {
+    return { validationError: { status: 409, error: 'Esta conta ja foi paga.' } };
+  }
+
+  const { data: payable, error } = await supabase
+    .from('accounts_payable')
+    .update({
+      paid_at: paidAt,
+      payment_method: paymentMethod,
+      status: 'paid',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', payableId)
+    .select('*')
+    .single();
+
+  if (error) return { validationError: { status: 400, error: publicError(error) } };
+
+  const { data: cashFlow } = await supabase
+    .from('cash_flow_entries')
+    .update({
+      entry_date: paidAt,
+      amount_cents: payable.net_amount_cents || payable.amount_cents,
+      status: 'realized'
+    })
+    .eq('source_type', 'payable')
+    .eq('source_id', payable.id)
+    .select('*')
+    .maybeSingle();
+
+  await writeAuditLog({
+    user,
+    action: 'pay_account_payable',
+    table: 'accounts_payable',
+    recordId: payable.id,
+    before,
+    after: payable
+  });
+
+  return {
+    source: 'supabase',
+    data: {
+      payable,
+      cashFlow
+    }
+  };
+}
+
 async function buildPurchasingData() {
   const [requests, requestItems, quotes, orders, orderItems, suppliers, rawMaterials, packagingItems] = await Promise.all([
     listTable('purchase_requests', 'created_at'),
@@ -2756,6 +2828,14 @@ app.post('/api/admin/sales/orders/:id/receivable', requireAdminAuth, async (req,
 
 app.post('/api/admin/accounts-receivable/:id/receive', requireAdminAuth, async (req, res) => {
   const result = await receiveAccountReceivable(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.post('/api/admin/accounts-payable/:id/pay', requireAdminAuth, async (req, res) => {
+  const result = await payAccountPayable(req.params.id, req.body || {}, req.user);
   if (result.validationError) {
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }

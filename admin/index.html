@@ -3571,6 +3571,62 @@
       }
     }
 
+    function renderPayableTable(rows) {
+      const target = document.getElementById("payableTable");
+      if (!target) return;
+
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhuma conta a pagar cadastrada.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => {
+        const canPay = item.status !== "paid" && item.status !== "cancelled";
+        const action = canPay
+          ? `<button class="btn" type="button" data-pay-account="${escapeHtml(item.id)}"><i data-lucide="badge-check"></i>Pagar</button>`
+          : `<span class="chip">${escapeHtml(item.paid_at || "Pago")}</span>`;
+
+        return `
+          <tr>
+            <td>${escapeHtml(item.description || "-")}</td>
+            <td>${escapeHtml(item.due_date || "-")}</td>
+            <td>${formatValue("net_amount_cents", item.net_amount_cents || item.amount_cents)}</td>
+            <td>${escapeHtml(item.payment_method || "-")}</td>
+            <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status || "-")}</span></td>
+            <td>${action}</td>
+          </tr>`;
+      }).join("");
+
+      target.innerHTML = `
+        <table>
+          <thead><tr><th>Descricao</th><th>Vencimento</th><th>Valor liquido</th><th>Forma</th><th>Status</th><th>Acao</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+
+      target.querySelectorAll("[data-pay-account]").forEach((button) => {
+        button.addEventListener("click", () => payAccountPayable(button.dataset.payAccount));
+      });
+      lucide.createIcons();
+    }
+
+    async function payAccountPayable(id) {
+      try {
+        const response = await apiFetch(`/api/admin/accounts-payable/${id}/pay`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paid_at: new Date().toISOString().slice(0, 10), payment_method: "manual" })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao pagar conta.");
+        await loadFinanceData();
+        await loadDreData();
+        await loadReportsData();
+        await loadNotificationsData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel baixar a conta.");
+      }
+    }
+
     async function loadFinanceData() {
       try {
         const response = await apiFetch("/api/admin/finance");
@@ -3586,13 +3642,7 @@
 
         renderReceivableTable(finance.receivable.data);
 
-        renderSimpleTable("payableTable", finance.payable.data, [
-          ["description", "Descrição"],
-          ["due_date", "Vencimento"],
-          ["net_amount_cents", "Valor líquido"],
-          ["payment_method", "Forma"],
-          ["status", "Status"]
-        ], "Nenhuma conta a pagar cadastrada.");
+        renderPayableTable(finance.payable.data);
 
         renderSimpleTable("cashFlowTable", finance.cashFlow.data, [
           ["entry_date", "Data"],
