@@ -24,6 +24,69 @@ const supabase =
     : null;
 
 const fallbackData = {
+  fragrances: [
+    {
+      id: 'fragrance-paz',
+      code: 'PAZ',
+      name: 'Paz',
+      concept: 'Serenidade para leitura, oração e descanso.',
+      biblical_inspiration: 'João 14:27',
+      verse: 'Deixo-vos a paz, a minha paz vos dou.',
+      olfactory_family: 'Floral aromático',
+      top_notes: ['Lavanda'],
+      heart_notes: ['Camomila'],
+      base_notes: ['Musk'],
+      status: 'active'
+    },
+    {
+      id: 'fragrance-eden',
+      code: 'EDEN',
+      name: 'Jardim do Éden',
+      concept: 'Frescor verde e acolhedor.',
+      biblical_inspiration: 'Gênesis 2',
+      olfactory_family: 'Verde floral',
+      status: 'planned'
+    },
+    {
+      id: 'fragrance-mansidao',
+      code: 'MANSIDAO',
+      name: 'Mansidão',
+      concept: 'Delicadeza, equilíbrio e conforto.',
+      biblical_inspiration: 'Mateus 5:5',
+      olfactory_family: 'Amadeirado suave',
+      status: 'planned'
+    }
+  ],
+  products: [
+    {
+      id: 'product-paz',
+      internal_code: 'PRD-0001',
+      sku: 'ADB-HS-PAZ-200',
+      name: 'Home Spray Paz 200 ml',
+      category: 'Home Spray 200 ml',
+      status: 'active',
+      current_cost_cents: 3050,
+      sale_price_cents: 6990,
+      current_stock: 42,
+      minimum_stock: 12,
+      active_on_site: true
+    }
+  ],
+  raw_materials: [
+    { id: 'raw-base', code: 'MP-BASE-HS', name: 'Base para aromatizador', type: 'base', unit: 'ml', quantity_on_hand: 5000, minimum_stock: 1200, current_cost_cents: 8 },
+    { id: 'raw-ess-paz', code: 'MP-ESS-PAZ', name: 'Essência Paz', type: 'essência', unit: 'ml', quantity_on_hand: 900, minimum_stock: 300, current_cost_cents: 18 }
+  ],
+  packaging_items: [
+    { id: 'pkg-frasco', code: 'EMB-FRASCO-AMB-200', name: 'Frasco âmbar 200 ml', type: 'frasco', quantity_on_hand: 120, minimum_stock: 40, unit_cost_cents: 520 },
+    { id: 'pkg-valvula', code: 'EMB-VALV-PRETA', name: 'Válvula spray preta', type: 'válvula', quantity_on_hand: 95, minimum_stock: 40, unit_cost_cents: 290 },
+    { id: 'pkg-rotulo', code: 'EMB-ROT-PAZ', name: 'Rótulo Paz', type: 'rótulo', quantity_on_hand: 34, minimum_stock: 50, unit_cost_cents: 320 }
+  ],
+  suppliers: [
+    { id: 'supplier-demo', trade_name: 'Fornecedor demonstrativo', category: 'Insumos e embalagens', contact_name: 'Contato comercial', status: 'active', rating: 4.5 }
+  ],
+  inventory_movements: [
+    { id: 'mov-001', item_type: 'product', item_id: 'product-paz', movement_type: 'in', origin: 'seed', quantity: 42, quantity_after: 42, unit_cost_cents: 3050 }
+  ],
   produtos: [
     {
       id: 'paz-home-spray',
@@ -346,12 +409,57 @@ app.get('/api/admin/system', requireAdminAuth, async (_req, res) => {
   res.json(Object.fromEntries(entries));
 });
 
+app.get('/api/admin/catalog', requireAdminAuth, async (_req, res) => {
+  const [fragrances, products, rawMaterials, packagingItems, suppliers, movements] = await Promise.all([
+    listTable('fragrances', 'created_at'),
+    listTable('products', 'created_at'),
+    listTable('raw_materials', 'created_at'),
+    listTable('packaging_items', 'created_at'),
+    listTable('suppliers', 'created_at'),
+    listTable('inventory_movements', 'created_at')
+  ]);
+
+  const lowRawMaterials = rawMaterials.data.filter((item) => Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0));
+  const lowPackaging = packagingItems.data.filter((item) => Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0));
+  const activeProducts = products.data.filter((item) => item.status === 'active');
+
+  res.json({
+    source: products.source,
+    metrics: {
+      fragrances: fragrances.data.length,
+      products: products.data.length,
+      activeProducts: activeProducts.length,
+      rawMaterials: rawMaterials.data.length,
+      packagingItems: packagingItems.data.length,
+      suppliers: suppliers.data.length,
+      lowStockAlerts: lowRawMaterials.length + lowPackaging.length,
+      movements: movements.data.length
+    },
+    fragrances,
+    products,
+    rawMaterials,
+    packagingItems,
+    suppliers,
+    movements
+  });
+});
+
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
   const result = await listTable(req.params.table);
   res.json(result);
 });
 
 app.post('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.get('/api/admin/:table(fragrances|products|raw_materials|packaging_items|suppliers|inventory_movements)', requireAdminAuth, async (req, res) => {
+  const result = await listTable(req.params.table);
+  res.json(result);
+});
+
+app.post('/api/admin/:table(fragrances|products|raw_materials|packaging_items|suppliers|inventory_movements)', requireAdminAuth, async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
 });

@@ -124,3 +124,41 @@ Manual Deploy > Deploy latest commit
 - Estoque com movimentações.
 - Produção, fórmulas e lotes.
 - CRM, orçamentos, pedidos e financeiro.
+
+### Fase 2 - Cadastro e Estoque Inicial
+
+Migration:
+
+```text
+supabase/migrations/202607180002_catalog_inventory.sql
+```
+
+Ela cria:
+
+- `fragrances`
+- `suppliers`
+- `products`
+- `raw_materials`
+- `packaging_items`
+- `inventory_locations`
+- `inventory_movements`
+
+Também adiciona dados iniciais editáveis para:
+
+- Aromas: Paz, Jardim do Éden, Mansidão
+- Produto inicial: Home Spray Paz 200 ml
+- Insumos demonstrativos
+- Embalagens demonstrativas
+- Fornecedor demonstrativo
+
+APIs administrativas:
+
+```text
+GET /api/admin/catalog
+GET /api/admin/fragrances
+GET /api/admin/products
+GET /api/admin/raw_materials
+GET /api/admin/packaging_items
+GET /api/admin/suppliers
+GET /api/admin/inventory_movements
+```

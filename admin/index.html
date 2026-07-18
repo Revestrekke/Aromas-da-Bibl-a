@@ -821,6 +821,10 @@
       <nav class="nav-list">
         <a class="nav-link active" href="/admin"><i data-lucide="layout-dashboard"></i>Visão Geral</a>
         <a class="nav-link" href="/admin/produto"><i data-lucide="package"></i>Produto</a>
+        <a class="nav-link" href="/admin/aromas"><i data-lucide="flower-2"></i>Aromas</a>
+        <a class="nav-link" href="/admin/insumos"><i data-lucide="flask-conical"></i>Insumos</a>
+        <a class="nav-link" href="/admin/embalagens"><i data-lucide="package-open"></i>Embalagens</a>
+        <a class="nav-link" href="/admin/fornecedores"><i data-lucide="truck"></i>Fornecedores</a>
         <a class="nav-link" href="/admin/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/admin/modelo"><i data-lucide="network"></i>Modelo</a>
         <a class="nav-link" href="/admin/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
@@ -950,6 +954,50 @@
             <ul class="list"><li>Preço sugerido: R$ 69,90</li><li>Custo estimado: R$ 26,50</li><li>Margem bruta: 62%</li></ul>
           </article>
         </div>
+      </section>
+
+      <section class="section panel" id="aromas">
+        <div class="panel-header">
+          <div>
+            <h2>Aromas</h2>
+            <p>Cadastro específico de fragrâncias, inspiração bíblica, família olfativa e status.</p>
+          </div>
+          <span class="chip" id="fragranceCount">0 aromas</span>
+        </div>
+        <div class="table-wrap" id="fragrancesTable"></div>
+      </section>
+
+      <section class="section panel" id="insumos">
+        <div class="panel-header">
+          <div>
+            <h2>Insumos</h2>
+            <p>Matérias-primas, custos, saldos, estoque mínimo e validade.</p>
+          </div>
+          <span class="chip" id="rawMaterialCount">0 insumos</span>
+        </div>
+        <div class="table-wrap" id="rawMaterialsTable"></div>
+      </section>
+
+      <section class="section panel" id="embalagens">
+        <div class="panel-header">
+          <div>
+            <h2>Embalagens</h2>
+            <p>Frascos, válvulas, rótulos, lacres, caixas e materiais compatíveis.</p>
+          </div>
+          <span class="chip" id="packagingCount">0 embalagens</span>
+        </div>
+        <div class="table-wrap" id="packagingTable"></div>
+      </section>
+
+      <section class="section panel" id="fornecedores">
+        <div class="panel-header">
+          <div>
+            <h2>Fornecedores</h2>
+            <p>Cadastro inicial para compras, cotações, custos e avaliação.</p>
+          </div>
+          <span class="chip" id="supplierCount">0 fornecedores</span>
+        </div>
+        <div class="table-wrap" id="suppliersTable"></div>
       </section>
 
       <section class="section two-col" id="mercado">
@@ -1241,6 +1289,8 @@
               <button class="tab-btn" type="button" data-table-tab="estoque">Estoque</button>
               <button class="tab-btn" type="button" data-table-tab="campanhas">Campanhas</button>
               <button class="tab-btn" type="button" data-table-tab="custos">Custos</button>
+              <button class="tab-btn" type="button" data-table-tab="products">Produtos Pro</button>
+              <button class="tab-btn" type="button" data-table-tab="fragrances">Aromas Pro</button>
             </div>
             <div class="table-wrap data-table active" id="table-produtos"></div>
             <div class="table-wrap data-table" id="table-pedidos"></div>
@@ -1248,6 +1298,8 @@
             <div class="table-wrap data-table" id="table-estoque"></div>
             <div class="table-wrap data-table" id="table-campanhas"></div>
             <div class="table-wrap data-table" id="table-custos"></div>
+            <div class="table-wrap data-table" id="table-products"></div>
+            <div class="table-wrap data-table" id="table-fragrances"></div>
           </div>
         </div>
       </section>
@@ -1310,6 +1362,7 @@
       document.getElementById("authGate").classList.add("hidden");
       await refreshHealth();
       await loadSystemData();
+      await loadCatalogData();
     }
 
     async function apiFetch(url, options = {}) {
@@ -1371,6 +1424,10 @@
       "/admin": { title: "Dashboard Aromas da Bíblia", label: "Visão Geral", sections: ["visao", "indicadores"] },
       "/admin/visao": { title: "Visão Geral | Aromas da Bíblia", label: "Visão Geral", sections: ["visao", "indicadores"] },
       "/admin/produto": { title: "Produto | Aromas da Bíblia", label: "Produto", sections: ["produto"] },
+      "/admin/aromas": { title: "Aromas | Aromas da Bíblia", label: "Aromas", sections: ["aromas"] },
+      "/admin/insumos": { title: "Insumos | Aromas da Bíblia", label: "Insumos", sections: ["insumos"] },
+      "/admin/embalagens": { title: "Embalagens | Aromas da Bíblia", label: "Embalagens", sections: ["embalagens"] },
+      "/admin/fornecedores": { title: "Fornecedores | Aromas da Bíblia", label: "Fornecedores", sections: ["fornecedores"] },
       "/admin/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/admin/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
       "/admin/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
@@ -1479,11 +1536,34 @@
           ["valor_unitario", "Valor unitário"],
           ["tipo", "Tipo"]
         ]
+      },
+      products: {
+        columns: [
+          ["internal_code", "Código"],
+          ["sku", "SKU"],
+          ["name", "Produto"],
+          ["category", "Categoria"],
+          ["sale_price_cents", "Preço"],
+          ["current_stock", "Estoque"],
+          ["status", "Status"]
+        ]
+      },
+      fragrances: {
+        columns: [
+          ["code", "Código"],
+          ["name", "Aroma"],
+          ["biblical_inspiration", "Inspiração"],
+          ["olfactory_family", "Família"],
+          ["status", "Status"]
+        ]
       }
     };
 
     function formatValue(key, value) {
       if (value === null || value === undefined || value === "") return "-";
+      if (key.endsWith("_cents")) {
+        return (Number(value) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      }
       if (["preco", "custo", "total", "receita", "custos", "lucro", "valor_unitario"].includes(key)) {
         return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
       }
@@ -1520,6 +1600,79 @@
       }).join("");
 
       target.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    function renderSimpleTable(targetId, rows, columns, emptyMessage) {
+      const target = document.getElementById(targetId);
+      if (!target) return;
+
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">${emptyMessage}</div>`;
+        return;
+      }
+
+      const head = columns.map(([, label]) => `<th>${label}</th>`).join("");
+      const body = rows.map((row) => {
+        const cells = columns.map(([key]) => {
+          const value = formatValue(key, row[key]);
+          if (key === "status") return `<td><span class="status ${statusClass(value)}">${value}</span></td>`;
+          return `<td>${value}</td>`;
+        }).join("");
+        return `<tr>${cells}</tr>`;
+      }).join("");
+
+      target.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    async function loadCatalogData() {
+      try {
+        const response = await apiFetch("/api/admin/catalog");
+        const catalog = await response.json();
+        window.catalogData = catalog;
+
+        document.getElementById("fragranceCount").textContent = `${catalog.metrics.fragrances} aromas`;
+        document.getElementById("rawMaterialCount").textContent = `${catalog.metrics.rawMaterials} insumos`;
+        document.getElementById("packagingCount").textContent = `${catalog.metrics.packagingItems} embalagens`;
+        document.getElementById("supplierCount").textContent = `${catalog.metrics.suppliers} fornecedores`;
+
+        renderSimpleTable("fragrancesTable", catalog.fragrances.data, [
+          ["code", "Código"],
+          ["name", "Aroma"],
+          ["biblical_inspiration", "Inspiração"],
+          ["olfactory_family", "Família"],
+          ["status", "Status"]
+        ], "Nenhum aroma cadastrado.");
+
+        renderSimpleTable("rawMaterialsTable", catalog.rawMaterials.data, [
+          ["code", "Código"],
+          ["name", "Insumo"],
+          ["type", "Tipo"],
+          ["quantity_on_hand", "Saldo"],
+          ["minimum_stock", "Mínimo"],
+          ["current_cost_cents", "Custo"]
+        ], "Nenhum insumo cadastrado.");
+
+        renderSimpleTable("packagingTable", catalog.packagingItems.data, [
+          ["code", "Código"],
+          ["name", "Embalagem"],
+          ["type", "Tipo"],
+          ["quantity_on_hand", "Saldo"],
+          ["minimum_stock", "Mínimo"],
+          ["unit_cost_cents", "Custo"]
+        ], "Nenhuma embalagem cadastrada.");
+
+        renderSimpleTable("suppliersTable", catalog.suppliers.data, [
+          ["trade_name", "Fornecedor"],
+          ["category", "Categoria"],
+          ["contact_name", "Contato"],
+          ["rating", "Avaliação"],
+          ["status", "Status"]
+        ], "Nenhum fornecedor cadastrado.");
+      } catch (error) {
+        ["fragrancesTable", "rawMaterialsTable", "packagingTable", "suppliersTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Não foi possível carregar o catálogo.</div>`;
+        });
+      }
     }
 
     let costsPageChart;
@@ -1596,6 +1749,8 @@
         renderTable("estoque", system.estoque);
         renderTable("campanhas", system.campanhas);
         renderTable("custos", system.custos);
+        renderTable("products", system.products);
+        renderTable("fragrances", system.fragrances);
         renderCostsPage(system.custos);
 
         document.getElementById("systemProducts").textContent = system.produtos?.data?.length || 0;
