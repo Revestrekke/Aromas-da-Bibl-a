@@ -4188,12 +4188,17 @@
             nps: 9,
             comment: "Feedback registrado a partir do acompanhamento de pos-venda.",
             result: "Cliente acompanhado e feedback registrado.",
-            next_action: "Manter relacionamento e avaliar recompra."
+            next_action: "Manter relacionamento e avaliar recompra.",
+            opportunity_title: "Recompra pos-venda Aromas da Biblia",
+            opportunity_next_action: "Enviar proposta de kit ou assinatura.",
+            estimated_value_cents: 8990,
+            probability_percent: 70
           })
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Falha ao concluir pos-venda.");
         await loadLogisticsData();
+        await loadCommercialData();
         await loadReportsData();
         await loadNotificationsData();
       } catch (error) {

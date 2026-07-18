@@ -2129,6 +2129,42 @@ async function completeAfterSalesFollowup(followupId, payload = {}, user = null)
 
   if (feedbackError) return { validationError: { status: 400, error: publicError(feedbackError) } };
 
+  let opportunity = null;
+  if (nps >= 8 || rating >= 4) {
+    const returnDate = payload.return_date || addDays(feedbackDate, 15);
+    const { data: existingOpportunity } = await supabase
+      .from('sales_opportunities')
+      .select('*')
+      .eq('customer_id', followup.customer_id)
+      .eq('source', 'Pós-venda')
+      .neq('stage', 'lost')
+      .maybeSingle();
+
+    if (!existingOpportunity) {
+      const { data: createdOpportunity } = await supabase
+        .from('sales_opportunities')
+        .insert({
+          customer_id: followup.customer_id || null,
+          title: payload.opportunity_title || 'Recompra pos-venda Aromas da Biblia',
+          source: 'Pós-venda',
+          estimated_value_cents: Number(payload.estimated_value_cents || 8990),
+          products_summary: payload.products_summary || 'Recompra, kit presenteavel ou assinatura.',
+          quantity: Number(payload.quantity || 1),
+          responsible: payload.responsible || 'Comercial',
+          next_action: payload.opportunity_next_action || 'Enviar proposta de recompra ou assinatura.',
+          return_date: returnDate,
+          probability_percent: Number(payload.probability_percent || 70),
+          notes: `Gerada a partir do feedback ${feedback.id}.`,
+          stage: 'interest_identified'
+        })
+        .select('*')
+        .single();
+      opportunity = createdOpportunity || null;
+    } else {
+      opportunity = existingOpportunity;
+    }
+  }
+
   await writeAuditLog({
     user,
     action: 'complete_after_sales_followup',
@@ -2142,7 +2178,8 @@ async function completeAfterSalesFollowup(followupId, payload = {}, user = null)
     source: 'supabase',
     data: {
       followup,
-      feedback
+      feedback,
+      opportunity
     }
   };
 }
