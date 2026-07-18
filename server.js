@@ -167,6 +167,22 @@ const fallbackData = {
   sales_order_items: [
     { id: 'order-item-001', order_id: 'order-001', product_id: 'product-paz', description: 'Home Spray Paz 200 ml', quantity: 20, unit_price_cents: 6990, total_cents: 139800, unit_cost_cents: 3050, margin_cents: 78800 }
   ],
+  carriers: [
+    { id: 'carrier-local', name: 'Entrega local demonstrativa', service_type: 'local', contact: 'WhatsApp interno', tracking_url_template: 'https://rastreamento.example/{{tracking_code}}', average_delivery_days: 3, active: true }
+  ],
+  shipments: [
+    { id: 'shipment-001', shipment_number: 'ENV-0001', sales_order_id: 'order-001', customer_id: 'customer-igreja', carrier_id: 'carrier-local', shipping_method: 'Entrega local', tracking_code: 'ADB0001', shipping_cost_cents: 2500, charged_shipping_cents: 0, shipped_at: '2026-07-18', expected_delivery: '2026-07-21', recipient_name: 'Igreja Vida Plena', status: 'shipped', notes: 'Envio demonstrativo.' }
+  ],
+  shipment_events: [
+    { id: 'ship-event-001', shipment_id: 'shipment-001', event_date: '2026-07-18T12:00:00Z', status: 'shipped', description: 'Pedido saiu para entrega.', location: 'Atelie Aromas da Biblia' },
+    { id: 'ship-event-002', shipment_id: 'shipment-001', event_date: '2026-07-18T16:00:00Z', status: 'in_transit', description: 'Entrega em andamento.', location: 'Rota local' }
+  ],
+  after_sales_followups: [
+    { id: 'after-sales-001', sales_order_id: 'order-001', customer_id: 'customer-igreja', shipment_id: 'shipment-001', followup_date: '2026-07-23', channel: 'WhatsApp', objective: 'Confirmar recebimento e experiencia com o aroma.', status: 'planned' }
+  ],
+  customer_feedback: [
+    { id: 'feedback-001', sales_order_id: 'order-001', customer_id: 'customer-igreja', rating: 5, nps: 9, comment: 'Produto demonstrativo com excelente proposta.', source_channel: 'WhatsApp', feedback_date: '2026-07-24' }
+  ],
   financial_categories: [
     { id: 'cat-sales', name: 'Venda de produtos', type: 'revenue', active: true },
     { id: 'cat-supplies', name: 'Compra de insumos', type: 'expense', active: true },
@@ -490,6 +506,26 @@ const tableValidation = {
   sales_order_items: {
     required: ['order_id', 'description', 'quantity'],
     numeric: ['quantity', 'unit_price_cents', 'discount_cents', 'total_cents', 'unit_cost_cents', 'margin_cents']
+  },
+  carriers: {
+    required: ['name'],
+    numeric: ['average_delivery_days']
+  },
+  shipments: {
+    required: ['shipment_number'],
+    numeric: ['shipping_cost_cents', 'charged_shipping_cents']
+  },
+  shipment_events: {
+    required: ['shipment_id', 'status', 'description'],
+    numeric: []
+  },
+  after_sales_followups: {
+    required: ['followup_date'],
+    numeric: []
+  },
+  customer_feedback: {
+    required: ['customer_id'],
+    numeric: ['rating', 'nps']
   },
   financial_categories: {
     required: ['name', 'type'],
@@ -1198,6 +1234,116 @@ async function buildMarketingData() {
     customers,
     opportunities
   };
+}
+
+async function buildLogisticsData() {
+  const [carriers, shipments, shipmentEvents, followups, feedback, orders, customers] = await Promise.all([
+    listTable('carriers', 'created_at'),
+    listTable('shipments', 'created_at'),
+    listTable('shipment_events', 'event_date'),
+    listTable('after_sales_followups', 'followup_date'),
+    listTable('customer_feedback', 'feedback_date'),
+    listTable('sales_orders', 'created_at'),
+    listTable('customers', 'created_at')
+  ]);
+
+  const shipmentRows = shipments.data || [];
+  const openShipments = shipmentRows.filter((item) => !['delivered', 'returned', 'cancelled'].includes(item.status));
+  const delayedShipments = shipmentRows.filter((item) => {
+    const days = daysFromToday(item.expected_delivery);
+    return days !== null && days < 0 && !['delivered', 'returned', 'cancelled'].includes(item.status);
+  });
+  const plannedFollowups = followups.data.filter((item) => item.status === 'planned');
+  const avgRating = feedback.data.length
+    ? Math.round((feedback.data.reduce((sum, item) => sum + Number(item.rating || 0), 0) / feedback.data.length) * 10) / 10
+    : 0;
+  const avgNps = feedback.data.length
+    ? Math.round(feedback.data.reduce((sum, item) => sum + Number(item.nps || 0), 0) / feedback.data.length)
+    : 0;
+
+  return {
+    source: shipments.source,
+    metrics: {
+      carriers: carriers.data.length,
+      shipments: shipmentRows.length,
+      openShipments: openShipments.length,
+      delayedShipments: delayedShipments.length,
+      delivered: shipmentRows.filter((item) => item.status === 'delivered').length,
+      followups: plannedFollowups.length,
+      feedback: feedback.data.length,
+      avgRating,
+      avgNps
+    },
+    carriers,
+    shipments,
+    shipmentEvents,
+    followups,
+    feedback,
+    orders,
+    customers
+  };
+}
+
+async function updateShipmentStatus(shipmentId, payload, user = null) {
+  const status = String(payload.status || '');
+  if (!['pending', 'label_ready', 'shipped', 'in_transit', 'delivered', 'delayed', 'returned', 'cancelled'].includes(status)) {
+    return { validationError: { status: 400, error: 'Status de envio invalido.' } };
+  }
+
+  if (!supabase) {
+    return { source: 'fallback', data: { id: shipmentId, status, delivered_at: status === 'delivered' ? new Date().toISOString().slice(0, 10) : null } };
+  }
+
+  const { data: before } = await supabase.from('shipments').select('*').eq('id', shipmentId).maybeSingle();
+  if (!before) return { validationError: { status: 404, error: 'Envio nao encontrado.' } };
+
+  const patch = {
+    status,
+    updated_at: new Date().toISOString()
+  };
+  if (status === 'delivered') patch.delivered_at = payload.delivered_at || new Date().toISOString().slice(0, 10);
+  if (status === 'shipped' && !before.shipped_at) patch.shipped_at = new Date().toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from('shipments')
+    .update(patch)
+    .eq('id', shipmentId)
+    .select('*')
+    .single();
+
+  if (error) return { validationError: { status: 404, error: publicError(error) } };
+
+  await supabase.from('shipment_events').insert({
+    shipment_id: shipmentId,
+    status,
+    description: payload.description || `Status alterado para ${status}.`,
+    location: payload.location || null
+  });
+
+  if (data.sales_order_id) {
+    const orderStatus = status === 'delivered'
+      ? 'delivered'
+      : status === 'shipped' || status === 'in_transit'
+        ? 'shipped'
+        : null;
+    if (orderStatus) {
+      await supabase
+        .from('sales_orders')
+        .update({ status: orderStatus, tracking_code: data.tracking_code, updated_at: new Date().toISOString() })
+        .eq('id', data.sales_order_id);
+    }
+  }
+
+  await writeAuditLog({
+    user,
+    action: `shipment_${status}`,
+    table: 'shipments',
+    recordId: shipmentId,
+    before,
+    after: data
+  });
+
+  return { data, source: 'supabase' };
 }
 
 async function receivePurchaseOrder(orderId, payload, user = null) {
@@ -2100,6 +2246,26 @@ app.post('/api/admin/:table(marketing_campaigns|marketing_content_items|marketin
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.get('/api/admin/logistics', requireAdminAuth, async (_req, res) => {
+  res.json(await buildLogisticsData());
+});
+
+app.post('/api/admin/:table(carriers|shipments|shipment_events|after_sales_followups|customer_feedback)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/shipments/:id/status', requireAdminAuth, async (req, res) => {
+  const result = await updateShipmentStatus(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {

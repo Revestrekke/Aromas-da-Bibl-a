@@ -481,3 +481,40 @@ Telas:
 - `/admin/leads-marketing`
 
 Essa fase operacionaliza campanhas, conteúdos, calendário comercial, leads captados e resultados de marketing com orçamento, receita e ROI.
+
+### Fase 5.8 - Entrega, Frete e Pós-venda
+
+Migration:
+
+```text
+supabase/migrations/202607180010_logistics_after_sales.sql
+```
+
+Ela cria:
+
+- `carriers`
+- `shipments`
+- `shipment_events`
+- `after_sales_followups`
+- `customer_feedback`
+
+APIs administrativas:
+
+```text
+GET /api/admin/logistics
+POST /api/admin/carriers
+POST /api/admin/shipments
+POST /api/admin/shipment_events
+POST /api/admin/after_sales_followups
+POST /api/admin/customer_feedback
+POST /api/admin/shipments/:id/status
+```
+
+Telas:
+
+- `/admin/entregas`
+- `/admin/transportadoras`
+- `/admin/pos-venda`
+- `/admin/feedback`
+
+Essa fase controla remessas, rastreio, transportadoras, custo de frete, status de entrega, follow-ups de pós-venda e avaliação/NPS do cliente.

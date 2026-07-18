@@ -838,6 +838,10 @@
         <a class="nav-link" href="/admin/crm"><i data-lucide="columns-3"></i>CRM</a>
         <a class="nav-link" href="/admin/orcamentos"><i data-lucide="file-text"></i>Orçamentos</a>
         <a class="nav-link" href="/admin/pedidos"><i data-lucide="shopping-cart"></i>Pedidos</a>
+        <a class="nav-link" href="/admin/entregas"><i data-lucide="package-check"></i>Entregas</a>
+        <a class="nav-link" href="/admin/transportadoras"><i data-lucide="truck"></i>Transportadoras</a>
+        <a class="nav-link" href="/admin/pos-venda"><i data-lucide="heart-handshake"></i>Pós-venda</a>
+        <a class="nav-link" href="/admin/feedback"><i data-lucide="message-circle-heart"></i>Feedback</a>
         <a class="nav-link" href="/admin/receber"><i data-lucide="circle-dollar-sign"></i>A Receber</a>
         <a class="nav-link" href="/admin/pagar"><i data-lucide="receipt"></i>A Pagar</a>
         <a class="nav-link" href="/admin/caixa"><i data-lucide="landmark"></i>Fluxo de Caixa</a>
@@ -1450,6 +1454,119 @@
           <span class="chip" id="orderCount">0 pedidos</span>
         </div>
         <div class="table-wrap" id="ordersTable"></div>
+      </section>
+
+      <section class="section panel" id="entregas-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Entregas</h2>
+            <p>Remessas, rastreio, custos de frete, status de entrega e atrasos.</p>
+          </div>
+          <span class="chip" id="logisticsSource">Aguardando dados</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric"><div class="metric-icon"><i data-lucide="package-check"></i></div><div><div class="metric-value" id="shipmentsOpenMetric">0</div><div class="metric-label">Entregas abertas</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="calendar-warning"></i></div><div><div class="metric-value" id="shipmentsDelayedMetric">0</div><div class="metric-label">Atrasadas</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="check-circle"></i></div><div><div class="metric-value" id="shipmentsDeliveredMetric">0</div><div class="metric-label">Entregues</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="star"></i></div><div><div class="metric-value" id="feedbackRatingMetric">0</div><div class="metric-label">Nota media</div></div></div>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="shipmentForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="shipmentNumber">Numero</label><input id="shipmentNumber" name="shipment_number" required placeholder="ENV-0002"></div>
+              <div class="field"><label for="shipmentOrderId">Pedido</label><select id="shipmentOrderId" name="sales_order_id"></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="shipmentCarrierId">Transportadora</label><select id="shipmentCarrierId" name="carrier_id"></select></div>
+              <div class="field"><label for="shipmentTracking">Rastreio</label><input id="shipmentTracking" name="tracking_code" placeholder="ADB0002"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="shipmentExpected">Previsao</label><input id="shipmentExpected" name="expected_delivery" type="date"></div>
+              <div class="field"><label for="shipmentCost">Custo frete</label><input id="shipmentCost" name="shipping_cost" type="number" min="0" step="0.01"></div>
+            </div>
+            <div class="field"><label for="shipmentAddress">Endereco</label><textarea id="shipmentAddress" name="address"></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar entrega</button>
+            <div class="notice" id="shipmentNotice">Pronto para criar remessa.</div>
+          </form>
+          <div class="table-wrap" id="shipmentsTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="transportadoras-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Transportadoras</h2>
+            <p>Cadastro de parceiros logísticos e serviços de entrega.</p>
+          </div>
+          <span class="chip" id="carriersChip">0 transportadoras</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="carrierForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="carrierName">Nome</label><input id="carrierName" name="name" required></div>
+              <div class="field"><label for="carrierService">Servico</label><input id="carrierService" name="service_type" placeholder="local, correios, motoboy"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="carrierContact">Contato</label><input id="carrierContact" name="contact"></div>
+              <div class="field"><label for="carrierDays">Prazo medio dias</label><input id="carrierDays" name="average_delivery_days" type="number" min="0" step="1"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar transportadora</button>
+            <div class="notice" id="carrierNotice">Pronto para cadastrar transportadora.</div>
+          </form>
+          <div class="table-wrap" id="carriersTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="pos-venda-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Pos-venda</h2>
+            <p>Acompanhamentos de recebimento, experiência, recompra e relacionamento.</p>
+          </div>
+          <span class="chip" id="afterSalesChip">0 planejados</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="afterSalesForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="afterSalesOrderId">Pedido</label><select id="afterSalesOrderId" name="sales_order_id"></select></div>
+              <div class="field"><label for="afterSalesDate">Data</label><input id="afterSalesDate" name="followup_date" type="date" required></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="afterSalesChannel">Canal</label><input id="afterSalesChannel" name="channel" placeholder="WhatsApp"></div>
+              <div class="field"><label for="afterSalesObjective">Objetivo</label><input id="afterSalesObjective" name="objective" placeholder="Confirmar recebimento"></div>
+            </div>
+            <div class="field"><label for="afterSalesNextAction">Proxima acao</label><textarea id="afterSalesNextAction" name="next_action"></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Agendar pos-venda</button>
+            <div class="notice" id="afterSalesNotice">Pronto para agendar acompanhamento.</div>
+          </form>
+          <div class="table-wrap" id="afterSalesTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="feedback-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Feedback</h2>
+            <p>Avaliações, NPS, comentários e aprendizado de produto.</p>
+          </div>
+          <span class="chip" id="feedbackChip">0 feedbacks</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="feedbackForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="feedbackCustomerId">Cliente</label><select id="feedbackCustomerId" name="customer_id" required></select></div>
+              <div class="field"><label for="feedbackOrderId">Pedido</label><select id="feedbackOrderId" name="sales_order_id"></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="feedbackRating">Nota 1-5</label><input id="feedbackRating" name="rating" type="number" min="1" max="5" step="1"></div>
+              <div class="field"><label for="feedbackNps">NPS 0-10</label><input id="feedbackNps" name="nps" type="number" min="0" max="10" step="1"></div>
+            </div>
+            <div class="field"><label for="feedbackComment">Comentario</label><textarea id="feedbackComment" name="comment"></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Registrar feedback</button>
+            <div class="notice" id="feedbackNotice">Pronto para registrar feedback.</div>
+          </form>
+          <div class="table-wrap" id="feedbackTable"></div>
+        </div>
       </section>
 
       <section class="section panel" id="receber-admin">
@@ -2198,6 +2315,7 @@
       await loadQualityData();
       await loadCommercialData();
       await loadMarketingData();
+      await loadLogisticsData();
       await loadFinanceData();
       await loadDreData();
       await simulatePricingFromForm();
@@ -2282,6 +2400,10 @@
       "/admin/crm": { title: "CRM | Aromas da Bíblia", label: "CRM", sections: ["crm-admin"] },
       "/admin/orcamentos": { title: "Orçamentos | Aromas da Bíblia", label: "Orçamentos", sections: ["orcamentos-admin"] },
       "/admin/pedidos": { title: "Pedidos | Aromas da Bíblia", label: "Pedidos", sections: ["pedidos-admin"] },
+      "/admin/entregas": { title: "Entregas | Aromas da Biblia", label: "Entregas", sections: ["entregas-admin"] },
+      "/admin/transportadoras": { title: "Transportadoras | Aromas da Biblia", label: "Transportadoras", sections: ["transportadoras-admin"] },
+      "/admin/pos-venda": { title: "Pos-venda | Aromas da Biblia", label: "Pos-venda", sections: ["pos-venda-admin"] },
+      "/admin/feedback": { title: "Feedback | Aromas da Biblia", label: "Feedback", sections: ["feedback-admin"] },
       "/admin/receber": { title: "Contas a Receber | Aromas da Bíblia", label: "Contas a Receber", sections: ["receber-admin"] },
       "/admin/pagar": { title: "Contas a Pagar | Aromas da Bíblia", label: "Contas a Pagar", sections: ["pagar-admin"] },
       "/admin/caixa": { title: "Fluxo de Caixa | Aromas da Bíblia", label: "Fluxo de Caixa", sections: ["caixa-admin"] },
@@ -2789,6 +2911,96 @@
       } catch (error) {
         ["marketingCampaignsTable", "marketingContentTable", "marketingCalendarTable", "marketingLeadsTable"].forEach((id) => {
           document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar marketing.</div>`;
+        });
+      }
+    }
+
+    function updateLogisticsOptions() {
+      const logistics = window.logisticsData || {};
+      const orders = logistics.orders?.data || window.commercialData?.orders?.data || [];
+      const customers = logistics.customers?.data || window.commercialData?.customers?.data || [];
+      const carriers = logistics.carriers?.data || [];
+
+      const orderOptions = orders.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.order_number)}</option>`).join("") || `<option value="">Nenhum pedido</option>`;
+      const customerOptions = customers.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("") || `<option value="">Nenhum cliente</option>`;
+      const carrierOptions = carriers.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("") || `<option value="">Nenhuma transportadora</option>`;
+
+      document.getElementById("shipmentOrderId").innerHTML = orderOptions;
+      document.getElementById("afterSalesOrderId").innerHTML = orderOptions;
+      document.getElementById("feedbackOrderId").innerHTML = `<option value="">Sem pedido</option>${orderOptions}`;
+      document.getElementById("feedbackCustomerId").innerHTML = customerOptions;
+      document.getElementById("shipmentCarrierId").innerHTML = carrierOptions;
+    }
+
+    function renderShipments(rows) {
+      const target = document.getElementById("shipmentsTable");
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhuma entrega cadastrada.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => `
+        <tr>
+          <td><strong>${escapeHtml(item.shipment_number)}</strong></td>
+          <td>${escapeHtml(item.tracking_code || "-")}</td>
+          <td>${escapeHtml(item.expected_delivery || "-")}</td>
+          <td>${formatValue("shipping_cost_cents", item.shipping_cost_cents || 0)}</td>
+          <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status)}</span></td>
+          <td>
+            <button class="btn" type="button" data-shipment-status="${escapeHtml(item.id)}" data-status="in_transit"><i data-lucide="truck"></i>Em rota</button>
+            <button class="btn" type="button" data-shipment-status="${escapeHtml(item.id)}" data-status="delivered"><i data-lucide="check"></i>Entregue</button>
+          </td>
+        </tr>`).join("");
+
+      target.innerHTML = `<table><thead><tr><th>Envio</th><th>Rastreio</th><th>Previsao</th><th>Custo</th><th>Status</th><th>Acoes</th></tr></thead><tbody>${body}</tbody></table>`;
+      target.querySelectorAll("[data-shipment-status]").forEach((button) => {
+        button.addEventListener("click", () => updateShipmentStatus(button.dataset.shipmentStatus, button.dataset.status));
+      });
+      lucide.createIcons();
+    }
+
+    async function loadLogisticsData() {
+      try {
+        const response = await apiFetch("/api/admin/logistics");
+        const data = await response.json();
+        window.logisticsData = data;
+
+        document.getElementById("logisticsSource").textContent = data.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("shipmentsOpenMetric").textContent = data.metrics?.openShipments || 0;
+        document.getElementById("shipmentsDelayedMetric").textContent = data.metrics?.delayedShipments || 0;
+        document.getElementById("shipmentsDeliveredMetric").textContent = data.metrics?.delivered || 0;
+        document.getElementById("feedbackRatingMetric").textContent = data.metrics?.avgRating || 0;
+        document.getElementById("carriersChip").textContent = `${data.metrics?.carriers || 0} transportadoras`;
+        document.getElementById("afterSalesChip").textContent = `${data.metrics?.followups || 0} planejados`;
+        document.getElementById("feedbackChip").textContent = `${data.metrics?.feedback || 0} feedbacks · NPS ${data.metrics?.avgNps || 0}`;
+
+        renderShipments(data.shipments?.data || []);
+        renderSimpleTable("carriersTable", data.carriers?.data || [], [
+          ["name", "Transportadora"],
+          ["service_type", "Servico"],
+          ["contact", "Contato"],
+          ["average_delivery_days", "Prazo"],
+          ["active", "Ativa"]
+        ], "Nenhuma transportadora cadastrada.");
+        renderSimpleTable("afterSalesTable", data.followups?.data || [], [
+          ["followup_date", "Data"],
+          ["channel", "Canal"],
+          ["objective", "Objetivo"],
+          ["next_action", "Proxima acao"],
+          ["status", "Status"]
+        ], "Nenhum pos-venda agendado.");
+        renderSimpleTable("feedbackTable", data.feedback?.data || [], [
+          ["feedback_date", "Data"],
+          ["rating", "Nota"],
+          ["nps", "NPS"],
+          ["comment", "Comentario"],
+          ["source_channel", "Canal"]
+        ], "Nenhum feedback cadastrado.");
+
+        updateLogisticsOptions();
+      } catch (error) {
+        ["shipmentsTable", "carriersTable", "afterSalesTable", "feedbackTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar logistica.</div>`;
         });
       }
     }
@@ -3422,6 +3634,52 @@
       });
     }
 
+    async function submitLogisticsForm({ formId, noticeId, endpoint, transform }) {
+      const form = document.getElementById(formId);
+      const notice = document.getElementById(noticeId);
+      if (!form || !notice) return;
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        notice.className = "notice";
+        notice.textContent = "Salvando...";
+
+        try {
+          const payload = transform(formPayload(form));
+          const response = await apiFetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Falha ao salvar.");
+
+          notice.textContent = result.source === "supabase" ? "Registro salvo no Supabase." : "Registro validado em modo demonstrativo.";
+          if (result.source === "supabase") form.reset();
+          await loadLogisticsData();
+        } catch (error) {
+          notice.className = "notice warn";
+          notice.textContent = error.message || "Nao foi possivel salvar.";
+        }
+      });
+    }
+
+    async function updateShipmentStatus(shipmentId, status) {
+      try {
+        const response = await apiFetch(`/api/admin/shipments/${shipmentId}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status, description: `Status atualizado para ${status}.` })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao atualizar entrega.");
+        await loadLogisticsData();
+        await loadCommercialData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel atualizar entrega.");
+      }
+    }
+
     async function receivePurchaseOrder(orderId) {
       const dueDate = window.prompt("Vencimento da conta a pagar (AAAA-MM-DD):", new Date().toISOString().slice(0, 10));
       if (!dueDate) return;
@@ -3852,6 +4110,51 @@
       transform: (payload) => ({
         ...payload,
         estimated_value_cents: toCents(payload.estimated_value)
+      })
+    });
+
+    submitLogisticsForm({
+      formId: "shipmentForm",
+      noticeId: "shipmentNotice",
+      endpoint: "/api/admin/shipments",
+      transform: (payload) => ({
+        ...payload,
+        shipping_cost_cents: toCents(payload.shipping_cost),
+        charged_shipping_cents: toCents(payload.charged_shipping || 0),
+        status: "pending"
+      })
+    });
+
+    submitLogisticsForm({
+      formId: "carrierForm",
+      noticeId: "carrierNotice",
+      endpoint: "/api/admin/carriers",
+      transform: (payload) => ({
+        ...payload,
+        average_delivery_days: Number(payload.average_delivery_days || 0),
+        active: true
+      })
+    });
+
+    submitLogisticsForm({
+      formId: "afterSalesForm",
+      noticeId: "afterSalesNotice",
+      endpoint: "/api/admin/after_sales_followups",
+      transform: (payload) => ({
+        ...payload,
+        status: "planned"
+      })
+    });
+
+    submitLogisticsForm({
+      formId: "feedbackForm",
+      noticeId: "feedbackNotice",
+      endpoint: "/api/admin/customer_feedback",
+      transform: (payload) => ({
+        ...payload,
+        rating: Number(payload.rating || 0),
+        nps: Number(payload.nps || 0),
+        source_channel: "Admin"
       })
     });
 
