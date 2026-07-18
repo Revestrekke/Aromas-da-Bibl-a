@@ -3,1579 +3,282 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aromas da Bíblia | Dashboard de Negócios</title>
+  <title>Aromas da Bíblia | Home Spray Premium</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <style>
     :root {
       --paper: #f7f1e8;
       --surface: #fffaf0;
-      --surface-2: #efe5d4;
       --ink: #243142;
       --muted: #756b5d;
       --navy: #173b5f;
       --gold: #b28a51;
       --sage: #88907a;
-      --olive: #666d4f;
       --clay: #aa6742;
       --line: rgba(74, 64, 55, .16);
       --shadow: 0 18px 48px rgba(46, 38, 28, .10);
       --radius: 8px;
-      --font-display: "Cormorant Garamond", Georgia, serif;
-      --font-body: "Inter", Arial, sans-serif;
+      --display: "Cormorant Garamond", Georgia, serif;
+      --body: "Inter", Arial, sans-serif;
     }
 
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      min-height: 100vh;
       background: var(--paper);
       color: var(--ink);
-      font-family: var(--font-body);
-      line-height: 1.5;
+      font-family: var(--body);
+      line-height: 1.55;
     }
-
-    button, input, select { font: inherit; }
-    img { max-width: 100%; display: block; }
+    img { display: block; max-width: 100%; }
     a { color: inherit; text-decoration: none; }
 
-    .app-shell {
-      display: grid;
-      grid-template-columns: 280px minmax(0, 1fr);
-      min-height: 100vh;
-    }
-
-    .sidebar {
+    .nav {
       position: sticky;
       top: 0;
-      height: 100vh;
-      overflow: auto;
-      padding: 20px 18px;
-      background: #fdf7ec;
-      border-right: 1px solid var(--line);
-    }
-
-    .brand {
-      display: grid;
-      grid-template-columns: 54px 1fr;
-      gap: 12px;
+      z-index: 20;
+      display: flex;
       align-items: center;
-      padding-bottom: 18px;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px clamp(18px, 4vw, 56px);
+      background: rgba(247, 241, 232, .88);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
     }
-
-    .brand-logo {
-      width: 54px;
-      height: 54px;
-      object-fit: cover;
-      border: 1px solid rgba(178, 138, 81, .34);
-      border-radius: 50%;
-      background: var(--surface);
-    }
-
-    .brand-title {
-      font-family: var(--font-display);
-      font-size: 24px;
-      line-height: 1;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       color: var(--navy);
+      font-family: var(--display);
+      font-size: 26px;
+      font-weight: 700;
       letter-spacing: .08em;
       text-transform: uppercase;
     }
-
-    .brand-subtitle {
-      margin-top: 5px;
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: .18em;
-      text-transform: uppercase;
+    .brand img {
+      width: 46px;
+      height: 46px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 1px solid rgba(178, 138, 81, .34);
     }
-
-    .nav-label {
-      margin: 22px 8px 10px;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-    }
-
-    .nav-list {
-      display: grid;
-      gap: 5px;
-    }
-
-    .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 11px;
-      color: #473f34;
-      border: 1px solid transparent;
-      border-radius: var(--radius);
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .nav-link:hover,
-    .nav-link.active {
-      color: var(--navy);
-      background: rgba(178, 138, 81, .10);
-      border-color: rgba(178, 138, 81, .22);
-    }
-
-    .nav-link i,
-    .metric-icon,
-    .btn i { width: 18px; height: 18px; }
-
-    .sidebar-card {
-      margin-top: 20px;
-      padding: 14px;
-      border: 1px solid rgba(178, 138, 81, .28);
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, #fffaf0, #f3eadb);
-    }
-
-    .sidebar-card strong {
-      display: block;
-      color: var(--navy);
-      font-size: 13px;
-      margin-bottom: 4px;
-    }
-
-    .sidebar-card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    main {
-      min-width: 0;
-      padding: 22px;
-    }
-
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: center;
-      padding: 14px 0 20px;
-      background: rgba(247, 241, 232, .88);
-      backdrop-filter: blur(12px);
-    }
-
-    .page-kicker {
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-    }
-
-    h1, h2, h3 {
-      margin: 0;
-      color: var(--navy);
-      line-height: 1.05;
-    }
-
-    h1 {
-      margin-top: 4px;
-      font-family: var(--font-display);
-      font-size: 34px;
-      letter-spacing: .02em;
-    }
-
-    h2 {
-      font-family: var(--font-display);
-      font-size: 28px;
-    }
-
-    h3 {
-      font-size: 15px;
-      font-weight: 800;
-    }
-
-    .top-actions {
+    .nav-actions {
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
       justify-content: flex-end;
     }
-
-    .status-pill,
-    .btn,
-    .chip {
+    .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      min-height: 34px;
-      padding: 7px 11px;
-      border: 1px solid rgba(178, 138, 81, .28);
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--ink);
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #4f8f61;
-      box-shadow: 0 0 0 4px rgba(79, 143, 97, .14);
-    }
-
-    .btn {
-      cursor: pointer;
+      min-height: 40px;
+      padding: 9px 14px;
+      border: 1px solid rgba(178, 138, 81, .30);
       border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--navy);
+      font-size: 13px;
+      font-weight: 800;
     }
-
     .btn.primary {
-      color: #fffaf0;
       background: var(--navy);
       border-color: var(--navy);
+      color: #fffaf0;
     }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.55fr) minmax(320px, .75fr);
-      gap: 18px;
-      align-items: start;
-    }
+    .btn i { width: 17px; height: 17px; }
 
     .hero {
-      min-height: 430px;
-      position: relative;
-      overflow: hidden;
-      border-radius: var(--radius);
-      border: 1px solid rgba(178, 138, 81, .28);
-      background: #dbcab3;
-      box-shadow: var(--shadow);
-    }
-
-    .hero img {
-      width: 100%;
-      height: 100%;
-      min-height: 430px;
-      object-fit: cover;
-      object-position: 50% 45%;
-    }
-
-    .hero-content {
-      position: absolute;
-      inset: auto 0 0;
       display: grid;
-      gap: 14px;
-      padding: 34px;
-      color: #fffaf0;
-      background: linear-gradient(0deg, rgba(23, 59, 95, .92), rgba(23, 59, 95, .08));
-    }
-
-    .hero-content h2 {
-      color: #fffaf0;
-      max-width: 620px;
-      font-size: 40px;
-    }
-
-    .hero-content p {
-      max-width: 720px;
-      margin: 0;
-      color: rgba(255, 250, 240, .88);
-      font-size: 15px;
-    }
-
-    .hero-chips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .hero-chips .chip {
-      background: rgba(255, 250, 240, .12);
-      color: #fffaf0;
-      border-color: rgba(255, 250, 240, .24);
-    }
-
-    .panel {
-      padding: 18px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: rgba(255, 250, 240, .82);
-      box-shadow: 0 12px 28px rgba(46, 38, 28, .06);
-    }
-
-    .panel + .panel { margin-top: 18px; }
-
-    .panel-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    .panel-header p {
-      margin: 5px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .product-preview {
-      display: grid;
-      grid-template-columns: 110px 1fr;
-      gap: 14px;
+      grid-template-columns: minmax(0, .9fr) minmax(340px, .78fr);
+      gap: clamp(24px, 5vw, 72px);
       align-items: center;
+      min-height: calc(100vh - 80px);
+      padding: clamp(28px, 5vw, 72px);
     }
-
-    .product-preview img {
-      width: 110px;
-      aspect-ratio: 3 / 4;
-      object-fit: cover;
-      border-radius: var(--radius);
-      border: 1px solid rgba(178, 138, 81, .25);
-    }
-
-    .verse {
-      margin: 0;
-      color: var(--navy);
-      font-family: var(--font-display);
-      font-size: 25px;
-      line-height: 1.12;
-    }
-
-    .muted {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin: 18px 0;
-    }
-
-    .metric {
-      display: grid;
-      grid-template-columns: 40px 1fr;
-      gap: 12px;
-      align-items: center;
-      min-height: 94px;
-      padding: 15px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-
-    .metric-icon {
-      display: grid;
-      place-items: center;
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius);
-      color: var(--navy);
-      background: rgba(178, 138, 81, .13);
-    }
-
-    .metric-value {
-      color: var(--navy);
-      font-size: 22px;
-      font-weight: 800;
-      line-height: 1.1;
-    }
-
-    .metric-label {
-      margin-top: 3px;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .section {
-      margin-top: 18px;
-      scroll-margin-top: 96px;
-    }
-
-    .module-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .module-card {
-      min-height: 180px;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-
-    .module-title {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      margin-bottom: 10px;
-      color: var(--navy);
-      font-weight: 800;
-    }
-
-    .module-title i {
-      width: 19px;
-      height: 19px;
+    .eyebrow {
       color: var(--gold);
-    }
-
-    .module-card p {
-      margin: 0 0 11px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .list {
-      display: grid;
-      gap: 8px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .list li {
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      color: #4a4037;
-      font-size: 13px;
-    }
-
-    .list li::before {
-      content: "";
-      flex: 0 0 auto;
-      width: 6px;
-      height: 6px;
-      margin-top: 7px;
-      border-radius: 50%;
-      background: var(--gold);
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
-    }
-
-    .table-wrap {
-      overflow: auto;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-
-    table {
-      width: 100%;
-      min-width: 720px;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 12px 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--line);
-      font-size: 13px;
-    }
-
-    th {
-      color: var(--muted);
-      background: rgba(178, 138, 81, .08);
-      font-size: 11px;
-      letter-spacing: .12em;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .18em;
       text-transform: uppercase;
     }
-
-    tr:last-child td { border-bottom: 0; }
-
-    .status {
-      display: inline-flex;
-      align-items: center;
-      min-height: 24px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 800;
-      background: rgba(136, 144, 122, .14);
-      color: var(--olive);
+    h1 {
+      max-width: 760px;
+      margin: 12px 0 18px;
+      color: var(--navy);
+      font-family: var(--display);
+      font-size: clamp(44px, 7vw, 92px);
+      line-height: .92;
+      letter-spacing: .01em;
     }
-
-    .status.warn {
-      color: var(--clay);
-      background: rgba(170, 103, 66, .13);
+    .lead {
+      max-width: 640px;
+      margin: 0 0 26px;
+      color: var(--muted);
+      font-size: 18px;
     }
-
-    .status.ok {
-      color: #3f7a53;
-      background: rgba(63, 122, 83, .13);
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
     }
-
-    .chart-card {
-      min-height: 320px;
-    }
-
-    .chart-card canvas {
-      width: 100% !important;
-      max-height: 265px;
-    }
-
-    .roadmap {
+    .proof {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .roadmap-step {
-      position: relative;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: var(--surface);
-    }
-
-    .step-badge {
-      display: inline-flex;
-      margin-bottom: 10px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      color: var(--navy);
-      background: rgba(23, 59, 95, .08);
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .system-strip {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 12px;
+      max-width: 720px;
     }
-
-    .system-item {
+    .proof-item {
       padding: 14px;
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--surface);
+      background: rgba(255, 250, 240, .76);
     }
-
-    .system-item strong {
+    .proof-item strong {
       display: block;
       color: var(--navy);
-      margin-bottom: 5px;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+    .proof-item span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .product-shot {
+      overflow: hidden;
+      border: 1px solid rgba(178, 138, 81, .26);
+      border-radius: var(--radius);
+      background: #dfcfb9;
+      box-shadow: var(--shadow);
+    }
+    .product-shot img {
+      width: 100%;
+      height: min(76vh, 760px);
+      object-fit: cover;
+      object-position: 50% 44%;
+    }
+    .section {
+      padding: 72px clamp(18px, 5vw, 72px);
+      border-top: 1px solid var(--line);
+    }
+    .section h2 {
+      margin: 0 0 14px;
+      color: var(--navy);
+      font-family: var(--display);
+      font-size: clamp(32px, 4vw, 54px);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+    .card {
+      min-height: 150px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+    .card i {
+      color: var(--gold);
+      width: 21px;
+      height: 21px;
+      margin-bottom: 12px;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 16px;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    footer {
+      padding: 26px clamp(18px, 5vw, 72px);
+      color: var(--muted);
+      border-top: 1px solid var(--line);
       font-size: 13px;
     }
 
-    .system-item span {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .ops-grid {
-      display: grid;
-      grid-template-columns: minmax(320px, .72fr) minmax(0, 1.28fr);
-      gap: 14px;
-      align-items: start;
-    }
-
-    .form-grid {
-      display: grid;
-      gap: 10px;
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-    }
-
-    .field label {
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .10em;
-      text-transform: uppercase;
-    }
-
-    .field input,
-    .field textarea,
-    .field select {
-      width: 100%;
-      min-height: 40px;
-      padding: 9px 10px;
-      border: 1px solid rgba(74, 64, 55, .20);
-      border-radius: var(--radius);
-      background: #fffdf7;
-      color: var(--ink);
-      outline: none;
-    }
-
-    .field textarea {
-      min-height: 82px;
-      resize: vertical;
-    }
-
-    .field input:focus,
-    .field textarea:focus,
-    .field select:focus {
-      border-color: rgba(23, 59, 95, .55);
-      box-shadow: 0 0 0 3px rgba(23, 59, 95, .08);
-    }
-
-    .inline-fields {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .notice {
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: var(--radius);
-      background: rgba(136, 144, 122, .12);
-      color: var(--olive);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .notice.warn {
-      background: rgba(170, 103, 66, .12);
-      color: var(--clay);
-    }
-
-    .mini-tabs {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .tab-btn {
-      min-height: 34px;
-      padding: 7px 11px;
-      border: 1px solid rgba(178, 138, 81, .28);
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .tab-btn.active {
-      background: var(--navy);
-      border-color: var(--navy);
-      color: #fffaf0;
-    }
-
-    .data-table {
-      display: none;
-    }
-
-    .data-table.active {
-      display: block;
-    }
-
-    .route-section:not(.active-page) {
-      display: none !important;
-    }
-
-    .mobile-menu {
-      display: none;
-    }
-
-    @media (max-width: 1180px) {
-      .app-shell { grid-template-columns: 1fr; }
-      .sidebar {
-        position: fixed;
-        inset: 0 auto 0 0;
-        width: 280px;
-        z-index: 100;
-        transform: translateX(-100%);
-        transition: transform .2s ease;
-      }
-      .sidebar.open { transform: translateX(0); }
-      .mobile-menu { display: inline-flex; }
-      .dashboard-grid,
-      .two-col,
-      .ops-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 900px) {
-      main { padding: 14px; }
-      .topbar { align-items: flex-start; flex-direction: column; }
-      .top-actions { justify-content: flex-start; }
-      .metrics,
-      .module-grid,
-      .roadmap,
-      .system-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .hero-content { padding: 24px; }
-      .hero-content h2 { font-size: 32px; }
-    }
-
-    @media (max-width: 620px) {
-      .metrics,
-      .module-grid,
-      .roadmap,
-      .system-strip { grid-template-columns: 1fr; }
-      .product-preview { grid-template-columns: 84px 1fr; }
-      .product-preview img { width: 84px; }
-      h1 { font-size: 28px; }
-      .hero,
-      .hero img { min-height: 390px; }
-      .hero-content h2 { font-size: 28px; }
-      .inline-fields { grid-template-columns: 1fr; }
+    @media (max-width: 920px) {
+      .hero { grid-template-columns: 1fr; }
+      .product-shot img { height: 520px; }
+      .proof, .cards { grid-template-columns: 1fr; }
+      .nav { align-items: flex-start; flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <img class="brand-logo" src="assets/logo-aromas.jpeg" alt="Logo Aromas da Bíblia">
-        <div>
-          <div class="brand-title">Aromas</div>
-          <div class="brand-subtitle">da Bíblia</div>
+  <header class="nav">
+    <a class="brand" href="/">
+      <img src="/assets/logo-aromas.jpeg" alt="Aromas da Bíblia">
+      <span>Aromas da Bíblia</span>
+    </a>
+    <div class="nav-actions">
+      <a class="btn" href="#contato"><i data-lucide="message-circle"></i>Contato</a>
+      <a class="btn primary" href="/admin"><i data-lucide="lock-keyhole"></i>Painel administrativo</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Home spray premium · 200 ml</div>
+        <h1>Aromas para momentos de fé, leitura e descanso.</h1>
+        <p class="lead">Aromas da Bíblia une perfumaria de ambiente, cuidado com a casa e inspiração cristã em produtos elegantes, suaves e presenteáveis.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#orcamento"><i data-lucide="send"></i>Solicitar orçamento</a>
+          <a class="btn" href="#produtos"><i data-lucide="spray-can"></i>Ver produto inicial</a>
+        </div>
+        <div class="proof">
+          <div class="proof-item"><strong>Produto inicial</strong><span>Home Spray Paz · João 14:27</span></div>
+          <div class="proof-item"><strong>Notas</strong><span>Lavanda, camomila e musk</span></div>
+          <div class="proof-item"><strong>Canais</strong><span>Clientes finais, igrejas e revendedores</span></div>
         </div>
       </div>
-
-      <div class="nav-label">Plano executivo</div>
-      <nav class="nav-list">
-        <a class="nav-link active" href="/"><i data-lucide="layout-dashboard"></i>Visão Geral</a>
-        <a class="nav-link" href="/produto"><i data-lucide="package"></i>Produto</a>
-        <a class="nav-link" href="/mercado"><i data-lucide="store"></i>Mercado</a>
-        <a class="nav-link" href="/modelo"><i data-lucide="network"></i>Modelo</a>
-        <a class="nav-link" href="/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
-        <a class="nav-link" href="/custos"><i data-lucide="calculator"></i>Custos</a>
-        <a class="nav-link" href="/marketing"><i data-lucide="megaphone"></i>Marketing</a>
-        <a class="nav-link" href="/operacoes"><i data-lucide="factory"></i>Operações</a>
-        <a class="nav-link" href="/roadmap"><i data-lucide="map"></i>Roadmap</a>
-      </nav>
-
-      <div class="nav-label">Sistema futuro</div>
-      <nav class="nav-list">
-        <a class="nav-link" href="/sistema"><i data-lucide="database"></i>Módulos</a>
-        <a class="nav-link" href="/indicadores"><i data-lucide="activity"></i>Indicadores</a>
-        <a class="nav-link" href="/gestao"><i data-lucide="table-properties"></i>Gestão</a>
-      </nav>
-
-      <div class="sidebar-card">
-        <strong>Status do projeto</strong>
-        <p>Dashboard conectado ao backend. Próxima etapa: tabelas reais no Supabase.</p>
+      <div class="product-shot">
+        <img src="/assets/produto-paz.png" alt="Home spray Paz Aromas da Bíblia">
       </div>
-    </aside>
-
-    <main>
-      <header class="topbar">
-        <div>
-          <div class="page-kicker">Plano de negócios operacional</div>
-          <h1>Dashboard Aromas da Bíblia</h1>
-        </div>
-        <div class="top-actions">
-          <button class="btn mobile-menu" id="menuButton" type="button" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
-          <span class="status-pill"><span class="status-dot"></span><span id="apiStatus">Backend online</span></span>
-          <button class="btn" type="button" onclick="window.print()"><i data-lucide="printer"></i>Imprimir</button>
-          <a class="btn primary" href="/sistema" data-route-link><i data-lucide="rocket"></i>Ver evolução</a>
-        </div>
-      </header>
-
-      <section class="dashboard-grid section" id="visao">
-        <div class="hero">
-          <img src="assets/produto-paz.png" alt="Home spray Paz Aromas da Bíblia">
-          <div class="hero-content">
-            <div class="hero-chips">
-              <span class="chip">Home Spray 200 ml</span>
-              <span class="chip">Lavanda · Camomila · Musk</span>
-              <span class="chip">João 14:27</span>
-            </div>
-            <h2>Um negócio de aromas para casa, fé, leitura e descanso.</h2>
-            <p>A primeira versão apresenta o plano de negócios como painel executivo. A próxima etapa transforma estes blocos em cadastros, relatórios, pedidos, estoque e CRM conectados ao Supabase.</p>
-          </div>
-        </div>
-
-        <div>
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h3>Produto principal</h3>
-                <p>Primeiro SKU validável para lançamento.</p>
-              </div>
-              <span class="status ok">Protótipo</span>
-            </div>
-            <div class="product-preview">
-              <img src="assets/rotulo-paz.png" alt="Rótulo Paz">
-              <div>
-                <p class="verse">"Deixo-vos a paz, a minha paz vos dou."</p>
-                <p class="muted">Paz · João 14:27 · Aromatizador de ambientes com posicionamento premium e presenteável.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <h3>Proposta de valor</h3>
-                <p>Perfumaria de ambiente com narrativa bíblica sofisticada.</p>
-              </div>
-            </div>
-            <ul class="list">
-              <li>Acompanha momentos de leitura, oração e descanso.</li>
-              <li>Embalagem premium pensada para presente cristão.</li>
-              <li>Produto escalável para kits, assinatura e revenda.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section class="metrics" id="indicadores">
-        <div class="metric">
-          <div class="metric-icon"><i data-lucide="wallet"></i></div>
-          <div><div class="metric-value">R$ 18,5k</div><div class="metric-label">Receita mensal provável</div></div>
-        </div>
-        <div class="metric">
-          <div class="metric-icon"><i data-lucide="percent"></i></div>
-          <div><div class="metric-value">62%</div><div class="metric-label">Margem bruta estimada</div></div>
-        </div>
-        <div class="metric">
-          <div class="metric-icon"><i data-lucide="shopping-bag"></i></div>
-          <div><div class="metric-value">128</div><div class="metric-label">Pedidos/mês simulados</div></div>
-        </div>
-        <div class="metric">
-          <div class="metric-icon"><i data-lucide="boxes"></i></div>
-          <div><div class="metric-value">4</div><div class="metric-label">SKUs planejados</div></div>
-        </div>
-      </section>
-
-      <section class="section panel" id="produto">
-        <div class="panel-header">
-          <div>
-            <h2>Produto</h2>
-            <p>Linha de aromas, inspiração bíblica, diferenciais, embalagens, preço e margem.</p>
-          </div>
-          <span class="chip">Fase 1</span>
-        </div>
-        <div class="module-grid">
-          <article class="module-card">
-            <div class="module-title"><i data-lucide="spray-can"></i>Linha de aromas</div>
-            <p>Começar com a linha Home Spray e expandir para difusores, sachês e kits devocionais.</p>
-            <ul class="list"><li>Paz</li><li>Graça</li><li>Esperança</li><li>Renovo</li></ul>
-          </article>
-          <article class="module-card">
-            <div class="module-title"><i data-lucide="book-open"></i>Inspiração bíblica</div>
-            <p>Cada fragrância carrega um versículo e uma intenção de uso, sem prometer efeito espiritual.</p>
-            <ul class="list"><li>João 14:27</li><li>Salmos de descanso</li><li>Textos de consolo</li></ul>
-          </article>
-          <article class="module-card">
-            <div class="module-title"><i data-lucide="badge-dollar-sign"></i>Preço e margem</div>
-            <p>Simulação inicial para orientar validação comercial e compra de insumos.</p>
-            <ul class="list"><li>Preço sugerido: R$ 69,90</li><li>Custo estimado: R$ 26,50</li><li>Margem bruta: 62%</li></ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="section two-col" id="mercado">
-        <div class="panel">
-          <div class="panel-header">
-            <div>
-              <h2>Mercado</h2>
-              <p>Onde a marca pode entrar primeiro.</p>
-            </div>
-          </div>
-          <div class="module-grid" style="grid-template-columns: 1fr 1fr;">
-            <div class="module-card"><div class="module-title"><i data-lucide="church"></i>Público cristão</div><p>Consumidores que valorizam objetos de casa conectados à fé.</p></div>
-            <div class="module-card"><div class="module-title"><i data-lucide="gift"></i>Presentes</div><p>Produto com forte apelo para datas especiais, gratidão e visitas.</p></div>
-            <div class="module-card"><div class="module-title"><i data-lucide="handshake"></i>Parcerias</div><p>Igrejas, eventos, livrarias cristãs, conferências e ministérios.</p></div>
-            <div class="module-card"><div class="module-title"><i data-lucide="scan-search"></i>Concorrência</div><p>Diferenciação por narrativa, estética premium e fragrâncias suaves.</p></div>
-          </div>
-        </div>
-        <div class="panel chart-card">
-          <div class="panel-header">
-            <div>
-              <h3>Oportunidade por canal</h3>
-              <p>Prioridade de validação comercial.</p>
-            </div>
-          </div>
-          <canvas id="marketChart"></canvas>
-        </div>
-      </section>
-
-      <section class="section panel" id="modelo">
-        <div class="panel-header">
-          <div>
-            <h2>Modelo de Negócio</h2>
-            <p>Canais planejados para vender agora e evoluir depois.</p>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Canal</th><th>Como funciona</th><th>Prioridade</th><th>Indicador</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Venda direta</td><td>Instagram, WhatsApp e catálogo simples.</td><td><span class="status ok">Alta</span></td><td>Conversão por conversa</td></tr>
-              <tr><td>Kits</td><td>Combos de fragrâncias e embalagem presenteável.</td><td><span class="status ok">Alta</span></td><td>Ticket médio</td></tr>
-              <tr><td>Assinatura</td><td>Envio mensal de aromas e devocionais.</td><td><span class="status">Média</span></td><td>Recorrência</td></tr>
-              <tr><td>Revenda</td><td>Igrejas, lojas cristãs e eventos.</td><td><span class="status ok">Alta</span></td><td>Margem por parceiro</td></tr>
-              <tr><td>Influenciadores</td><td>Parcerias com criadores cristãos e casa.</td><td><span class="status">Média</span></td><td>CAC e leads</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="section two-col" id="financeiro">
-        <div class="panel chart-card">
-          <div class="panel-header">
-            <div>
-              <h2>Financeiro</h2>
-              <p>Cenários conservador, provável e otimista.</p>
-            </div>
-          </div>
-          <canvas id="financeChart"></canvas>
-        </div>
-        <div class="panel chart-card">
-          <div class="panel-header">
-            <div>
-              <h3>Composição do custo</h3>
-              <p>Estimativa por unidade.</p>
-            </div>
-          </div>
-          <canvas id="costChart"></canvas>
-        </div>
-      </section>
-
-      <section class="section panel" id="custos">
-        <div class="panel-header">
-          <div>
-            <h2>Custos</h2>
-            <p>Composição por unidade, margem, preço sugerido e ponto de equilíbrio.</p>
-          </div>
-          <span class="chip">Precificação</span>
-        </div>
-
-        <div class="metrics" style="margin-top:0;">
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="coins"></i></div>
-            <div><div class="metric-value" id="costUnitMetric">R$ 0</div><div class="metric-label">Custo unitário</div></div>
-          </div>
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="tag"></i></div>
-            <div><div class="metric-value" id="priceMetric">R$ 69,90</div><div class="metric-label">Preço sugerido</div></div>
-          </div>
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="percent"></i></div>
-            <div><div class="metric-value" id="marginMetric">0%</div><div class="metric-label">Margem bruta</div></div>
-          </div>
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="scale"></i></div>
-            <div><div class="metric-value" id="breakEvenMetric">0 un</div><div class="metric-label">Ponto de equilíbrio</div></div>
-          </div>
-        </div>
-
-        <div class="two-col">
-          <div class="table-wrap" id="costsTable"></div>
-          <div class="panel chart-card" style="margin-top:0;">
-            <div class="panel-header">
-              <div>
-                <h3>Participação no custo</h3>
-                <p>Itens que mais pesam na formação do preço.</p>
-              </div>
-            </div>
-            <canvas id="costsPageChart"></canvas>
-          </div>
-        </div>
-      </section>
-
-      <section class="section panel" id="marketing">
-        <div class="panel-header">
-          <div>
-            <h2>Marketing</h2>
-            <p>Posicionamento, canais e campanhas com foco em validação.</p>
-          </div>
-        </div>
-        <div class="module-grid">
-          <article class="module-card"><div class="module-title"><i data-lucide="gem"></i>Posicionamento</div><p>Aroma premium para momentos de fé, leitura, descanso e cuidado com a casa.</p></article>
-          <article class="module-card"><div class="module-title"><i data-lucide="messages-square"></i>Canais</div><p>Instagram, WhatsApp, marketplace, site próprio e revendedores cristãos.</p></article>
-          <article class="module-card"><div class="module-title"><i data-lucide="calendar-heart"></i>Campanhas</div><p>Dia das Mães, Natal, batismos, congressos, células, devocionais e kits de gratidão.</p></article>
-        </div>
-      </section>
-
-      <section class="section panel" id="operacoes">
-        <div class="panel-header">
-          <div>
-            <h2>Operações</h2>
-            <p>Base operacional para transformar o plano em rotina de gestão.</p>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Área</th><th>Controle necessário</th><th>Status atual</th><th>Próximo passo</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Produção</td><td>Lotes, fórmulas, testes e descanso.</td><td><span class="status warn">Manual</span></td><td>Criar tabela de lotes</td></tr>
-              <tr><td>Fornecedores</td><td>Insumos, frascos, válvulas, rótulos.</td><td><span class="status warn">Manual</span></td><td>Cadastro no Supabase</td></tr>
-              <tr><td>Estoque</td><td>Produto final e matéria-prima.</td><td><span class="status warn">Manual</span></td><td>Alertas de mínimo</td></tr>
-              <tr><td>Logística</td><td>Prazo, frete, envio e rastreio.</td><td><span class="status">Planejado</span></td><td>Integrar pedidos</td></tr>
-              <tr><td>Pedidos</td><td>Cliente, pagamento, entrega e histórico.</td><td><span class="status">Planejado</span></td><td>Criar CRM simples</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="section panel" id="roadmap">
-        <div class="panel-header">
-          <div>
-            <h2>Roadmap</h2>
-            <p>Próximos 30, 60 e 90 dias.</p>
-          </div>
-        </div>
-        <div class="roadmap">
-          <article class="roadmap-step">
-            <span class="step-badge">30 dias</span>
-            <h3>Lançamento mínimo viável</h3>
-            <ul class="list"><li>Fechar fórmula e embalagem</li><li>Produzir lote piloto</li><li>Fotografar produto</li><li>Vender primeiros kits</li></ul>
-          </article>
-          <article class="roadmap-step">
-            <span class="step-badge">60 dias</span>
-            <h3>Validação comercial</h3>
-            <ul class="list"><li>Medir recompra</li><li>Testar revendedores</li><li>Organizar pedidos</li><li>Revisar preço e margem</li></ul>
-          </article>
-          <article class="roadmap-step">
-            <span class="step-badge">90 dias</span>
-            <h3>Sistema interno</h3>
-            <ul class="list"><li>Conectar Supabase</li><li>Cadastrar produtos</li><li>Controlar estoque</li><li>Relatórios por mês</li></ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="section panel" id="sistema">
-        <div class="panel-header">
-          <div>
-            <h2>Fase 2: Sistema</h2>
-            <p>Os módulos abaixo já aparecem no dashboard e depois viram funções reais.</p>
-          </div>
-          <span class="chip">Supabase-ready</span>
-        </div>
-        <div class="system-strip">
-          <div class="system-item"><strong>Produtos</strong><span>Nome, referência bíblica, descrição, custo, preço, estoque e imagens.</span></div>
-          <div class="system-item"><strong>Financeiro</strong><span>Custos fixos, variáveis, vendas, lucro, margem e relatórios mensais.</span></div>
-          <div class="system-item"><strong>Pedidos</strong><span>Cliente, produto, status, pagamento, entrega e histórico.</span></div>
-          <div class="system-item"><strong>CRM</strong><span>Clientes, igrejas parceiras, revendedores, leads e follow-ups.</span></div>
-          <div class="system-item"><strong>Estoque</strong><span>Insumos, frascos, essências, embalagens e alertas de baixo estoque.</span></div>
-          <div class="system-item"><strong>Campanhas</strong><span>Calendário, conteúdos, datas cristãs, leads e conversão por canal.</span></div>
-          <div class="system-item"><strong>Indicadores</strong><span>Ticket médio, CAC, taxa de recompra, lucro líquido e produtos mais vendidos.</span></div>
-          <div class="system-item"><strong>Relatórios</strong><span>Visão executiva para decidir produção, compras e ações comerciais.</span></div>
-        </div>
-      </section>
-
-      <section class="section panel" id="gestao">
-        <div class="panel-header">
-          <div>
-            <h2>Gestão Operacional</h2>
-            <p>Primeira camada prática do sistema: cadastrar produto, ler módulos e preparar persistência no Supabase.</p>
-          </div>
-          <span class="chip" id="dataSourceChip">Carregando dados</span>
-        </div>
-
-        <div class="metrics" style="margin-top:0;">
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="box"></i></div>
-            <div><div class="metric-value" id="systemProducts">0</div><div class="metric-label">Produtos cadastrados</div></div>
-          </div>
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="receipt-text"></i></div>
-            <div><div class="metric-value" id="systemOrders">0</div><div class="metric-label">Pedidos em carteira</div></div>
-          </div>
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="users"></i></div>
-            <div><div class="metric-value" id="systemCustomers">0</div><div class="metric-label">Clientes e parceiros</div></div>
-          </div>
-          <div class="metric">
-            <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
-            <div><div class="metric-value" id="systemStockAlerts">0</div><div class="metric-label">Alertas de estoque</div></div>
-          </div>
-        </div>
-
-        <div class="ops-grid">
-          <div class="panel" style="margin-top:0;">
-            <div class="panel-header">
-              <div>
-                <h3>Novo produto</h3>
-                <p>Quando a tabela existir no Supabase, este cadastro passa a persistir no banco.</p>
-              </div>
-            </div>
-            <form class="form-grid" id="productForm">
-              <div class="field">
-                <label for="productName">Nome do aroma</label>
-                <input id="productName" name="nome" required placeholder="Ex.: Renovo">
-              </div>
-              <div class="field">
-                <label for="productReference">Referência bíblica</label>
-                <input id="productReference" name="referencia" placeholder="Ex.: Isaías 40:31">
-              </div>
-              <div class="field">
-                <label for="productDescription">Descrição</label>
-                <textarea id="productDescription" name="descricao" placeholder="Resumo do aroma, uso e intenção da fragrância."></textarea>
-              </div>
-              <div class="inline-fields">
-                <div class="field">
-                  <label for="productCost">Custo</label>
-                  <input id="productCost" name="custo" type="number" min="0" step="0.01" placeholder="26.50">
-                </div>
-                <div class="field">
-                  <label for="productPrice">Preço</label>
-                  <input id="productPrice" name="preco" type="number" min="0" step="0.01" placeholder="69.90">
-                </div>
-              </div>
-              <div class="inline-fields">
-                <div class="field">
-                  <label for="productStock">Estoque</label>
-                  <input id="productStock" name="estoque" type="number" min="0" step="1" placeholder="30">
-                </div>
-                <div class="field">
-                  <label for="productStatus">Status</label>
-                  <select id="productStatus" name="status">
-                    <option>Planejado</option>
-                    <option>Protótipo</option>
-                    <option>Ativo</option>
-                    <option>Pausado</option>
-                  </select>
-                </div>
-              </div>
-              <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar produto</button>
-              <div class="notice" id="formNotice">Pronto para receber dados.</div>
-            </form>
-          </div>
-
-          <div class="panel" style="margin-top:0;">
-            <div class="panel-header">
-              <div>
-                <h3>Dados do sistema</h3>
-                <p>Tabelas operacionais que serão conectadas ao Supabase.</p>
-              </div>
-              <button class="btn" type="button" id="refreshSystem"><i data-lucide="refresh-cw"></i>Atualizar</button>
-            </div>
-            <div class="mini-tabs">
-              <button class="tab-btn active" type="button" data-table-tab="produtos">Produtos</button>
-              <button class="tab-btn" type="button" data-table-tab="pedidos">Pedidos</button>
-              <button class="tab-btn" type="button" data-table-tab="clientes">Clientes</button>
-              <button class="tab-btn" type="button" data-table-tab="estoque">Estoque</button>
-              <button class="tab-btn" type="button" data-table-tab="campanhas">Campanhas</button>
-              <button class="tab-btn" type="button" data-table-tab="custos">Custos</button>
-            </div>
-            <div class="table-wrap data-table active" id="table-produtos"></div>
-            <div class="table-wrap data-table" id="table-pedidos"></div>
-            <div class="table-wrap data-table" id="table-clientes"></div>
-            <div class="table-wrap data-table" id="table-estoque"></div>
-            <div class="table-wrap data-table" id="table-campanhas"></div>
-            <div class="table-wrap data-table" id="table-custos"></div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <script>
-    const brandColors = {
-      navy: "#173b5f",
-      gold: "#b28a51",
-      sage: "#88907a",
-      clay: "#aa6742",
-      olive: "#666d4f",
-      paper: "#fffaf0"
-    };
-
-    lucide.createIcons();
-
-    const sidebar = document.getElementById("sidebar");
-    document.getElementById("menuButton").addEventListener("click", () => {
-      sidebar.classList.toggle("open");
-    });
-
-    const routes = {
-      "/": { title: "Dashboard Aromas da Bíblia", label: "Visão Geral", sections: ["visao", "indicadores"] },
-      "/visao": { title: "Visão Geral | Aromas da Bíblia", label: "Visão Geral", sections: ["visao", "indicadores"] },
-      "/produto": { title: "Produto | Aromas da Bíblia", label: "Produto", sections: ["produto"] },
-      "/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
-      "/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
-      "/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
-      "/custos": { title: "Custos | Aromas da Bíblia", label: "Custos", sections: ["custos"] },
-      "/marketing": { title: "Marketing | Aromas da Bíblia", label: "Marketing", sections: ["marketing"] },
-      "/operacoes": { title: "Operações | Aromas da Bíblia", label: "Operações", sections: ["operacoes"] },
-      "/roadmap": { title: "Roadmap | Aromas da Bíblia", label: "Roadmap", sections: ["roadmap"] },
-      "/sistema": { title: "Sistema Futuro | Aromas da Bíblia", label: "Sistema Futuro", sections: ["sistema"] },
-      "/indicadores": { title: "Indicadores | Aromas da Bíblia", label: "Indicadores", sections: ["indicadores"] },
-      "/gestao": { title: "Gestão Operacional | Aromas da Bíblia", label: "Gestão Operacional", sections: ["gestao"] }
-    };
-
-    const routeSectionIds = [...new Set(Object.values(routes).flatMap((route) => route.sections))];
-    routeSectionIds.forEach((id) => document.getElementById(id)?.classList.add("route-section"));
-
-    function normalizePath(pathname) {
-      const path = pathname.replace(/\/+$/, "") || "/";
-      return routes[path] ? path : "/";
-    }
-
-    function renderRoute(pathname, options = {}) {
-      const path = normalizePath(pathname);
-      const route = routes[path];
-
-      routeSectionIds.forEach((id) => document.getElementById(id)?.classList.remove("active-page"));
-      route.sections.forEach((id) => document.getElementById(id)?.classList.add("active-page"));
-
-      document.title = route.title;
-      document.querySelector("h1").textContent = route.label;
-      document.querySelectorAll(".nav-link").forEach((link) => {
-        link.classList.toggle("active", normalizePath(new URL(link.href).pathname) === path);
-      });
-
-      sidebar.classList.remove("open");
-      if (path === "/custos" && window.systemData?.custos) {
-        window.setTimeout(() => renderCostsPage(window.systemData.custos), 50);
-      }
-      if (!options.skipScroll) window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    document.querySelectorAll(".nav-link, [data-route-link]").forEach((link) => {
-      link.addEventListener("click", (event) => {
-        const url = new URL(link.href);
-        if (url.origin !== window.location.origin) return;
-
-        event.preventDefault();
-        history.pushState({}, "", url.pathname);
-        renderRoute(url.pathname);
-      });
-    });
-
-    window.addEventListener("popstate", () => renderRoute(window.location.pathname, { skipScroll: true }));
-    renderRoute(window.location.pathname, { skipScroll: true });
-
-    fetch("/api/health")
-      .then((response) => response.json())
-      .then((data) => {
-        document.getElementById("apiStatus").textContent = data.supabase
-          ? "Backend + Supabase"
-          : "Backend online";
-      })
-      .catch(() => {
-        document.getElementById("apiStatus").textContent = "Modo visual";
-      });
-
-    const tableDefinitions = {
-      produtos: {
-        columns: [
-          ["nome", "Produto"],
-          ["referencia", "Referência"],
-          ["preco", "Preço"],
-          ["estoque", "Estoque"],
-          ["status", "Status"]
-        ]
-      },
-      pedidos: {
-        columns: [
-          ["id", "Pedido"],
-          ["cliente", "Cliente"],
-          ["produto", "Produto"],
-          ["quantidade", "Qtd."],
-          ["total", "Total"],
-          ["status", "Status"]
-        ]
-      },
-      clientes: {
-        columns: [
-          ["nome", "Nome"],
-          ["tipo", "Tipo"],
-          ["contato", "Canal"],
-          ["telefone", "Telefone"],
-          ["status", "Status"]
-        ]
-      },
-      estoque: {
-        columns: [
-          ["item", "Item"],
-          ["categoria", "Categoria"],
-          ["quantidade", "Qtd."],
-          ["minimo", "Mínimo"],
-          ["unidade", "Unidade"]
-        ]
-      },
-      campanhas: {
-        columns: [
-          ["nome", "Campanha"],
-          ["canal", "Canal"],
-          ["periodo", "Período"],
-          ["leads", "Leads"],
-          ["conversao", "Conversão"]
-        ]
-      },
-      custos: {
-        columns: [
-          ["item", "Item"],
-          ["categoria", "Categoria"],
-          ["valor_unitario", "Valor unitário"],
-          ["tipo", "Tipo"]
-        ]
-      }
-    };
-
-    function formatValue(key, value) {
-      if (value === null || value === undefined || value === "") return "-";
-      if (["preco", "custo", "total", "receita", "custos", "lucro", "valor_unitario"].includes(key)) {
-        return Number(value).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-      }
-      if (key === "conversao") return `${value}%`;
-      if (Array.isArray(value)) return value.join(", ");
-      return String(value);
-    }
-
-    function statusClass(value) {
-      const text = String(value || "").toLowerCase();
-      if (text.includes("ativo") || text.includes("pago") || text.includes("protótipo") || text.includes("prototipo")) return "ok";
-      if (text.includes("manual") || text.includes("pendente") || text.includes("negociação") || text.includes("negociacao")) return "warn";
-      return "";
-    }
-
-    function renderTable(tableName, payload) {
-      const target = document.getElementById(`table-${tableName}`);
-      const rows = payload?.data || [];
-      const columns = tableDefinitions[tableName].columns;
-
-      if (!rows.length) {
-        target.innerHTML = `<div class="notice warn">Nenhum registro encontrado em ${tableName}.</div>`;
-        return;
-      }
-
-      const head = columns.map(([, label]) => `<th>${label}</th>`).join("");
-      const body = rows.map((row) => {
-        const cells = columns.map(([key]) => {
-          const value = formatValue(key, row[key]);
-          if (key === "status") return `<td><span class="status ${statusClass(value)}">${value}</span></td>`;
-          return `<td>${value}</td>`;
-        }).join("");
-        return `<tr>${cells}</tr>`;
-      }).join("");
-
-      target.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-    }
-
-    let costsPageChart;
-
-    function renderCostsPage(payload) {
-      const rows = payload?.data || [];
-      const price = 69.9;
-      const fixedCosts = 1500;
-      const totalCost = rows.reduce((sum, item) => sum + Number(item.valor_unitario || 0), 0);
-      const margin = price > 0 ? Math.round(((price - totalCost) / price) * 100) : 0;
-      const contribution = Math.max(price - totalCost, 1);
-      const breakEven = Math.ceil(fixedCosts / contribution);
-
-      document.getElementById("costUnitMetric").textContent = totalCost.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-      document.getElementById("priceMetric").textContent = price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-      document.getElementById("marginMetric").textContent = `${margin}%`;
-      document.getElementById("breakEvenMetric").textContent = `${breakEven} un`;
-
-      const target = document.getElementById("costsTable");
-      const body = rows.map((row) => `
-        <tr>
-          <td>${formatValue("item", row.item)}</td>
-          <td>${formatValue("categoria", row.categoria)}</td>
-          <td>${formatValue("valor_unitario", row.valor_unitario)}</td>
-          <td>${formatValue("tipo", row.tipo)}</td>
-        </tr>
-      `).join("");
-
-      target.innerHTML = `
-        <table>
-          <thead><tr><th>Item</th><th>Categoria</th><th>Valor unitário</th><th>Tipo</th></tr></thead>
-          <tbody>${body}</tbody>
-        </table>
-      `;
-
-      if (costsPageChart) costsPageChart.destroy();
-      costsPageChart = new Chart(document.getElementById("costsPageChart"), {
-        type: "bar",
-        data: {
-          labels: rows.map((item) => item.item),
-          datasets: [{
-            label: "Valor unitário",
-            data: rows.map((item) => Number(item.valor_unitario || 0)),
-            backgroundColor: [brandColors.navy, brandColors.gold, brandColors.sage, brandColors.clay, brandColors.olive, "#9f7d56"],
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { display: false } },
-            y: { grid: { color: "rgba(74,64,55,.10)" }, ticks: { callback: (value) => `R$ ${value}` } }
-          }
-        }
-      });
-    }
-
-    async function loadSystemData() {
-      const chip = document.getElementById("dataSourceChip");
-      chip.textContent = "Carregando dados";
-
-      try {
-        const response = await fetch("/api/system");
-        const system = await response.json();
-        window.systemData = system;
-        const source = system.produtos?.source === "supabase" ? "Supabase" : "Dados iniciais";
-
-        chip.textContent = source;
-        renderTable("produtos", system.produtos);
-        renderTable("pedidos", system.pedidos);
-        renderTable("clientes", system.clientes);
-        renderTable("estoque", system.estoque);
-        renderTable("campanhas", system.campanhas);
-        renderTable("custos", system.custos);
-        renderCostsPage(system.custos);
-
-        document.getElementById("systemProducts").textContent = system.produtos?.data?.length || 0;
-        document.getElementById("systemOrders").textContent = system.pedidos?.data?.length || 0;
-        document.getElementById("systemCustomers").textContent = system.clientes?.data?.length || 0;
-        document.getElementById("systemStockAlerts").textContent = (system.estoque?.data || [])
-          .filter((item) => Number(item.quantidade) <= Number(item.minimo)).length;
-      } catch (error) {
-        chip.textContent = "Erro ao carregar";
-        document.getElementById("formNotice").className = "notice warn";
-        document.getElementById("formNotice").textContent = "Não foi possível carregar os dados do sistema.";
-      }
-    }
-
-    document.querySelectorAll("[data-table-tab]").forEach((button) => {
-      button.addEventListener("click", () => {
-        document.querySelectorAll("[data-table-tab]").forEach((item) => item.classList.remove("active"));
-        document.querySelectorAll(".data-table").forEach((item) => item.classList.remove("active"));
-        button.classList.add("active");
-        document.getElementById(`table-${button.dataset.tableTab}`).classList.add("active");
-      });
-    });
-
-    document.getElementById("refreshSystem").addEventListener("click", loadSystemData);
-
-    document.getElementById("productForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const notice = document.getElementById("formNotice");
-      const formData = new FormData(event.currentTarget);
-      const payload = Object.fromEntries(formData.entries());
-
-      payload.custo = Number(payload.custo || 0);
-      payload.preco = Number(payload.preco || 0);
-      payload.estoque = Number(payload.estoque || 0);
-      payload.tipo = "Home Spray";
-      payload.volume = "200 ml";
-
-      notice.className = "notice";
-      notice.textContent = "Salvando produto...";
-
-      try {
-        const response = await fetch("/api/produtos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-
-        if (result.source === "supabase") {
-          notice.textContent = "Produto cadastrado no Supabase.";
-          event.currentTarget.reset();
-        } else {
-          notice.className = "notice warn";
-          notice.textContent = "Produto recebido. Crie a tabela no Supabase para persistir definitivamente.";
-        }
-
-        await loadSystemData();
-      } catch (error) {
-        notice.className = "notice warn";
-        notice.textContent = "Falha ao cadastrar produto.";
-      }
-    });
-
-    loadSystemData();
-
-    Chart.defaults.font.family = "Inter, Arial, sans-serif";
-    Chart.defaults.color = "#756b5d";
-
-    new Chart(document.getElementById("marketChart"), {
-      type: "bar",
-      data: {
-        labels: ["WhatsApp", "Instagram", "Igrejas", "Livrarias", "Eventos"],
-        datasets: [{
-          label: "Potencial",
-          data: [92, 86, 78, 64, 72],
-          backgroundColor: [brandColors.navy, brandColors.gold, brandColors.sage, brandColors.olive, brandColors.clay],
-          borderRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false } },
-          y: { beginAtZero: true, max: 100, grid: { color: "rgba(74,64,55,.10)" } }
-        }
-      }
-    });
-
-    new Chart(document.getElementById("financeChart"), {
-      type: "line",
-      data: {
-        labels: ["Mês 1", "Mês 2", "Mês 3", "Mês 4", "Mês 5", "Mês 6"],
-        datasets: [
-          { label: "Conservador", data: [4200, 5800, 7200, 8400, 9800, 11200], borderColor: brandColors.sage, backgroundColor: "rgba(136,144,122,.12)", tension: .35, fill: true },
-          { label: "Provável", data: [6800, 9200, 12400, 15000, 18500, 21800], borderColor: brandColors.navy, backgroundColor: "rgba(23,59,95,.10)", tension: .35, fill: true },
-          { label: "Otimista", data: [9000, 14000, 19800, 26000, 33500, 42000], borderColor: brandColors.gold, backgroundColor: "rgba(178,138,81,.14)", tension: .35, fill: true }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { boxWidth: 10, usePointStyle: true } },
-          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: R$ ${ctx.raw.toLocaleString("pt-BR")}` } }
-        },
-        scales: {
-          x: { grid: { display: false } },
-          y: { grid: { color: "rgba(74,64,55,.10)" }, ticks: { callback: (value) => `R$ ${value / 1000}k` } }
-        }
-      }
-    });
-
-    new Chart(document.getElementById("costChart"), {
-      type: "doughnut",
-      data: {
-        labels: ["Essência e base", "Frasco e válvula", "Rótulo", "Embalagem", "Reserva operacional"],
-        datasets: [{
-          data: [34, 28, 14, 12, 12],
-          backgroundColor: [brandColors.navy, brandColors.gold, brandColors.sage, brandColors.clay, brandColors.olive],
-          borderColor: "#fffaf0",
-          borderWidth: 3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: "bottom", labels: { boxWidth: 10, usePointStyle: true } } },
-        cutout: "62%"
-      }
-    });
-  </script>
+    </section>
+
+    <section class="section" id="produtos">
+      <div class="eyebrow">Catálogo inicial</div>
+      <h2>Paz, um aroma para desacelerar.</h2>
+      <p class="lead">O primeiro SKU da marca será usado para validar embalagem, preço, aceitação, revenda e operação de produção.</p>
+      <div class="cards">
+        <article class="card"><i data-lucide="book-open"></i><h3>Inspiração bíblica</h3><p>"Deixo-vos a paz, a minha paz vos dou." João 14:27.</p></article>
+        <article class="card"><i data-lucide="flower-2"></i><h3>Perfil olfativo</h3><p>Lavanda, camomila e musk em uma composição suave para ambientes.</p></article>
+        <article class="card"><i data-lucide="gift"></i><h3>Uso comercial</h3><p>Produto presenteável para venda direta, kits, igrejas, eventos e revendedores.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="orcamento">
+      <div class="eyebrow">Igrejas · Eventos · Revenda</div>
+      <h2>Orçamentos e parcerias</h2>
+      <p class="lead">A área pública ficará integrada futuramente ao painel administrativo para gerar leads, orçamentos e pedidos.</p>
+      <div class="cards" id="contato">
+        <article class="card"><i data-lucide="church"></i><h3>Igrejas e ministérios</h3><p>Kits para congressos, encontros, células e presentes de gratidão.</p></article>
+        <article class="card"><i data-lucide="store"></i><h3>Revendedores</h3><p>Cadastro futuro de representantes com tabela de preço e comissão.</p></article>
+        <article class="card"><i data-lucide="calendar-heart"></i><h3>Eventos</h3><p>Orçamentos personalizados para datas, retiros, casamentos e ações especiais.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Aromas da Bíblia · Site público separado do painel administrativo.
+  </footer>
+
+  <script>lucide.createIcons();</script>
 </body>
 </html>

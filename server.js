@@ -2,6 +2,8 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { randomUUID } = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
@@ -133,9 +135,38 @@ const fallbackData = {
   ]
 };
 
+app.set('trust proxy', 1);
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
+app.use('/api', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false
+}));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(__dirname));
+
+async function requireAdminAuth(req, res, next) {
+  if (!supabase) {
+    return res.status(503).json({ error: 'Supabase não configurado para autenticação.' });
+  }
+
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+
+  if (!token) {
+    return res.status(401).json({ error: 'Sessão administrativa ausente.' });
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user) {
+    return res.status(401).json({ error: 'Sessão inválida ou expirada.' });
+  }
+
+  req.user = data.user;
+  next();
+}
 
 function normalizeId(value) {
   return String(value || '')
@@ -171,7 +202,20 @@ async function listTable(table, order = 'created_at') {
   return { data, source: 'supabase' };
 }
 
-async function insertIntoTable(table, payload) {
+async function writeAuditLog({ user, action, table, recordId, before = null, after = null }) {
+  if (!supabase || table === 'audit_logs') return;
+
+  await supabase.from('audit_logs').insert({
+    user_id: user?.id || null,
+    action,
+    entity_table: table,
+    entity_id: recordId || null,
+    old_value: before,
+    new_value: after
+  });
+}
+
+async function insertIntoTable(table, payload, user = null) {
   const record = {
     id: payload.id || normalizeId(payload.nome || payload.item || payload.cliente || randomUUID()),
     ...payload
@@ -185,6 +229,14 @@ async function insertIntoTable(table, payload) {
   if (error) {
     return { data: record, source: 'fallback', supabaseError: publicError(error) };
   }
+
+  await writeAuditLog({
+    user,
+    action: 'create',
+    table,
+    recordId: data.id,
+    after: data
+  });
 
   return { data, source: 'supabase' };
 }
@@ -206,7 +258,7 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
-app.get('/api/dashboard', async (_req, res) => {
+app.get('/api/dashboard', requireAdminAuth, async (_req, res) => {
   const [produtos, pedidos, estoque, financeiro, custos, campanhas] = await Promise.all([
     listTable('produtos', 'nome'),
     listTable('pedidos', 'created_at'),
@@ -240,7 +292,53 @@ app.get('/api/dashboard', async (_req, res) => {
   });
 });
 
-app.get('/api/system', async (_req, res) => {
+app.get('/api/admin/health', requireAdminAuth, (req, res) => {
+  res.json({
+    ok: true,
+    app: 'Aromas da Biblia',
+    service: 'admin',
+    supabase: Boolean(supabase),
+    user: {
+      id: req.user.id,
+      email: req.user.email
+    }
+  });
+});
+
+app.get('/api/admin/dashboard', requireAdminAuth, async (_req, res) => {
+  const [produtos, pedidos, estoque, financeiro, custos, campanhas] = await Promise.all([
+    listTable('produtos', 'nome'),
+    listTable('pedidos', 'created_at'),
+    listTable('estoque', 'item'),
+    listTable('financeiro', 'created_at'),
+    listTable('custos', 'created_at'),
+    listTable('campanhas', 'created_at')
+  ]);
+
+  const receitaProjetada = financeiro.data.reduce((sum, item) => sum + Number(item.receita || 0), 0);
+  const custosProjetados = financeiro.data.reduce((sum, item) => sum + Number(item.custos || 0), 0);
+  const custoUnitario = custos.data.reduce((sum, item) => sum + Number(item.valor_unitario || 0), 0);
+  const pedidosMes = pedidos.data.reduce((sum, item) => sum + Number(item.quantidade || 1), 0);
+  const estoqueCritico = estoque.data.filter((item) => Number(item.quantidade) <= Number(item.minimo)).length;
+  const margemBruta = receitaProjetada > 0 ? Math.round(((receitaProjetada - custosProjetados) / receitaProjetada) * 100) : 0;
+
+  res.json({
+    negocio: 'Aromas da Biblia',
+    fase: 'Fundação administrativa',
+    source: produtos.source,
+    indicadores: {
+      receitaProjetada,
+      margemBruta,
+      produtosAtivos: produtos.data.length,
+      pedidosMes,
+      campanhasAtivas: campanhas.data.length,
+      estoqueCritico,
+      custoUnitario
+    }
+  });
+});
+
+app.get('/api/admin/system', requireAdminAuth, async (_req, res) => {
   const entries = await Promise.all(
     Object.keys(fallbackData).map(async (table) => [table, await listTable(table)])
   );
@@ -248,14 +346,18 @@ app.get('/api/system', async (_req, res) => {
   res.json(Object.fromEntries(entries));
 });
 
-app.get('/api/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', async (req, res) => {
+app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
   const result = await listTable(req.params.table);
   res.json(result);
 });
 
-app.post('/api/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', async (req, res) => {
-  const result = await insertIntoTable(req.params.table, req.body || {});
+app.post('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.get(['/admin', '/admin/*'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'admin', 'index.html'));
 });
 
 app.get('*', (_req, res) => {
