@@ -147,6 +147,23 @@ const fallbackData = {
   sales_orders: [
     { id: 'order-001', order_number: 'PED-0001', quote_id: 'quote-001', customer_id: 'customer-igreja', channel: 'WhatsApp', subtotal_cents: 139800, total_cents: 139800, payment_status: 'pending', status: 'awaiting_payment' }
   ],
+  marketing_campaigns: [
+    { id: 'mkt-paz-001', code: 'MKT-PAZ-001', name: 'Kit Devocional Paz', objective: 'Validar kit presenteavel para igrejas e encontros.', channel: 'Instagram + WhatsApp', audience: 'Igrejas, mulheres, grupos de devocional e presentes cristaos.', start_date: '2026-07-18', end_date: '2026-08-17', budget_cents: 45000, target_leads: 40, target_revenue_cents: 600000, owner: 'Marketing', status: 'active' }
+  ],
+  marketing_content_items: [
+    { id: 'mkt-content-001', campaign_id: 'mkt-paz-001', title: 'Post de lancamento Home Spray Paz', content_type: 'post', channel: 'Instagram', publish_at: '2026-07-19T12:00:00Z', status: 'scheduled' },
+    { id: 'mkt-content-002', campaign_id: 'mkt-paz-001', title: 'Sequencia WhatsApp para igrejas parceiras', content_type: 'whatsapp', channel: 'WhatsApp', publish_at: '2026-07-20T12:00:00Z', status: 'draft' }
+  ],
+  marketing_calendar_events: [
+    { id: 'mkt-cal-001', campaign_id: 'mkt-paz-001', event_date: '2026-07-19', title: 'Publicar lancamento Paz', event_type: 'content', channel: 'Instagram', status: 'planned' },
+    { id: 'mkt-cal-002', campaign_id: 'mkt-paz-001', event_date: '2026-07-25', title: 'Follow-up igrejas', event_type: 'campaign', channel: 'WhatsApp', status: 'planned' }
+  ],
+  marketing_leads: [
+    { id: 'mkt-lead-001', campaign_id: 'mkt-paz-001', customer_id: 'customer-igreja', name: 'Igreja Vida Plena', contact: '(00) 90000-0000', source_channel: 'WhatsApp', interest: 'Kit devocional para evento', stage: 'qualified', estimated_value_cents: 139800 }
+  ],
+  marketing_results: [
+    { id: 'mkt-result-001', campaign_id: 'mkt-paz-001', result_date: '2026-07-18', impressions: 1200, clicks: 86, leads: 8, conversions: 1, revenue_cents: 139800, spend_cents: 12000 }
+  ],
   sales_order_items: [
     { id: 'order-item-001', order_id: 'order-001', product_id: 'product-paz', description: 'Home Spray Paz 200 ml', quantity: 20, unit_price_cents: 6990, total_cents: 139800, unit_cost_cents: 3050, margin_cents: 78800 }
   ],
@@ -449,6 +466,26 @@ const tableValidation = {
   sales_orders: {
     required: ['order_number'],
     numeric: ['subtotal_cents', 'discount_cents', 'freight_cents', 'total_cents']
+  },
+  marketing_campaigns: {
+    required: ['code', 'name'],
+    numeric: ['budget_cents', 'target_leads', 'target_revenue_cents']
+  },
+  marketing_content_items: {
+    required: ['title'],
+    numeric: []
+  },
+  marketing_calendar_events: {
+    required: ['event_date', 'title'],
+    numeric: []
+  },
+  marketing_leads: {
+    required: ['name'],
+    numeric: ['estimated_value_cents']
+  },
+  marketing_results: {
+    required: ['campaign_id'],
+    numeric: ['impressions', 'clicks', 'leads', 'conversions', 'revenue_cents', 'spend_cents']
   },
   sales_order_items: {
     required: ['order_id', 'description', 'quantity'],
@@ -1117,6 +1154,49 @@ async function buildPurchasingData() {
     rawMaterials,
     packagingItems,
     lowStock: { data: lowStock, source: rawMaterials.source === 'supabase' || packagingItems.source === 'supabase' ? 'supabase' : 'fallback' }
+  };
+}
+
+async function buildMarketingData() {
+  const [campaigns, contentItems, calendarEvents, leads, results, customers, opportunities] = await Promise.all([
+    listTable('marketing_campaigns', 'created_at'),
+    listTable('marketing_content_items', 'publish_at'),
+    listTable('marketing_calendar_events', 'event_date'),
+    listTable('marketing_leads', 'created_at'),
+    listTable('marketing_results', 'result_date'),
+    listTable('customers', 'created_at'),
+    listTable('sales_opportunities', 'created_at')
+  ]);
+
+  const resultRows = results.data || [];
+  const totalSpend = resultRows.reduce((sum, item) => sum + Number(item.spend_cents || 0), 0);
+  const totalRevenue = resultRows.reduce((sum, item) => sum + Number(item.revenue_cents || 0), 0);
+  const totalLeads = resultRows.reduce((sum, item) => sum + Number(item.leads || 0), 0) || leads.data.length;
+  const conversions = resultRows.reduce((sum, item) => sum + Number(item.conversions || 0), 0);
+  const roiPercent = totalSpend > 0 ? Math.round(((totalRevenue - totalSpend) / totalSpend) * 100) : 0;
+
+  return {
+    source: campaigns.source,
+    metrics: {
+      campaigns: campaigns.data.length,
+      activeCampaigns: campaigns.data.filter((item) => item.status === 'active').length,
+      scheduledContent: contentItems.data.filter((item) => item.status === 'scheduled').length,
+      calendarEvents: calendarEvents.data.length,
+      leads: totalLeads,
+      conversions,
+      totalSpend,
+      totalRevenue,
+      roiPercent,
+      consentCustomers: customers.data.filter((item) => item.marketing_consent).length,
+      marketingOpportunities: opportunities.data.filter((item) => ['Instagram', 'WhatsApp', 'Site', 'Evento'].includes(item.source)).length
+    },
+    campaigns,
+    contentItems,
+    calendarEvents,
+    leads,
+    results,
+    customers,
+    opportunities
   };
 }
 
@@ -2008,6 +2088,18 @@ app.post('/api/admin/purchase-orders/:id/receive', requireAdminAuth, async (req,
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.get('/api/admin/marketing', requireAdminAuth, async (_req, res) => {
+  res.json(await buildMarketingData());
+});
+
+app.post('/api/admin/:table(marketing_campaigns|marketing_content_items|marketing_calendar_events|marketing_leads|marketing_results)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {

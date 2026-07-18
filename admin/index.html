@@ -850,6 +850,10 @@
         <a class="nav-link" href="/admin/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
         <a class="nav-link" href="/admin/custos"><i data-lucide="calculator"></i>Custos</a>
         <a class="nav-link" href="/admin/marketing"><i data-lucide="megaphone"></i>Marketing</a>
+        <a class="nav-link" href="/admin/campanhas"><i data-lucide="radar"></i>Campanhas</a>
+        <a class="nav-link" href="/admin/conteudo"><i data-lucide="panels-top-left"></i>Conteúdo</a>
+        <a class="nav-link" href="/admin/calendario"><i data-lucide="calendar-days"></i>Calendário</a>
+        <a class="nav-link" href="/admin/leads-marketing"><i data-lucide="user-round-plus"></i>Leads MKT</a>
         <a class="nav-link" href="/admin/operacoes"><i data-lucide="factory"></i>Operações</a>
         <a class="nav-link" href="/admin/roadmap"><i data-lucide="map"></i>Roadmap</a>
       </nav>
@@ -1779,6 +1783,114 @@
         </div>
       </section>
 
+      <section class="section panel" id="campanhas-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Campanhas</h2>
+            <p>Planejamento, orçamento, público, metas e resultado das campanhas comerciais.</p>
+          </div>
+          <span class="chip" id="marketingSource">Aguardando dados</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric"><div class="metric-icon"><i data-lucide="radar"></i></div><div><div class="metric-value" id="marketingCampaignsMetric">0</div><div class="metric-label">Campanhas ativas</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="user-round-plus"></i></div><div><div class="metric-value" id="marketingLeadsMetric">0</div><div class="metric-label">Leads</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="shopping-cart"></i></div><div><div class="metric-value" id="marketingConversionsMetric">0</div><div class="metric-label">Conversoes</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="percent"></i></div><div><div class="metric-value" id="marketingRoiMetric">0%</div><div class="metric-label">ROI</div></div></div>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="marketingCampaignForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="campaignCode">Codigo</label><input id="campaignCode" name="code" required placeholder="MKT-PAZ-002"></div>
+              <div class="field"><label for="campaignName">Campanha</label><input id="campaignName" name="name" required placeholder="Natal da Paz"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="campaignChannel">Canal</label><input id="campaignChannel" name="channel" placeholder="Instagram + WhatsApp"></div>
+              <div class="field"><label for="campaignOwner">Responsavel</label><input id="campaignOwner" name="owner" placeholder="Marketing"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="campaignStart">Inicio</label><input id="campaignStart" name="start_date" type="date"></div>
+              <div class="field"><label for="campaignEnd">Fim</label><input id="campaignEnd" name="end_date" type="date"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="campaignBudget">Orcamento</label><input id="campaignBudget" name="budget" type="number" min="0" step="0.01"></div>
+              <div class="field"><label for="campaignTargetRevenue">Meta receita</label><input id="campaignTargetRevenue" name="target_revenue" type="number" min="0" step="0.01"></div>
+            </div>
+            <div class="field"><label for="campaignAudience">Publico</label><textarea id="campaignAudience" name="audience"></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar campanha</button>
+            <div class="notice" id="marketingCampaignNotice">Pronto para criar campanha.</div>
+          </form>
+          <div class="table-wrap" id="marketingCampaignsTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="conteudo-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Conteudo</h2>
+            <p>Posts, stories, reels, WhatsApp, e-mails e anúncios vinculados a campanhas.</p>
+          </div>
+          <span class="chip" id="marketingContentChip">0 agendados</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="marketingContentForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="contentCampaignId">Campanha</label><select id="contentCampaignId" name="campaign_id"></select></div>
+              <div class="field"><label for="contentType">Tipo</label><select id="contentType" name="content_type"><option value="post">Post</option><option value="story">Story</option><option value="reel">Reel</option><option value="whatsapp">WhatsApp</option><option value="email">E-mail</option><option value="ad">Anuncio</option></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="contentTitle">Titulo</label><input id="contentTitle" name="title" required></div>
+              <div class="field"><label for="contentChannel">Canal</label><input id="contentChannel" name="channel" placeholder="Instagram"></div>
+            </div>
+            <div class="field"><label for="contentPublishAt">Publicar em</label><input id="contentPublishAt" name="publish_at" type="datetime-local"></div>
+            <div class="field"><label for="contentCopy">Texto</label><textarea id="contentCopy" name="copy_text"></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Agendar conteudo</button>
+            <div class="notice" id="marketingContentNotice">Pronto para agendar conteudo.</div>
+          </form>
+          <div class="table-wrap" id="marketingContentTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="calendario-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Calendario Comercial</h2>
+            <p>Datas, conteúdos, campanhas, eventos cristãos e ações de venda.</p>
+          </div>
+          <span class="chip" id="marketingCalendarChip">0 eventos</span>
+        </div>
+        <div class="table-wrap" id="marketingCalendarTable"></div>
+      </section>
+
+      <section class="section panel" id="leads-marketing-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Leads de Marketing</h2>
+            <p>Interessados captados por campanha antes de virarem cliente ou oportunidade.</p>
+          </div>
+          <span class="chip" id="marketingLeadChip">0 leads</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="marketingLeadForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="leadCampaignId">Campanha</label><select id="leadCampaignId" name="campaign_id"></select></div>
+              <div class="field"><label for="leadName">Nome</label><input id="leadName" name="name" required></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="leadContact">Contato</label><input id="leadContact" name="contact"></div>
+              <div class="field"><label for="leadSource">Canal</label><input id="leadSource" name="source_channel" placeholder="WhatsApp"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="leadStage">Etapa</label><select id="leadStage" name="stage"><option value="new">Novo</option><option value="contacted">Contactado</option><option value="qualified">Qualificado</option><option value="converted">Convertido</option><option value="lost">Perdido</option></select></div>
+              <div class="field"><label for="leadEstimatedValue">Valor potencial</label><input id="leadEstimatedValue" name="estimated_value" type="number" min="0" step="0.01"></div>
+            </div>
+            <div class="field"><label for="leadInterest">Interesse</label><textarea id="leadInterest" name="interest"></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar lead</button>
+            <div class="notice" id="marketingLeadNotice">Pronto para cadastrar lead.</div>
+          </form>
+          <div class="table-wrap" id="marketingLeadsTable"></div>
+        </div>
+      </section>
+
       <section class="section panel" id="operacoes">
         <div class="panel-header">
           <div>
@@ -2085,6 +2197,7 @@
       await loadProductionData();
       await loadQualityData();
       await loadCommercialData();
+      await loadMarketingData();
       await loadFinanceData();
       await loadDreData();
       await simulatePricingFromForm();
@@ -2181,6 +2294,10 @@
       "/admin/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
       "/admin/custos": { title: "Custos | Aromas da Bíblia", label: "Custos", sections: ["custos"] },
       "/admin/marketing": { title: "Marketing | Aromas da Bíblia", label: "Marketing", sections: ["marketing"] },
+      "/admin/campanhas": { title: "Campanhas | Aromas da Biblia", label: "Campanhas", sections: ["campanhas-admin"] },
+      "/admin/conteudo": { title: "Conteudo | Aromas da Biblia", label: "Conteudo", sections: ["conteudo-admin"] },
+      "/admin/calendario": { title: "Calendario | Aromas da Biblia", label: "Calendario Comercial", sections: ["calendario-admin"] },
+      "/admin/leads-marketing": { title: "Leads Marketing | Aromas da Biblia", label: "Leads de Marketing", sections: ["leads-marketing-admin"] },
       "/admin/operacoes": { title: "Operações | Aromas da Bíblia", label: "Operações", sections: ["operacoes"] },
       "/admin/roadmap": { title: "Roadmap | Aromas da Bíblia", label: "Roadmap", sections: ["roadmap"] },
       "/admin/sistema": { title: "Sistema Futuro | Aromas da Bíblia", label: "Sistema Futuro", sections: ["sistema"] },
@@ -2610,6 +2727,68 @@
       } catch (error) {
         ["purchaseRequestsTable", "purchaseLowStockTable", "purchaseQuotesTable", "purchaseOrdersTable"].forEach((id) => {
           document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar compras.</div>`;
+        });
+      }
+    }
+
+    function updateMarketingOptions() {
+      const marketing = window.marketingData || {};
+      const campaigns = marketing.campaigns?.data || [];
+      const options = campaigns.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("") || `<option value="">Nenhuma campanha</option>`;
+      document.getElementById("contentCampaignId").innerHTML = options;
+      document.getElementById("leadCampaignId").innerHTML = options;
+    }
+
+    async function loadMarketingData() {
+      try {
+        const response = await apiFetch("/api/admin/marketing");
+        const data = await response.json();
+        window.marketingData = data;
+
+        document.getElementById("marketingSource").textContent = data.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("marketingCampaignsMetric").textContent = data.metrics?.activeCampaigns || 0;
+        document.getElementById("marketingLeadsMetric").textContent = data.metrics?.leads || 0;
+        document.getElementById("marketingConversionsMetric").textContent = data.metrics?.conversions || 0;
+        document.getElementById("marketingRoiMetric").textContent = `${data.metrics?.roiPercent || 0}%`;
+        document.getElementById("marketingContentChip").textContent = `${data.metrics?.scheduledContent || 0} agendados`;
+        document.getElementById("marketingCalendarChip").textContent = `${data.metrics?.calendarEvents || 0} eventos`;
+        document.getElementById("marketingLeadChip").textContent = `${data.leads?.data?.length || 0} leads`;
+
+        renderSimpleTable("marketingCampaignsTable", data.campaigns?.data || [], [
+          ["code", "Codigo"],
+          ["name", "Campanha"],
+          ["channel", "Canal"],
+          ["budget_cents", "Orcamento"],
+          ["target_revenue_cents", "Meta"],
+          ["status", "Status"]
+        ], "Nenhuma campanha cadastrada.");
+        renderSimpleTable("marketingContentTable", data.contentItems?.data || [], [
+          ["title", "Conteudo"],
+          ["content_type", "Tipo"],
+          ["channel", "Canal"],
+          ["publish_at", "Publicacao"],
+          ["status", "Status"]
+        ], "Nenhum conteudo cadastrado.");
+        renderSimpleTable("marketingCalendarTable", data.calendarEvents?.data || [], [
+          ["event_date", "Data"],
+          ["title", "Evento"],
+          ["event_type", "Tipo"],
+          ["channel", "Canal"],
+          ["status", "Status"]
+        ], "Nenhum evento no calendario.");
+        renderSimpleTable("marketingLeadsTable", data.leads?.data || [], [
+          ["name", "Lead"],
+          ["contact", "Contato"],
+          ["source_channel", "Canal"],
+          ["interest", "Interesse"],
+          ["estimated_value_cents", "Potencial"],
+          ["stage", "Etapa"]
+        ], "Nenhum lead de marketing cadastrado.");
+
+        updateMarketingOptions();
+      } catch (error) {
+        ["marketingCampaignsTable", "marketingContentTable", "marketingCalendarTable", "marketingLeadsTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar marketing.</div>`;
         });
       }
     }
@@ -3213,6 +3392,36 @@
       });
     }
 
+    async function submitMarketingForm({ formId, noticeId, endpoint, transform }) {
+      const form = document.getElementById(formId);
+      const notice = document.getElementById(noticeId);
+      if (!form || !notice) return;
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        notice.className = "notice";
+        notice.textContent = "Salvando...";
+
+        try {
+          const payload = transform(formPayload(form));
+          const response = await apiFetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Falha ao salvar.");
+
+          notice.textContent = result.source === "supabase" ? "Registro salvo no Supabase." : "Registro validado em modo demonstrativo.";
+          if (result.source === "supabase") form.reset();
+          await loadMarketingData();
+        } catch (error) {
+          notice.className = "notice warn";
+          notice.textContent = error.message || "Nao foi possivel salvar.";
+        }
+      });
+    }
+
     async function receivePurchaseOrder(orderId) {
       const dueDate = window.prompt("Vencimento da conta a pagar (AAAA-MM-DD):", new Date().toISOString().slice(0, 10));
       if (!dueDate) return;
@@ -3610,6 +3819,39 @@
         total_cents: toCents(payload.total),
         subtotal_cents: toCents(payload.total),
         status: "sent"
+      })
+    });
+
+    submitMarketingForm({
+      formId: "marketingCampaignForm",
+      noticeId: "marketingCampaignNotice",
+      endpoint: "/api/admin/marketing_campaigns",
+      transform: (payload) => ({
+        ...payload,
+        budget_cents: toCents(payload.budget),
+        target_revenue_cents: toCents(payload.target_revenue),
+        target_leads: Number(payload.target_leads || 0),
+        status: "planned"
+      })
+    });
+
+    submitMarketingForm({
+      formId: "marketingContentForm",
+      noticeId: "marketingContentNotice",
+      endpoint: "/api/admin/marketing_content_items",
+      transform: (payload) => ({
+        ...payload,
+        status: payload.publish_at ? "scheduled" : "draft"
+      })
+    });
+
+    submitMarketingForm({
+      formId: "marketingLeadForm",
+      noticeId: "marketingLeadNotice",
+      endpoint: "/api/admin/marketing_leads",
+      transform: (payload) => ({
+        ...payload,
+        estimated_value_cents: toCents(payload.estimated_value)
       })
     });
 

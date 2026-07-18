@@ -445,3 +445,39 @@ Telas:
 - `/admin/compras`
 
 O recebimento de compra gera entrada de estoque, conta a pagar e lançamento previsto no fluxo de caixa.
+
+### Fase 5.7 - Marketing, Campanhas e Calendário Comercial
+
+Migration:
+
+```text
+supabase/migrations/202607180009_marketing.sql
+```
+
+Ela cria:
+
+- `marketing_campaigns`
+- `marketing_content_items`
+- `marketing_calendar_events`
+- `marketing_leads`
+- `marketing_results`
+
+APIs administrativas:
+
+```text
+GET /api/admin/marketing
+POST /api/admin/marketing_campaigns
+POST /api/admin/marketing_content_items
+POST /api/admin/marketing_calendar_events
+POST /api/admin/marketing_leads
+POST /api/admin/marketing_results
+```
+
+Telas:
+
+- `/admin/campanhas`
+- `/admin/conteudo`
+- `/admin/calendario`
+- `/admin/leads-marketing`
+
+Essa fase operacionaliza campanhas, conteúdos, calendário comercial, leads captados e resultados de marketing com orçamento, receita e ROI.
