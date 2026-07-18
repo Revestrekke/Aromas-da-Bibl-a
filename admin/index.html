@@ -3090,13 +3090,7 @@
           ["average_delivery_days", "Prazo"],
           ["active", "Ativa"]
         ], "Nenhuma transportadora cadastrada.");
-        renderSimpleTable("afterSalesTable", data.followups?.data || [], [
-          ["followup_date", "Data"],
-          ["channel", "Canal"],
-          ["objective", "Objetivo"],
-          ["next_action", "Proxima acao"],
-          ["status", "Status"]
-        ], "Nenhum pos-venda agendado.");
+        renderAfterSalesTable(data.followups?.data || []);
         renderSimpleTable("feedbackTable", data.feedback?.data || [], [
           ["feedback_date", "Data"],
           ["rating", "Nota"],
@@ -3111,6 +3105,44 @@
           document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar logistica.</div>`;
         });
       }
+    }
+
+    function renderAfterSalesTable(rows) {
+      const target = document.getElementById("afterSalesTable");
+      if (!target) return;
+
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhum pos-venda agendado.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => {
+        const canComplete = item.status === "planned" || item.status === "rescheduled";
+        const action = canComplete
+          ? `<button class="btn" type="button" data-complete-followup="${escapeHtml(item.id)}"><i data-lucide="message-circle-check"></i>Concluir + feedback</button>`
+          : `<span class="chip">${escapeHtml(item.status || "Concluido")}</span>`;
+
+        return `
+          <tr>
+            <td>${escapeHtml(item.followup_date || "-")}</td>
+            <td>${escapeHtml(item.channel || "-")}</td>
+            <td>${escapeHtml(item.objective || "-")}</td>
+            <td>${escapeHtml(item.next_action || "-")}</td>
+            <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status || "-")}</span></td>
+            <td>${action}</td>
+          </tr>`;
+      }).join("");
+
+      target.innerHTML = `
+        <table>
+          <thead><tr><th>Data</th><th>Canal</th><th>Objetivo</th><th>Proxima acao</th><th>Status</th><th>Acao</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+
+      target.querySelectorAll("[data-complete-followup]").forEach((button) => {
+        button.addEventListener("click", () => completeAfterSalesFollowup(button.dataset.completeFollowup));
+      });
+      lucide.createIcons();
     }
 
     function updateProductionOptions() {
@@ -4143,6 +4175,29 @@
         await loadNotificationsData();
       } catch (error) {
         window.alert(error.message || "Nao foi possivel atualizar entrega.");
+      }
+    }
+
+    async function completeAfterSalesFollowup(id) {
+      try {
+        const response = await apiFetch(`/api/admin/after-sales-followups/${id}/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rating: 5,
+            nps: 9,
+            comment: "Feedback registrado a partir do acompanhamento de pos-venda.",
+            result: "Cliente acompanhado e feedback registrado.",
+            next_action: "Manter relacionamento e avaliar recompra."
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao concluir pos-venda.");
+        await loadLogisticsData();
+        await loadReportsData();
+        await loadNotificationsData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel concluir o pos-venda.");
       }
     }
 

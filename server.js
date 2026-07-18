@@ -2056,6 +2056,97 @@ async function createShipmentFromOrder(orderId, payload = {}, user = null) {
   };
 }
 
+async function completeAfterSalesFollowup(followupId, payload = {}, user = null) {
+  const feedbackDate = payload.feedback_date || new Date().toISOString().slice(0, 10);
+  const rating = Number(payload.rating || 5);
+  const nps = Number(payload.nps || 9);
+
+  if (!supabase) {
+    const followup = fallbackData.after_sales_followups.find((item) => String(item.id) === String(followupId));
+    if (!followup) return { validationError: { status: 404, error: 'Acompanhamento nao encontrado.' } };
+    return {
+      source: 'fallback',
+      data: {
+        followup: {
+          ...followup,
+          status: 'done',
+          result: payload.result || 'Cliente acompanhado e feedback registrado.',
+          next_action: payload.next_action || 'Manter relacionamento e avaliar recompra.'
+        },
+        feedback: {
+          id: normalizeId(`feedback-${followup.id}`),
+          sales_order_id: followup.sales_order_id || null,
+          customer_id: followup.customer_id || null,
+          rating,
+          nps,
+          comment: payload.comment || 'Feedback registrado a partir do pos-venda.',
+          source_channel: followup.channel || 'WhatsApp',
+          feedback_date: feedbackDate
+        }
+      }
+    };
+  }
+
+  const { data: before, error: beforeError } = await supabase
+    .from('after_sales_followups')
+    .select('*')
+    .eq('id', followupId)
+    .maybeSingle();
+
+  if (beforeError) return { validationError: { status: 400, error: publicError(beforeError) } };
+  if (!before) return { validationError: { status: 404, error: 'Acompanhamento nao encontrado.' } };
+  if (before.status === 'done') {
+    return { validationError: { status: 409, error: 'Este acompanhamento ja foi concluido.' } };
+  }
+
+  const { data: followup, error: followupError } = await supabase
+    .from('after_sales_followups')
+    .update({
+      result: payload.result || 'Cliente acompanhado e feedback registrado.',
+      next_action: payload.next_action || 'Manter relacionamento e avaliar recompra.',
+      status: 'done',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', followupId)
+    .select('*')
+    .single();
+
+  if (followupError) return { validationError: { status: 400, error: publicError(followupError) } };
+
+  const { data: feedback, error: feedbackError } = await supabase
+    .from('customer_feedback')
+    .insert({
+      sales_order_id: followup.sales_order_id || null,
+      customer_id: followup.customer_id || null,
+      rating,
+      nps,
+      comment: payload.comment || 'Feedback registrado a partir do pos-venda.',
+      source_channel: followup.channel || 'WhatsApp',
+      feedback_date: feedbackDate
+    })
+    .select('*')
+    .single();
+
+  if (feedbackError) return { validationError: { status: 400, error: publicError(feedbackError) } };
+
+  await writeAuditLog({
+    user,
+    action: 'complete_after_sales_followup',
+    table: 'after_sales_followups',
+    recordId: followup.id,
+    before,
+    after: followup
+  });
+
+  return {
+    source: 'supabase',
+    data: {
+      followup,
+      feedback
+    }
+  };
+}
+
 async function receivePurchaseOrder(orderId, payload, user = null) {
   const dueDate = payload.due_date || new Date().toISOString().slice(0, 10);
 
@@ -2992,6 +3083,14 @@ app.post('/api/admin/:table(carriers|shipments|shipment_events|after_sales_follo
 
 app.post('/api/admin/shipments/:id/status', requireAdminAuth, async (req, res) => {
   const result = await updateShipmentStatus(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.post('/api/admin/after-sales-followups/:id/complete', requireAdminAuth, async (req, res) => {
+  const result = await completeAfterSalesFollowup(req.params.id, req.body || {}, req.user);
   if (result.validationError) {
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
