@@ -838,6 +838,9 @@
         <a class="nav-link" href="/admin/crm"><i data-lucide="columns-3"></i>CRM</a>
         <a class="nav-link" href="/admin/orcamentos"><i data-lucide="file-text"></i>Orçamentos</a>
         <a class="nav-link" href="/admin/pedidos"><i data-lucide="shopping-cart"></i>Pedidos</a>
+        <a class="nav-link" href="/admin/kits"><i data-lucide="gift"></i>Kits</a>
+        <a class="nav-link" href="/admin/assinaturas"><i data-lucide="repeat"></i>Assinaturas</a>
+        <a class="nav-link" href="/admin/ciclos"><i data-lucide="calendar-sync"></i>Ciclos</a>
         <a class="nav-link" href="/admin/entregas"><i data-lucide="package-check"></i>Entregas</a>
         <a class="nav-link" href="/admin/transportadoras"><i data-lucide="truck"></i>Transportadoras</a>
         <a class="nav-link" href="/admin/pos-venda"><i data-lucide="heart-handshake"></i>Pós-venda</a>
@@ -1454,6 +1457,107 @@
           <span class="chip" id="orderCount">0 pedidos</span>
         </div>
         <div class="table-wrap" id="ordersTable"></div>
+      </section>
+
+      <section class="section panel" id="kits-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Kits e combos</h2>
+            <p>Ofertas prontas para presentes, igrejas, eventos e campanhas sazonais.</p>
+          </div>
+          <span class="chip" id="kitsSource">Aguardando dados</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric"><div class="metric-icon"><i data-lucide="gift"></i></div><div><div class="metric-value" id="kitsActiveMetric">0</div><div class="metric-label">Kits ativos</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="package-plus"></i></div><div><div class="metric-value" id="kitItemsMetric">0</div><div class="metric-label">Itens em kits</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="wallet-cards"></i></div><div><div class="metric-value" id="kitAverageMetric">R$ 0,00</div><div class="metric-label">Ticket medio</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="percent"></i></div><div><div class="metric-value" id="kitMarginMetric">0%</div><div class="metric-label">Margem media</div></div></div>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="kitForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="kitCode">Codigo</label><input id="kitCode" name="code" required placeholder="KIT-PAZ-DEV-02"></div>
+              <div class="field"><label for="kitName">Nome</label><input id="kitName" name="name" required placeholder="Kit Devocional Paz"></div>
+            </div>
+            <div class="field"><label for="kitDescription">Descricao</label><textarea id="kitDescription" name="description" placeholder="Oferta com produto, embalagem e mensagem."></textarea></div>
+            <div class="inline-fields">
+              <div class="field"><label for="kitAudience">Publico</label><input id="kitAudience" name="audience" placeholder="Igrejas e presentes cristaos"></div>
+              <div class="field"><label for="kitOccasion">Ocasiao</label><input id="kitOccasion" name="occasion" placeholder="Eventos, visitas e devocionais"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="kitPrice">Preco de venda</label><input id="kitPrice" name="sale_price" type="number" min="0" step="0.01" required></div>
+              <div class="field"><label for="kitCost">Custo</label><input id="kitCost" name="cost" type="number" min="0" step="0.01" required></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar kit</button>
+            <div class="notice" id="kitNotice">Kits ajudam a vender presenteavel, igreja e campanhas.</div>
+          </form>
+          <div class="table-wrap" id="kitsTable"></div>
+        </div>
+        <div class="table-wrap" id="kitItemsTable" style="margin-top:16px;"></div>
+      </section>
+
+      <section class="section panel" id="assinaturas-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Assinaturas</h2>
+            <p>Planos recorrentes e contratos ativos para envio programado.</p>
+          </div>
+          <span class="chip" id="subscriptionsSource">Aguardando dados</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric"><div class="metric-icon"><i data-lucide="repeat"></i></div><div><div class="metric-value" id="plansActiveMetric">0</div><div class="metric-label">Planos ativos</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="user-check"></i></div><div><div class="metric-value" id="subscriptionsActiveMetric">0</div><div class="metric-label">Assinaturas ativas</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="circle-dollar-sign"></i></div><div><div class="metric-value" id="recurringRevenueMetric">R$ 0,00</div><div class="metric-label">Receita recorrente</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="calendar-clock"></i></div><div><div class="metric-value" id="plannedCyclesMetric">0</div><div class="metric-label">Ciclos planejados</div></div></div>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="subscriptionPlanForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="planCode">Codigo</label><input id="planCode" name="code" required placeholder="ASS-PAZ-MENSAL"></div>
+              <div class="field"><label for="planName">Plano</label><input id="planName" name="name" required placeholder="Assinatura Paz Mensal"></div>
+            </div>
+            <div class="field"><label for="planDescription">Descricao</label><textarea id="planDescription" name="description"></textarea></div>
+            <div class="inline-fields">
+              <div class="field"><label for="planFrequency">Frequencia</label><select id="planFrequency" name="frequency"><option value="monthly">Mensal</option><option value="bimonthly">Bimestral</option><option value="quarterly">Trimestral</option></select></div>
+              <div class="field"><label for="planKit">Kit base</label><select id="planKit" name="kit_id"></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="planPrice">Preco</label><input id="planPrice" name="price" type="number" min="0" step="0.01" required></div>
+              <div class="field"><label for="planMinimumCycles">Ciclos minimos</label><input id="planMinimumCycles" name="minimum_cycles" type="number" min="1" step="1" value="3"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar plano</button>
+            <div class="notice" id="subscriptionPlanNotice">Plano recorrente para previsibilidade de receita.</div>
+          </form>
+          <form class="panel form-grid" id="customerSubscriptionForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="subscriptionNumber">Numero</label><input id="subscriptionNumber" name="subscription_number" required placeholder="SUB-0002"></div>
+              <div class="field"><label for="subscriptionStatus">Status</label><select id="subscriptionStatus" name="status"><option value="active">Ativa</option><option value="paused">Pausada</option><option value="cancelled">Cancelada</option><option value="finished">Finalizada</option></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="subscriptionCustomer">Cliente</label><select id="subscriptionCustomer" name="customer_id"></select></div>
+              <div class="field"><label for="subscriptionPlan">Plano</label><select id="subscriptionPlan" name="plan_id"></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="subscriptionBilling">Proxima cobranca</label><input id="subscriptionBilling" name="next_billing_date" type="date"></div>
+              <div class="field"><label for="subscriptionShipping">Proximo envio</label><input id="subscriptionShipping" name="next_shipping_date" type="date"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar assinatura</button>
+            <div class="notice" id="customerSubscriptionNotice">Assinaturas alimentam ciclos, pedidos e caixa futuro.</div>
+          </form>
+        </div>
+        <div class="table-wrap" id="plansTable" style="margin-top:16px;"></div>
+        <div class="table-wrap" id="subscriptionsTable" style="margin-top:16px;"></div>
+      </section>
+
+      <section class="section panel" id="ciclos-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Ciclos de assinatura</h2>
+            <p>Agenda de cobranca, envio e faturamento recorrente planejado.</p>
+          </div>
+          <span class="chip" id="cyclesChip">0 ciclos</span>
+        </div>
+        <div class="table-wrap" id="subscriptionCyclesTable"></div>
       </section>
 
       <section class="section panel" id="entregas-admin">
@@ -2314,6 +2418,7 @@
       await loadProductionData();
       await loadQualityData();
       await loadCommercialData();
+      await loadOfferData();
       await loadMarketingData();
       await loadLogisticsData();
       await loadFinanceData();
@@ -2400,6 +2505,9 @@
       "/admin/crm": { title: "CRM | Aromas da Bíblia", label: "CRM", sections: ["crm-admin"] },
       "/admin/orcamentos": { title: "Orçamentos | Aromas da Bíblia", label: "Orçamentos", sections: ["orcamentos-admin"] },
       "/admin/pedidos": { title: "Pedidos | Aromas da Bíblia", label: "Pedidos", sections: ["pedidos-admin"] },
+      "/admin/kits": { title: "Kits | Aromas da Biblia", label: "Kits e Combos", sections: ["kits-admin"] },
+      "/admin/assinaturas": { title: "Assinaturas | Aromas da Biblia", label: "Assinaturas", sections: ["assinaturas-admin"] },
+      "/admin/ciclos": { title: "Ciclos | Aromas da Biblia", label: "Ciclos de Assinatura", sections: ["ciclos-admin"] },
       "/admin/entregas": { title: "Entregas | Aromas da Biblia", label: "Entregas", sections: ["entregas-admin"] },
       "/admin/transportadoras": { title: "Transportadoras | Aromas da Biblia", label: "Transportadoras", sections: ["transportadoras-admin"] },
       "/admin/pos-venda": { title: "Pos-venda | Aromas da Biblia", label: "Pos-venda", sections: ["pos-venda-admin"] },
@@ -3221,6 +3329,146 @@
       }
     }
 
+    function updateOfferOptions() {
+      const offer = window.offerData || {};
+      const kits = offer.kits?.data || [];
+      const customers = offer.customers?.data || [];
+      const plans = offer.plans?.data || [];
+
+      const planKit = document.getElementById("planKit");
+      if (planKit) {
+        planKit.innerHTML = kits.length
+          ? kits.map((item) => `<option value="${item.id}">${escapeHtml(item.name || item.code)}</option>`).join("")
+          : `<option value="">Nenhum kit disponivel</option>`;
+      }
+
+      const subscriptionCustomer = document.getElementById("subscriptionCustomer");
+      if (subscriptionCustomer) {
+        subscriptionCustomer.innerHTML = customers.length
+          ? customers.map((item) => `<option value="${item.id}">${escapeHtml(item.name || item.email || item.id)}</option>`).join("")
+          : `<option value="">Nenhum cliente disponivel</option>`;
+      }
+
+      const subscriptionPlan = document.getElementById("subscriptionPlan");
+      if (subscriptionPlan) {
+        subscriptionPlan.innerHTML = plans.length
+          ? plans.map((item) => `<option value="${item.id}">${escapeHtml(item.name || item.code)}</option>`).join("")
+          : `<option value="">Nenhum plano disponivel</option>`;
+      }
+    }
+
+    function renderSubscriptionsTable(rows) {
+      const target = document.getElementById("subscriptionsTable");
+      if (!target) return;
+
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhuma assinatura cadastrada.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.subscription_number || item.id)}</td>
+          <td>${escapeHtml(item.customer_id || "-")}</td>
+          <td>${escapeHtml(item.plan_id || "-")}</td>
+          <td>${escapeHtml(item.next_billing_date || "-")}</td>
+          <td>${escapeHtml(item.next_shipping_date || "-")}</td>
+          <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status || "-")}</span></td>
+          <td><button class="btn" type="button" data-generate-cycle="${escapeHtml(item.id)}"><i data-lucide="calendar-plus"></i>Gerar ciclo</button></td>
+        </tr>`).join("");
+
+      target.innerHTML = `
+        <table>
+          <thead><tr><th>Numero</th><th>Cliente</th><th>Plano</th><th>Cobranca</th><th>Envio</th><th>Status</th><th>Acao</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+
+      target.querySelectorAll("[data-generate-cycle]").forEach((button) => {
+        button.addEventListener("click", () => generateSubscriptionCycle(button.dataset.generateCycle));
+      });
+      lucide.createIcons();
+    }
+
+    async function loadOfferData() {
+      try {
+        const response = await apiFetch("/api/admin/offers");
+        const offer = await response.json();
+        window.offerData = offer;
+
+        const kits = offer.kits?.data || [];
+        const totalKitSales = kits.reduce((sum, item) => sum + Number(item.sale_price_cents || 0), 0);
+        const totalKitCost = kits.reduce((sum, item) => sum + Number(item.cost_cents || 0), 0);
+        const avgKit = kits.length ? Math.round(totalKitSales / kits.length) : 0;
+        const marginPercent = totalKitSales > 0 ? Math.round(((totalKitSales - totalKitCost) / totalKitSales) * 100) : 0;
+
+        document.getElementById("kitsSource").textContent = offer.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("subscriptionsSource").textContent = offer.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("kitsActiveMetric").textContent = offer.metrics?.activeKits || 0;
+        document.getElementById("kitItemsMetric").textContent = offer.metrics?.kitItems || 0;
+        document.getElementById("kitAverageMetric").textContent = formatValue("avgKit_cents", avgKit);
+        document.getElementById("kitMarginMetric").textContent = `${marginPercent}%`;
+        document.getElementById("plansActiveMetric").textContent = offer.metrics?.activePlans || 0;
+        document.getElementById("subscriptionsActiveMetric").textContent = offer.metrics?.activeSubscriptions || 0;
+        document.getElementById("recurringRevenueMetric").textContent = formatValue("recurringRevenue_cents", offer.metrics?.recurringRevenue || 0);
+        document.getElementById("plannedCyclesMetric").textContent = offer.metrics?.plannedCycles || 0;
+        document.getElementById("cyclesChip").textContent = `${offer.cycles?.data?.length || 0} ciclos`;
+
+        renderSimpleTable("kitsTable", kits, [
+          ["code", "Codigo"],
+          ["name", "Kit"],
+          ["audience", "Publico"],
+          ["sale_price_cents", "Preco"],
+          ["cost_cents", "Custo"],
+          ["margin_cents", "Margem"]
+        ], "Nenhum kit cadastrado.");
+
+        renderSimpleTable("kitItemsTable", offer.kitItems?.data || [], [
+          ["description", "Item"],
+          ["quantity", "Qtd."],
+          ["unit_price_cents", "Preco"],
+          ["unit_cost_cents", "Custo"],
+          ["sort_order", "Ordem"]
+        ], "Nenhum item de kit cadastrado.");
+
+        renderSimpleTable("plansTable", offer.plans?.data || [], [
+          ["code", "Codigo"],
+          ["name", "Plano"],
+          ["frequency", "Frequencia"],
+          ["price_cents", "Preco"],
+          ["minimum_cycles", "Ciclos"],
+          ["active", "Ativo"]
+        ], "Nenhum plano cadastrado.");
+
+        renderSubscriptionsTable(offer.subscriptions?.data || []);
+
+        renderSimpleTable("subscriptionCyclesTable", offer.cycles?.data || [], [
+          ["cycle_number", "Ciclo"],
+          ["billing_date", "Cobranca"],
+          ["shipping_date", "Envio"],
+          ["amount_cents", "Valor"],
+          ["status", "Status"],
+          ["notes", "Observacoes"]
+        ], "Nenhum ciclo planejado.");
+
+        updateOfferOptions();
+      } catch (error) {
+        ["kitsTable", "kitItemsTable", "plansTable", "subscriptionsTable", "subscriptionCyclesTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar kits e assinaturas.</div>`;
+        });
+      }
+    }
+
+    async function generateSubscriptionCycle(id) {
+      try {
+        const response = await apiFetch(`/api/admin/customer-subscriptions/${id}/cycle`, { method: "POST" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao gerar ciclo.");
+        await loadOfferData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel gerar o ciclo.");
+      }
+    }
+
     async function loadFinanceData() {
       try {
         const response = await apiFetch("/api/admin/finance");
@@ -3949,6 +4197,98 @@
       } catch (error) {
         notice.className = "notice warn";
         notice.textContent = error.message || "Não foi possível salvar oportunidade.";
+      }
+    });
+
+    document.getElementById("kitForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("kitNotice");
+      notice.className = "notice";
+      notice.textContent = "Salvando kit...";
+
+      try {
+        const payload = formPayload(event.currentTarget);
+        const salePrice = toCents(payload.sale_price);
+        const cost = toCents(payload.cost);
+        delete payload.sale_price;
+        delete payload.cost;
+        payload.sale_price_cents = salePrice;
+        payload.cost_cents = cost;
+        payload.margin_cents = salePrice - cost;
+        payload.active = true;
+
+        const response = await apiFetch("/api/admin/product_kits", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao salvar kit.");
+        notice.textContent = result.source === "supabase" ? "Kit salvo no Supabase." : "Kit validado. Aplique as migrations para persistir.";
+        if (result.source === "supabase") event.currentTarget.reset();
+        await loadOfferData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Nao foi possivel salvar kit.";
+      }
+    });
+
+    document.getElementById("subscriptionPlanForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("subscriptionPlanNotice");
+      notice.className = "notice";
+      notice.textContent = "Salvando plano...";
+
+      try {
+        const payload = formPayload(event.currentTarget);
+        payload.price_cents = toCents(payload.price);
+        payload.setup_fee_cents = 0;
+        payload.minimum_cycles = Number(payload.minimum_cycles || 1);
+        payload.active = true;
+        delete payload.price;
+
+        const response = await apiFetch("/api/admin/subscription_plans", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao salvar plano.");
+        notice.textContent = result.source === "supabase" ? "Plano salvo no Supabase." : "Plano validado. Aplique as migrations para persistir.";
+        if (result.source === "supabase") event.currentTarget.reset();
+        await loadOfferData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Nao foi possivel salvar plano.";
+      }
+    });
+
+    document.getElementById("customerSubscriptionForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("customerSubscriptionNotice");
+      notice.className = "notice";
+      notice.textContent = "Salvando assinatura...";
+
+      try {
+        const payload = {
+          ...formPayload(event.currentTarget),
+          start_date: new Date().toISOString().slice(0, 10),
+          cycles_completed: 0
+        };
+
+        const response = await apiFetch("/api/admin/customer_subscriptions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao salvar assinatura.");
+        notice.textContent = result.source === "supabase" ? "Assinatura salva no Supabase." : "Assinatura validada. Aplique as migrations para persistir.";
+        if (result.source === "supabase") event.currentTarget.reset();
+        await loadOfferData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Nao foi possivel salvar assinatura.";
       }
     });
 

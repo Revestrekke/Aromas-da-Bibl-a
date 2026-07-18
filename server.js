@@ -167,6 +167,22 @@ const fallbackData = {
   sales_order_items: [
     { id: 'order-item-001', order_id: 'order-001', product_id: 'product-paz', description: 'Home Spray Paz 200 ml', quantity: 20, unit_price_cents: 6990, total_cents: 139800, unit_cost_cents: 3050, margin_cents: 78800 }
   ],
+  product_kits: [
+    { id: 'kit-paz-devocional', code: 'KIT-PAZ-DEV-01', name: 'Kit Devocional Paz', description: 'Kit demonstrativo com Home Spray Paz e embalagem presenteavel.', audience: 'Igrejas, grupos de leitura e presentes cristaos.', occasion: 'Encontros, visitas e devocionais.', sale_price_cents: 8990, cost_cents: 4200, margin_cents: 4790, active: true }
+  ],
+  product_kit_items: [
+    { id: 'kit-item-paz-spray', kit_id: 'kit-paz-devocional', product_id: 'product-paz', description: 'Home Spray Paz 200 ml', quantity: 1, unit_cost_cents: 3050, unit_price_cents: 6990, sort_order: 1 },
+    { id: 'kit-item-paz-presente', kit_id: 'kit-paz-devocional', product_id: null, description: 'Embalagem presenteavel e cartao devocional', quantity: 1, unit_cost_cents: 1150, unit_price_cents: 2000, sort_order: 2 }
+  ],
+  subscription_plans: [
+    { id: 'plan-paz-mensal', code: 'ASS-PAZ-MENSAL', name: 'Assinatura Paz Mensal', description: 'Envio mensal de aroma e mensagem devocional.', frequency: 'monthly', price_cents: 7990, setup_fee_cents: 0, kit_id: 'kit-paz-devocional', minimum_cycles: 3, active: true }
+  ],
+  customer_subscriptions: [
+    { id: 'sub-001', subscription_number: 'SUB-0001', customer_id: 'customer-igreja', plan_id: 'plan-paz-mensal', start_date: '2026-07-18', next_billing_date: '2026-08-17', next_shipping_date: '2026-08-19', cycles_completed: 0, status: 'active', notes: 'Assinatura demonstrativa.' }
+  ],
+  subscription_cycles: [
+    { id: 'sub-cycle-001', subscription_id: 'sub-001', cycle_number: 1, billing_date: '2026-08-17', shipping_date: '2026-08-19', amount_cents: 7990, status: 'planned', notes: 'Primeiro ciclo demonstrativo.' }
+  ],
   carriers: [
     { id: 'carrier-local', name: 'Entrega local demonstrativa', service_type: 'local', contact: 'WhatsApp interno', tracking_url_template: 'https://rastreamento.example/{{tracking_code}}', average_delivery_days: 3, active: true }
   ],
@@ -506,6 +522,26 @@ const tableValidation = {
   sales_order_items: {
     required: ['order_id', 'description', 'quantity'],
     numeric: ['quantity', 'unit_price_cents', 'discount_cents', 'total_cents', 'unit_cost_cents', 'margin_cents']
+  },
+  product_kits: {
+    required: ['code', 'name'],
+    numeric: ['sale_price_cents', 'cost_cents', 'margin_cents']
+  },
+  product_kit_items: {
+    required: ['kit_id', 'description', 'quantity'],
+    numeric: ['quantity', 'unit_cost_cents', 'unit_price_cents', 'sort_order']
+  },
+  subscription_plans: {
+    required: ['code', 'name'],
+    numeric: ['price_cents', 'setup_fee_cents', 'minimum_cycles']
+  },
+  customer_subscriptions: {
+    required: ['subscription_number'],
+    numeric: ['cycles_completed']
+  },
+  subscription_cycles: {
+    required: ['subscription_id', 'cycle_number', 'billing_date'],
+    numeric: ['cycle_number', 'amount_cents']
   },
   carriers: {
     required: ['name'],
@@ -1282,6 +1318,104 @@ async function buildLogisticsData() {
     orders,
     customers
   };
+}
+
+async function buildOfferData() {
+  const [kits, kitItems, plans, subscriptions, cycles, products, customers] = await Promise.all([
+    listTable('product_kits', 'created_at'),
+    listTable('product_kit_items', 'created_at'),
+    listTable('subscription_plans', 'created_at'),
+    listTable('customer_subscriptions', 'created_at'),
+    listTable('subscription_cycles', 'billing_date'),
+    listTable('products', 'created_at'),
+    listTable('customers', 'created_at')
+  ]);
+
+  const activeSubscriptions = subscriptions.data.filter((item) => item.status === 'active');
+  const plannedCycles = cycles.data.filter((item) => item.status === 'planned');
+  const recurringRevenue = activeSubscriptions.reduce((sum, subscription) => {
+    const plan = plans.data.find((item) => String(item.id) === String(subscription.plan_id));
+    return sum + Number(plan?.price_cents || 0);
+  }, 0);
+
+  return {
+    source: kits.source,
+    metrics: {
+      kits: kits.data.length,
+      activeKits: kits.data.filter((item) => item.active).length,
+      kitItems: kitItems.data.length,
+      plans: plans.data.length,
+      activePlans: plans.data.filter((item) => item.active).length,
+      subscriptions: subscriptions.data.length,
+      activeSubscriptions: activeSubscriptions.length,
+      plannedCycles: plannedCycles.length,
+      recurringRevenue
+    },
+    kits,
+    kitItems,
+    plans,
+    subscriptions,
+    cycles,
+    products,
+    customers
+  };
+}
+
+function addDays(dateText, days) {
+  const date = dateText ? new Date(dateText) : new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+async function generateSubscriptionCycle(subscriptionId, payload = {}, user = null) {
+  const subscriptions = await listTable('customer_subscriptions', 'created_at');
+  const subscription = subscriptions.data.find((item) => String(item.id) === String(subscriptionId));
+  if (!subscription) return { validationError: { status: 404, error: 'Assinatura nao encontrada.' } };
+
+  const [plans, cycles] = await Promise.all([
+    listTable('subscription_plans', 'created_at'),
+    listTable('subscription_cycles', 'billing_date')
+  ]);
+  const plan = plans.data.find((item) => String(item.id) === String(subscription.plan_id));
+  const subscriptionCycles = cycles.data.filter((item) => String(item.subscription_id) === String(subscriptionId));
+  const cycleNumber = Math.max(0, ...subscriptionCycles.map((item) => Number(item.cycle_number || 0))) + 1;
+  const billingDate = payload.billing_date || subscription.next_billing_date || new Date().toISOString().slice(0, 10);
+  const shippingDate = payload.shipping_date || subscription.next_shipping_date || addDays(billingDate, 2);
+  const record = {
+    subscription_id: subscriptionId,
+    cycle_number: cycleNumber,
+    billing_date: billingDate,
+    shipping_date: shippingDate,
+    amount_cents: Number(payload.amount_cents || plan?.price_cents || 0),
+    status: 'planned',
+    notes: payload.notes || `Ciclo ${cycleNumber} gerado pelo painel.`
+  };
+
+  if (!supabase) {
+    return { source: 'fallback', data: { id: `sub-cycle-${cycleNumber}`, ...record } };
+  }
+
+  const { data, error } = await supabase.from('subscription_cycles').insert(record).select('*').single();
+  if (error) return { validationError: { status: 400, error: publicError(error) } };
+
+  await supabase
+    .from('customer_subscriptions')
+    .update({
+      next_billing_date: addDays(billingDate, 30),
+      next_shipping_date: addDays(shippingDate, 30),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', subscriptionId);
+
+  await writeAuditLog({
+    user,
+    action: 'generate_cycle',
+    table: 'subscription_cycles',
+    recordId: data.id,
+    after: data
+  });
+
+  return { data, source: 'supabase' };
 }
 
 async function updateShipmentStatus(shipmentId, payload, user = null) {
@@ -2252,6 +2386,18 @@ app.get('/api/admin/logistics', requireAdminAuth, async (_req, res) => {
   res.json(await buildLogisticsData());
 });
 
+app.get('/api/admin/offers', requireAdminAuth, async (_req, res) => {
+  res.json(await buildOfferData());
+});
+
+app.post('/api/admin/customer-subscriptions/:id/cycle', requireAdminAuth, async (req, res) => {
+  const result = await generateSubscriptionCycle(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
 app.post('/api/admin/:table(carriers|shipments|shipment_events|after_sales_followups|customer_feedback)', requireAdminAuth, async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
   if (result.validationError) {
@@ -2329,6 +2475,19 @@ app.get('/api/admin/:table(customers|sales_opportunities|sales_quotes|sales_quot
 });
 
 app.post('/api/admin/:table(customers|sales_opportunities|sales_quotes|sales_quote_items|sales_orders|sales_order_items)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.get('/api/admin/:table(product_kits|product_kit_items|subscription_plans|customer_subscriptions|subscription_cycles)', requireAdminAuth, async (req, res) => {
+  const result = await listTable(req.params.table);
+  res.json(result);
+});
+
+app.post('/api/admin/:table(product_kits|product_kit_items|subscription_plans|customer_subscriptions|subscription_cycles)', requireAdminAuth, async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
   if (result.validationError) {
     return res.status(result.validationError.status).json({ error: result.validationError.error });
