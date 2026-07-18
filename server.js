@@ -1187,6 +1187,97 @@ async function createReceivableFromOrder(orderId, payload, user = null) {
   return { data: receivable, source: 'supabase' };
 }
 
+async function receiveAccountReceivable(receivableId, payload = {}, user = null) {
+  const receivedAt = payload.received_at || new Date().toISOString().slice(0, 10);
+  const paymentMethod = payload.payment_method || 'manual';
+
+  if (!supabase) {
+    const receivable = fallbackData.accounts_receivable.find((item) => String(item.id) === String(receivableId));
+    if (!receivable) return { validationError: { status: 404, error: 'Conta a receber nao encontrada.' } };
+    return {
+      source: 'fallback',
+      data: {
+        receivable: { ...receivable, received_at: receivedAt, payment_method: paymentMethod, status: 'received' },
+        cashFlow: { source_id: receivable.id, entry_date: receivedAt, status: 'realized' },
+        order: receivable.sales_order_id ? { id: receivable.sales_order_id, payment_status: 'paid', status: 'payment_approved' } : null
+      }
+    };
+  }
+
+  const { data: before, error: beforeError } = await supabase
+    .from('accounts_receivable')
+    .select('*')
+    .eq('id', receivableId)
+    .maybeSingle();
+
+  if (beforeError) return { validationError: { status: 400, error: publicError(beforeError) } };
+  if (!before) return { validationError: { status: 404, error: 'Conta a receber nao encontrada.' } };
+  if (before.status === 'received') {
+    return { validationError: { status: 409, error: 'Esta conta ja foi recebida.' } };
+  }
+
+  const patch = {
+    received_at: receivedAt,
+    payment_method: paymentMethod,
+    status: 'received',
+    updated_at: new Date().toISOString()
+  };
+
+  const { data: receivable, error } = await supabase
+    .from('accounts_receivable')
+    .update(patch)
+    .eq('id', receivableId)
+    .select('*')
+    .single();
+
+  if (error) return { validationError: { status: 400, error: publicError(error) } };
+
+  const { data: cashFlow } = await supabase
+    .from('cash_flow_entries')
+    .update({
+      entry_date: receivedAt,
+      amount_cents: receivable.net_amount_cents,
+      status: 'realized'
+    })
+    .eq('source_type', 'receivable')
+    .eq('source_id', receivable.id)
+    .select('*')
+    .maybeSingle();
+
+  let order = null;
+  if (receivable.sales_order_id) {
+    const { data: updatedOrder } = await supabase
+      .from('sales_orders')
+      .update({
+        payment_status: 'paid',
+        status: 'payment_approved',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', receivable.sales_order_id)
+      .select('*')
+      .maybeSingle();
+    order = updatedOrder;
+  }
+
+  await writeAuditLog({
+    user,
+    action: 'receive_account_receivable',
+    table: 'accounts_receivable',
+    recordId: receivable.id,
+    before,
+    after: receivable
+  });
+
+  return {
+    source: 'supabase',
+    data: {
+      receivable,
+      cashFlow,
+      order
+    }
+  };
+}
+
 async function buildPurchasingData() {
   const [requests, requestItems, quotes, orders, orderItems, suppliers, rawMaterials, packagingItems] = await Promise.all([
     listTable('purchase_requests', 'created_at'),
@@ -2661,6 +2752,14 @@ app.post('/api/admin/sales/orders/:id/receivable', requireAdminAuth, async (req,
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/accounts-receivable/:id/receive', requireAdminAuth, async (req, res) => {
+  const result = await receiveAccountReceivable(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
 });
 
 app.get(['/admin', '/admin/*'], (_req, res) => {
