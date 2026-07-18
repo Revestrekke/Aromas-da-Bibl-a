@@ -162,3 +162,12 @@ GET /api/admin/packaging_items
 GET /api/admin/suppliers
 GET /api/admin/inventory_movements
 ```
+
+Telas administrativas já possuem cadastro rápido para:
+
+- Aromas
+- Insumos
+- Embalagens
+- Fornecedores
+
+Os formulários enviam dados para APIs protegidas e exigem usuário autenticado no Supabase Auth.

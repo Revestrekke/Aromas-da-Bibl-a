@@ -964,7 +964,23 @@
           </div>
           <span class="chip" id="fragranceCount">0 aromas</span>
         </div>
-        <div class="table-wrap" id="fragrancesTable"></div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="fragranceForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="fragranceCode">Código</label><input id="fragranceCode" name="code" required placeholder="EX.: PAZ"></div>
+              <div class="field"><label for="fragranceName">Nome</label><input id="fragranceName" name="name" required placeholder="Ex.: Paz"></div>
+            </div>
+            <div class="field"><label for="fragranceVerse">Versículo</label><input id="fragranceVerse" name="verse" placeholder="João 14:27"></div>
+            <div class="field"><label for="fragranceConcept">Conceito</label><textarea id="fragranceConcept" name="concept" placeholder="Serenidade para leitura, oração e descanso."></textarea></div>
+            <div class="inline-fields">
+              <div class="field"><label for="fragranceFamily">Família olfativa</label><input id="fragranceFamily" name="olfactory_family" placeholder="Floral aromático"></div>
+              <div class="field"><label for="fragranceStatus">Status</label><select id="fragranceStatus" name="status"><option value="planned">Planejado</option><option value="testing">Teste</option><option value="active">Ativo</option><option value="inactive">Inativo</option></select></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar aroma</button>
+            <div class="notice" id="fragranceNotice">Pronto para cadastrar aroma.</div>
+          </form>
+          <div class="table-wrap" id="fragrancesTable"></div>
+        </div>
       </section>
 
       <section class="section panel" id="insumos">
@@ -975,7 +991,26 @@
           </div>
           <span class="chip" id="rawMaterialCount">0 insumos</span>
         </div>
-        <div class="table-wrap" id="rawMaterialsTable"></div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="rawMaterialForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="rawCode">Código</label><input id="rawCode" name="code" required placeholder="MP-ESS-PAZ"></div>
+              <div class="field"><label for="rawName">Nome</label><input id="rawName" name="name" required placeholder="Essência Paz"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="rawType">Tipo</label><input id="rawType" name="type" required placeholder="essência"></div>
+              <div class="field"><label for="rawUnit">Unidade</label><input id="rawUnit" name="unit" required value="ml"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="rawCost">Custo por unidade</label><input id="rawCost" name="current_cost" type="number" min="0" step="0.01" placeholder="0.18"></div>
+              <div class="field"><label for="rawQty">Saldo</label><input id="rawQty" name="quantity_on_hand" type="number" min="0" step="0.001" placeholder="900"></div>
+            </div>
+            <div class="field"><label for="rawMin">Estoque mínimo</label><input id="rawMin" name="minimum_stock" type="number" min="0" step="0.001" placeholder="300"></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar insumo</button>
+            <div class="notice" id="rawMaterialNotice">Pronto para cadastrar insumo.</div>
+          </form>
+          <div class="table-wrap" id="rawMaterialsTable"></div>
+        </div>
       </section>
 
       <section class="section panel" id="embalagens">
@@ -986,7 +1021,25 @@
           </div>
           <span class="chip" id="packagingCount">0 embalagens</span>
         </div>
-        <div class="table-wrap" id="packagingTable"></div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="packagingForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="packCode">Código</label><input id="packCode" name="code" required placeholder="EMB-FRASCO-AMB-200"></div>
+              <div class="field"><label for="packName">Nome</label><input id="packName" name="name" required placeholder="Frasco âmbar 200 ml"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="packType">Tipo</label><input id="packType" name="type" required placeholder="frasco"></div>
+              <div class="field"><label for="packCost">Custo unitário</label><input id="packCost" name="unit_cost" type="number" min="0" step="0.01" placeholder="5.20"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="packQty">Saldo</label><input id="packQty" name="quantity_on_hand" type="number" min="0" step="0.001" placeholder="120"></div>
+              <div class="field"><label for="packMin">Estoque mínimo</label><input id="packMin" name="minimum_stock" type="number" min="0" step="0.001" placeholder="40"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar embalagem</button>
+            <div class="notice" id="packagingNotice">Pronto para cadastrar embalagem.</div>
+          </form>
+          <div class="table-wrap" id="packagingTable"></div>
+        </div>
       </section>
 
       <section class="section panel" id="fornecedores">
@@ -997,7 +1050,22 @@
           </div>
           <span class="chip" id="supplierCount">0 fornecedores</span>
         </div>
-        <div class="table-wrap" id="suppliersTable"></div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="supplierForm" style="margin-top:0;">
+            <div class="field"><label for="supplierTradeName">Nome fantasia</label><input id="supplierTradeName" name="trade_name" required placeholder="Fornecedor de Essências"></div>
+            <div class="inline-fields">
+              <div class="field"><label for="supplierCategory">Categoria</label><input id="supplierCategory" name="category" placeholder="Insumos"></div>
+              <div class="field"><label for="supplierContact">Contato</label><input id="supplierContact" name="contact_name" placeholder="Pessoa responsável"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="supplierWhatsapp">WhatsApp</label><input id="supplierWhatsapp" name="whatsapp" placeholder="(00) 90000-0000"></div>
+              <div class="field"><label for="supplierEmail">E-mail</label><input id="supplierEmail" name="email" type="email" placeholder="contato@fornecedor.com"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar fornecedor</button>
+            <div class="notice" id="supplierNotice">Pronto para cadastrar fornecedor.</div>
+          </form>
+          <div class="table-wrap" id="suppliersTable"></div>
+        </div>
       </section>
 
       <section class="section two-col" id="mercado">
@@ -1674,6 +1742,115 @@
         });
       }
     }
+
+    function toCents(value) {
+      return Math.round(Number(value || 0) * 100);
+    }
+
+    function formPayload(form) {
+      const data = Object.fromEntries(new FormData(form).entries());
+      Object.keys(data).forEach((key) => {
+        if (data[key] === "") delete data[key];
+      });
+      return data;
+    }
+
+    async function submitCatalogForm({ formId, noticeId, endpoint, transform }) {
+      const form = document.getElementById(formId);
+      const notice = document.getElementById(noticeId);
+      if (!form || !notice) return;
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        notice.className = "notice";
+        notice.textContent = "Salvando...";
+
+        try {
+          const payload = transform(formPayload(form));
+          const response = await apiFetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || "Falha ao salvar.");
+          }
+
+          if (result.source === "supabase") {
+            notice.textContent = "Cadastro salvo no Supabase.";
+            form.reset();
+          } else {
+            notice.className = "notice warn";
+            notice.textContent = "Cadastro validado. Aplique as migrations no Supabase para persistir.";
+          }
+
+          await loadCatalogData();
+          await loadSystemData();
+        } catch (error) {
+          notice.className = "notice warn";
+          notice.textContent = error.message || "Não foi possível salvar.";
+        }
+      });
+    }
+
+    submitCatalogForm({
+      formId: "fragranceForm",
+      noticeId: "fragranceNotice",
+      endpoint: "/api/admin/fragrances",
+      transform: (payload) => ({
+        ...payload,
+        code: String(payload.code || "").toUpperCase(),
+        biblical_inspiration: payload.verse || payload.biblical_inspiration,
+        top_notes: [],
+        heart_notes: [],
+        base_notes: []
+      })
+    });
+
+    submitCatalogForm({
+      formId: "rawMaterialForm",
+      noticeId: "rawMaterialNotice",
+      endpoint: "/api/admin/raw_materials",
+      transform: (payload) => {
+        const currentCost = payload.current_cost;
+        delete payload.current_cost;
+        return {
+          ...payload,
+          current_cost_cents: toCents(currentCost),
+          average_cost_cents: toCents(currentCost),
+          quantity_on_hand: Number(payload.quantity_on_hand || 0),
+          minimum_stock: Number(payload.minimum_stock || 0)
+        };
+      }
+    });
+
+    submitCatalogForm({
+      formId: "packagingForm",
+      noticeId: "packagingNotice",
+      endpoint: "/api/admin/packaging_items",
+      transform: (payload) => {
+        const unitCost = payload.unit_cost;
+        delete payload.unit_cost;
+        return {
+          ...payload,
+          unit_cost_cents: toCents(unitCost),
+          quantity_on_hand: Number(payload.quantity_on_hand || 0),
+          minimum_stock: Number(payload.minimum_stock || 0)
+        };
+      }
+    });
+
+    submitCatalogForm({
+      formId: "supplierForm",
+      noticeId: "supplierNotice",
+      endpoint: "/api/admin/suppliers",
+      transform: (payload) => ({
+        ...payload,
+        status: "active"
+      })
+    });
 
     let costsPageChart;
 

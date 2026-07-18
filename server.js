@@ -249,6 +249,68 @@ function publicError(error) {
   };
 }
 
+const tableValidation = {
+  fragrances: {
+    required: ['code', 'name'],
+    numeric: ['intensity', 'cost_per_liter_cents']
+  },
+  products: {
+    required: ['internal_code', 'sku', 'name', 'category'],
+    numeric: ['current_cost_cents', 'sale_price_cents', 'reseller_price_cents', 'minimum_price_cents', 'desired_margin_percent', 'current_stock', 'minimum_stock', 'maximum_stock', 'volume']
+  },
+  raw_materials: {
+    required: ['code', 'name', 'type', 'unit'],
+    numeric: ['current_cost_cents', 'average_cost_cents', 'quantity_on_hand', 'minimum_stock', 'maximum_stock']
+  },
+  packaging_items: {
+    required: ['code', 'name', 'type'],
+    numeric: ['unit_cost_cents', 'minimum_purchase_quantity', 'lead_time_days', 'quantity_on_hand', 'minimum_stock']
+  },
+  suppliers: {
+    required: ['trade_name'],
+    numeric: ['average_lead_time_days', 'minimum_order_cents', 'rating']
+  },
+  inventory_movements: {
+    required: ['item_type', 'item_id', 'movement_type', 'quantity'],
+    numeric: ['quantity', 'quantity_before', 'quantity_after', 'unit_cost_cents']
+  },
+  produtos: {
+    required: ['nome'],
+    numeric: ['custo', 'preco', 'estoque']
+  }
+};
+
+function validatePayload(table, payload) {
+  const rules = tableValidation[table];
+  if (!rules) return { ok: true, payload };
+
+  const clean = { ...payload };
+  const missing = rules.required.filter((field) => !String(clean[field] ?? '').trim());
+
+  if (missing.length) {
+    return {
+      ok: false,
+      status: 400,
+      error: `Campos obrigatórios ausentes: ${missing.join(', ')}.`
+    };
+  }
+
+  for (const field of rules.numeric || []) {
+    if (clean[field] === '' || clean[field] === null || clean[field] === undefined) continue;
+    const value = Number(clean[field]);
+    if (Number.isNaN(value)) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Campo numérico inválido: ${field}.`
+      };
+    }
+    clean[field] = value;
+  }
+
+  return { ok: true, payload: clean };
+}
+
 async function listTable(table, order = 'created_at') {
   if (!supabase) {
     return { data: fallbackData[table] || [], source: 'fallback' };
@@ -279,9 +341,14 @@ async function writeAuditLog({ user, action, table, recordId, before = null, aft
 }
 
 async function insertIntoTable(table, payload, user = null) {
+  const validation = validatePayload(table, payload);
+  if (!validation.ok) {
+    return { validationError: validation };
+  }
+
   const record = {
-    id: payload.id || normalizeId(payload.nome || payload.item || payload.cliente || randomUUID()),
-    ...payload
+    id: validation.payload.id || normalizeId(validation.payload.nome || validation.payload.name || validation.payload.item || validation.payload.cliente || validation.payload.trade_name || randomUUID()),
+    ...validation.payload
   };
 
   if (!supabase) {
@@ -451,6 +518,9 @@ app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeir
 
 app.post('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
 });
 
@@ -461,6 +531,9 @@ app.get('/api/admin/:table(fragrances|products|raw_materials|packaging_items|sup
 
 app.post('/api/admin/:table(fragrances|products|raw_materials|packaging_items|suppliers|inventory_movements)', requireAdminAuth, async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
 });
 
