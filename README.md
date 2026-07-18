@@ -331,3 +331,30 @@ Tela:
 - `/admin/relatorios`
 
 Todos os relatórios são protegidos por autenticação e os CSVs são gerados no backend.
+
+### Fase 5.3 - Notificações e Alertas
+
+Migration:
+
+```text
+supabase/migrations/202607180006_notifications.sql
+```
+
+Ela cria:
+
+- `notifications`
+
+APIs administrativas:
+
+```text
+GET /api/admin/notifications
+POST /api/admin/notifications
+POST /api/admin/notifications/:id/read
+POST /api/admin/notifications/:id/resolve
+```
+
+Tela:
+
+- `/admin/notificacoes`
+
+A central combina notificações salvas no Supabase com alertas calculados pelo backend, incluindo estoque baixo, contas a receber ou pagar próximas do vencimento, produções abertas e follow-ups atrasados.

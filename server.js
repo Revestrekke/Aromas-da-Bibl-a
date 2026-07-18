@@ -146,6 +146,10 @@ const fallbackData = {
     { id: 'cf-001', entry_date: '2026-07-25', source_type: 'receivable', source_id: 'ar-001', direction: 'in', description: 'Pedido PED-0001 - Home Spray Paz', amount_cents: 139800, status: 'planned' },
     { id: 'cf-002', entry_date: '2026-07-28', source_type: 'payable', source_id: 'ap-001', direction: 'out', description: 'Compra demonstrativa de frascos e insumos', amount_cents: 85000, status: 'planned' }
   ],
+  notifications: [
+    { id: 'notif-stock-label', type: 'stock_low', severity: 'warning', title: 'Rótulo Paz abaixo do mínimo', message: 'Item demonstrativo com saldo inferior ao estoque mínimo.', entity_table: 'packaging_items', entity_id: 'pkg-rotulo', status: 'unread' },
+    { id: 'notif-production-open', type: 'production_open', severity: 'info', title: 'Ordem de produção em aberto', message: 'Há ordem planejada aguardando execução.', entity_table: 'production_orders', entity_id: 'op-001', status: 'unread' }
+  ],
   produtos: [
     {
       id: 'paz-home-spray',
@@ -397,6 +401,10 @@ const tableValidation = {
     required: ['entry_date', 'source_type', 'direction', 'description'],
     numeric: ['amount_cents']
   },
+  notifications: {
+    required: ['type', 'title'],
+    numeric: []
+  },
   produtos: {
     required: ['nome'],
     numeric: ['custo', 'preco', 'estoque']
@@ -488,6 +496,48 @@ async function insertIntoTable(table, payload, user = null) {
     action: 'create',
     table,
     recordId: data.id,
+    after: data
+  });
+
+  return { data, source: 'supabase' };
+}
+
+async function updateNotificationStatus(id, status, user = null) {
+  if (!['read', 'resolved', 'ignored'].includes(status)) {
+    return { validationError: { status: 400, error: 'Status de notificacao invalido.' } };
+  }
+
+  const patch = {
+    status,
+    updated_at: new Date().toISOString()
+  };
+
+  if (status === 'resolved') {
+    patch.resolved_by = user?.id || null;
+    patch.resolved_at = new Date().toISOString();
+  }
+
+  if (!supabase) {
+    return {
+      data: { id, ...patch },
+      source: 'fallback',
+      message: 'Aplique a migration de notificacoes no Supabase para persistir a alteracao.'
+    };
+  }
+
+  const { data: before } = await supabase.from('notifications').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('notifications').update(patch).eq('id', id).select('*').single();
+
+  if (error) {
+    return { validationError: { status: 404, error: publicError(error) } };
+  }
+
+  await writeAuditLog({
+    user,
+    action: status,
+    table: 'notifications',
+    recordId: id,
+    before,
     after: data
   });
 
@@ -1058,6 +1108,160 @@ const reportExports = {
   }
 };
 
+function daysFromToday(dateValue) {
+  if (!dateValue) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const date = new Date(dateValue);
+  date.setHours(0, 0, 0, 0);
+  return Math.round((date - today) / 86400000);
+}
+
+async function buildNotifications() {
+  const [persisted, products, rawMaterials, packagingItems, receivable, payable, productionOrders, opportunities] = await Promise.all([
+    listTable('notifications', 'created_at'),
+    listTable('products', 'created_at'),
+    listTable('raw_materials', 'created_at'),
+    listTable('packaging_items', 'created_at'),
+    listTable('accounts_receivable', 'due_date'),
+    listTable('accounts_payable', 'due_date'),
+    listTable('production_orders', 'created_at'),
+    listTable('sales_opportunities', 'return_date')
+  ]);
+
+  const dynamic = [];
+
+  for (const item of products.data) {
+    if (Number(item.current_stock || 0) <= Number(item.minimum_stock || 0)) {
+      dynamic.push({
+        id: `dyn-product-stock-${item.id}`,
+        type: 'stock_low',
+        severity: 'warning',
+        title: `Produto abaixo do mínimo: ${item.name}`,
+        message: `Saldo ${item.current_stock || 0}; mínimo ${item.minimum_stock || 0}.`,
+        entity_table: 'products',
+        entity_id: item.id,
+        status: 'unread',
+        dynamic: true
+      });
+    }
+  }
+
+  for (const item of rawMaterials.data) {
+    if (Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0)) {
+      dynamic.push({
+        id: `dyn-raw-stock-${item.id}`,
+        type: 'stock_low',
+        severity: 'warning',
+        title: `Insumo abaixo do mínimo: ${item.name}`,
+        message: `Saldo ${item.quantity_on_hand || 0}; mínimo ${item.minimum_stock || 0}.`,
+        entity_table: 'raw_materials',
+        entity_id: item.id,
+        status: 'unread',
+        dynamic: true
+      });
+    }
+  }
+
+  for (const item of packagingItems.data) {
+    if (Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0)) {
+      dynamic.push({
+        id: `dyn-pack-stock-${item.id}`,
+        type: 'stock_low',
+        severity: 'warning',
+        title: `Embalagem abaixo do mínimo: ${item.name}`,
+        message: `Saldo ${item.quantity_on_hand || 0}; mínimo ${item.minimum_stock || 0}.`,
+        entity_table: 'packaging_items',
+        entity_id: item.id,
+        status: 'unread',
+        dynamic: true
+      });
+    }
+  }
+
+  for (const item of receivable.data.filter((row) => ['pending', 'partial'].includes(row.status))) {
+    const days = daysFromToday(item.due_date);
+    if (days !== null && days <= 3) {
+      dynamic.push({
+        id: `dyn-receivable-${item.id}`,
+        type: days < 0 ? 'accounts_receivable_overdue' : 'accounts_receivable_due',
+        severity: days < 0 ? 'critical' : 'info',
+        title: days < 0 ? `Recebível vencido: ${item.description}` : `Recebível vence em ${days} dia(s)`,
+        message: item.description,
+        entity_table: 'accounts_receivable',
+        entity_id: item.id,
+        due_date: item.due_date,
+        status: 'unread',
+        dynamic: true
+      });
+    }
+  }
+
+  for (const item of payable.data.filter((row) => ['pending', 'partial'].includes(row.status))) {
+    const days = daysFromToday(item.due_date);
+    if (days !== null && days <= 3) {
+      dynamic.push({
+        id: `dyn-payable-${item.id}`,
+        type: days < 0 ? 'accounts_payable_overdue' : 'accounts_payable_due',
+        severity: days < 0 ? 'critical' : 'warning',
+        title: days < 0 ? `Conta vencida: ${item.description}` : `Conta vence em ${days} dia(s)`,
+        message: item.description,
+        entity_table: 'accounts_payable',
+        entity_id: item.id,
+        due_date: item.due_date,
+        status: 'unread',
+        dynamic: true
+      });
+    }
+  }
+
+  for (const item of productionOrders.data.filter((row) => !['finished', 'cancelled'].includes(row.status))) {
+    dynamic.push({
+      id: `dyn-production-${item.id}`,
+      type: 'production_open',
+      severity: 'info',
+      title: `Produção em aberto: ${item.order_number}`,
+      message: `Status atual: ${item.status}.`,
+      entity_table: 'production_orders',
+      entity_id: item.id,
+      status: 'unread',
+      dynamic: true
+    });
+  }
+
+  for (const item of opportunities.data.filter((row) => !['approved', 'lost', 'after_sales'].includes(row.stage))) {
+    const days = daysFromToday(item.return_date);
+    if (days !== null && days < 0) {
+      dynamic.push({
+        id: `dyn-opportunity-${item.id}`,
+        type: 'follow_up_overdue',
+        severity: 'warning',
+        title: `Follow-up atrasado: ${item.title}`,
+        message: item.next_action || 'Retomar contato comercial.',
+        entity_table: 'sales_opportunities',
+        entity_id: item.id,
+        due_date: item.return_date,
+        status: 'unread',
+        dynamic: true
+      });
+    }
+  }
+
+  const all = [...dynamic, ...(persisted.data || [])].filter((item) => item.status !== 'resolved' && item.status !== 'ignored');
+
+  return {
+    source: persisted.source,
+    metrics: {
+      total: all.length,
+      unread: all.filter((item) => item.status === 'unread').length,
+      critical: all.filter((item) => item.severity === 'critical').length,
+      warning: all.filter((item) => item.severity === 'warning').length,
+      dynamic: dynamic.length
+    },
+    notifications: all
+  };
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -1321,6 +1525,34 @@ app.get('/api/admin/reports/:type.csv', requireAdminAuth, async (req, res) => {
 
 app.post('/api/admin/pricing/simulate', requireAdminAuth, (req, res) => {
   res.json(simulatePricing(req.body || {}));
+});
+
+app.get('/api/admin/notifications', requireAdminAuth, async (_req, res) => {
+  res.json(await buildNotifications());
+});
+
+app.post('/api/admin/notifications', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable('notifications', req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/notifications/:id/read', requireAdminAuth, async (req, res) => {
+  const result = await updateNotificationStatus(req.params.id, 'read', req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.post('/api/admin/notifications/:id/resolve', requireAdminAuth, async (req, res) => {
+  const result = await updateNotificationStatus(req.params.id, 'resolved', req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
