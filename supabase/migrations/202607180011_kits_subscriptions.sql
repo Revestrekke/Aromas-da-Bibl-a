@@ -92,7 +92,7 @@ begin
   select id into customer_igreja from customers where name = 'Igreja Vida Plena' limit 1;
 
   insert into product_kits (code, name, description, audience, occasion, sale_price_cents, cost_cents, margin_cents, active)
-  values ('KIT-PAZ-DEV-01', 'Kit Devocional Paz', 'Kit demonstrativo com Home Spray Paz e embalagem presenteavel.', 'Igrejas, grupos de leitura e presentes cristãos.', 'Encontros, visitas e devocionais.', 8990, 4200, 4790, true)
+  values ('KIT-PAZ-DEV-01', 'Kit Devocional Paz', 'Kit demonstrativo com Home Spray Paz e embalagem presenteavel.', 'Igrejas, grupos de leitura e presentes cristaos.', 'Encontros, visitas e devocionais.', 8990, 4200, 4790, true)
   on conflict (code) do nothing;
 
   select id into kit_paz from product_kits where code = 'KIT-PAZ-DEV-01';

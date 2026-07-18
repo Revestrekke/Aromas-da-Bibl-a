@@ -3389,6 +3389,45 @@
       lucide.createIcons();
     }
 
+    function renderSubscriptionCyclesTable(rows) {
+      const target = document.getElementById("subscriptionCyclesTable");
+      if (!target) return;
+
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhum ciclo planejado.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => {
+        const canBill = item.status === "planned" && !item.sales_order_id;
+        const action = canBill
+          ? `<button class="btn" type="button" data-bill-cycle="${escapeHtml(item.id)}"><i data-lucide="receipt-text"></i>Faturar</button>`
+          : `<span class="chip">${escapeHtml(item.sales_order_id ? "Pedido gerado" : "Sem acao")}</span>`;
+
+        return `
+          <tr>
+            <td>${escapeHtml(item.cycle_number || "-")}</td>
+            <td>${escapeHtml(item.billing_date || "-")}</td>
+            <td>${escapeHtml(item.shipping_date || "-")}</td>
+            <td>${formatValue("amount_cents", item.amount_cents)}</td>
+            <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status || "-")}</span></td>
+            <td>${escapeHtml(item.sales_order_id || "-")}</td>
+            <td>${action}</td>
+          </tr>`;
+      }).join("");
+
+      target.innerHTML = `
+        <table>
+          <thead><tr><th>Ciclo</th><th>Cobranca</th><th>Envio</th><th>Valor</th><th>Status</th><th>Pedido</th><th>Acao</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+
+      target.querySelectorAll("[data-bill-cycle]").forEach((button) => {
+        button.addEventListener("click", () => billSubscriptionCycle(button.dataset.billCycle));
+      });
+      lucide.createIcons();
+    }
+
     async function loadOfferData() {
       try {
         const response = await apiFetch("/api/admin/offers");
@@ -3441,14 +3480,7 @@
 
         renderSubscriptionsTable(offer.subscriptions?.data || []);
 
-        renderSimpleTable("subscriptionCyclesTable", offer.cycles?.data || [], [
-          ["cycle_number", "Ciclo"],
-          ["billing_date", "Cobranca"],
-          ["shipping_date", "Envio"],
-          ["amount_cents", "Valor"],
-          ["status", "Status"],
-          ["notes", "Observacoes"]
-        ], "Nenhum ciclo planejado.");
+        renderSubscriptionCyclesTable(offer.cycles?.data || []);
 
         updateOfferOptions();
       } catch (error) {
@@ -3466,6 +3498,19 @@
         await loadOfferData();
       } catch (error) {
         window.alert(error.message || "Nao foi possivel gerar o ciclo.");
+      }
+    }
+
+    async function billSubscriptionCycle(id) {
+      try {
+        const response = await apiFetch(`/api/admin/subscription-cycles/${id}/bill`, { method: "POST" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao faturar ciclo.");
+        await loadOfferData();
+        await loadCommercialData();
+        await loadFinanceData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel faturar o ciclo.");
       }
     }
 

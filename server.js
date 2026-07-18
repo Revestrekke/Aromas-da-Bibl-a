@@ -1418,6 +1418,145 @@ async function generateSubscriptionCycle(subscriptionId, payload = {}, user = nu
   return { data, source: 'supabase' };
 }
 
+async function billSubscriptionCycle(cycleId, payload = {}, user = null) {
+  const cycles = await listTable('subscription_cycles', 'billing_date');
+  const cycle = cycles.data.find((item) => String(item.id) === String(cycleId));
+  if (!cycle) return { validationError: { status: 404, error: 'Ciclo de assinatura nao encontrado.' } };
+  if (cycle.sales_order_id || cycle.status === 'billed') {
+    return { validationError: { status: 409, error: 'Este ciclo ja foi faturado.' } };
+  }
+
+  const [subscriptions, plans, kits, kitItems] = await Promise.all([
+    listTable('customer_subscriptions', 'created_at'),
+    listTable('subscription_plans', 'created_at'),
+    listTable('product_kits', 'created_at'),
+    listTable('product_kit_items', 'created_at')
+  ]);
+  const subscription = subscriptions.data.find((item) => String(item.id) === String(cycle.subscription_id));
+  if (!subscription) return { validationError: { status: 404, error: 'Assinatura do ciclo nao encontrada.' } };
+
+  const plan = plans.data.find((item) => String(item.id) === String(subscription.plan_id));
+  const kit = kits.data.find((item) => String(item.id) === String(plan?.kit_id));
+  const items = kitItems.data.filter((item) => String(item.kit_id) === String(kit?.id));
+  const total = Number(cycle.amount_cents || plan?.price_cents || kit?.sale_price_cents || 0);
+  const orderNumber = payload.order_number || `ASS-${subscription.subscription_number || 'SUB'}-${String(cycle.cycle_number || 1).padStart(3, '0')}`;
+  const orderPayload = {
+    id: randomUUID(),
+    order_number: orderNumber,
+    customer_id: subscription.customer_id || null,
+    channel: 'Assinatura',
+    seller: 'Sistema',
+    subtotal_cents: total,
+    discount_cents: 0,
+    freight_cents: 0,
+    total_cents: total,
+    payment_status: 'pending',
+    expected_date: cycle.shipping_date || null,
+    notes: `Faturado a partir da assinatura ${subscription.subscription_number || subscription.id}, ciclo ${cycle.cycle_number}.`,
+    status: 'awaiting_payment'
+  };
+
+  if (!supabase) {
+    return {
+      source: 'fallback',
+      data: {
+        order: orderPayload,
+        receivable: {
+          id: normalizeId(`ar-${orderNumber}`),
+          customer_id: orderPayload.customer_id,
+          sales_order_id: orderPayload.id,
+          description: `Assinatura ${subscription.subscription_number || ''} - ciclo ${cycle.cycle_number}`,
+          due_date: cycle.billing_date,
+          gross_amount_cents: total,
+          net_amount_cents: total,
+          status: 'pending'
+        },
+        cycle: { ...cycle, status: 'billed', sales_order_id: orderPayload.id }
+      }
+    };
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from('sales_orders')
+    .insert(orderPayload)
+    .select('*')
+    .single();
+
+  if (orderError) return { validationError: { status: 400, error: publicError(orderError) } };
+
+  const orderItems = items.length
+    ? items.map((item) => ({
+        order_id: order.id,
+        product_id: item.product_id || null,
+        description: item.description,
+        quantity: Number(item.quantity || 1),
+        unit_price_cents: Number(item.unit_price_cents || 0),
+        total_cents: Number(item.unit_price_cents || 0) * Number(item.quantity || 1),
+        unit_cost_cents: Number(item.unit_cost_cents || 0),
+        margin_cents: (Number(item.unit_price_cents || 0) - Number(item.unit_cost_cents || 0)) * Number(item.quantity || 1)
+      }))
+    : [{
+        order_id: order.id,
+        product_id: null,
+        description: plan?.name || kit?.name || 'Assinatura Aromas da Biblia',
+        quantity: 1,
+        unit_price_cents: total,
+        total_cents: total,
+        unit_cost_cents: 0,
+        margin_cents: total
+      }];
+
+  await supabase.from('sales_order_items').insert(orderItems);
+
+  const receivableResult = await createReceivableFromOrder(order.id, {
+    due_date: cycle.billing_date,
+    description: `Assinatura ${subscription.subscription_number || ''} - ciclo ${cycle.cycle_number}`,
+    payment_method: payload.payment_method || null,
+    notes: payload.notes || 'Recebivel gerado a partir de ciclo de assinatura.'
+  }, user);
+
+  if (receivableResult.validationError) return receivableResult;
+
+  const { data: updatedCycle, error: cycleError } = await supabase
+    .from('subscription_cycles')
+    .update({
+      status: 'billed',
+      sales_order_id: order.id,
+      notes: payload.notes || cycle.notes
+    })
+    .eq('id', cycle.id)
+    .select('*')
+    .single();
+
+  if (cycleError) return { validationError: { status: 400, error: publicError(cycleError) } };
+
+  await supabase
+    .from('customer_subscriptions')
+    .update({
+      cycles_completed: Number(subscription.cycles_completed || 0) + 1,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', subscription.id);
+
+  await writeAuditLog({
+    user,
+    action: 'bill_subscription_cycle',
+    table: 'subscription_cycles',
+    recordId: cycle.id,
+    before: cycle,
+    after: updatedCycle
+  });
+
+  return {
+    source: 'supabase',
+    data: {
+      order,
+      receivable: receivableResult.data,
+      cycle: updatedCycle
+    }
+  };
+}
+
 async function updateShipmentStatus(shipmentId, payload, user = null) {
   const status = String(payload.status || '');
   if (!['pending', 'label_ready', 'shipped', 'in_transit', 'delivered', 'delayed', 'returned', 'cancelled'].includes(status)) {
@@ -2392,6 +2531,14 @@ app.get('/api/admin/offers', requireAdminAuth, async (_req, res) => {
 
 app.post('/api/admin/customer-subscriptions/:id/cycle', requireAdminAuth, async (req, res) => {
   const result = await generateSubscriptionCycle(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/subscription-cycles/:id/bill', requireAdminAuth, async (req, res) => {
+  const result = await billSubscriptionCycle(req.params.id, req.body || {}, req.user);
   if (result.validationError) {
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
