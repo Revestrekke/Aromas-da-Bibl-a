@@ -808,6 +808,100 @@ async function createReceivableFromOrder(orderId, payload, user = null) {
   return { data: receivable, source: 'supabase' };
 }
 
+async function buildDreReport() {
+  const [orders, orderItems, payable, receivable] = await Promise.all([
+    listTable('sales_orders', 'created_at'),
+    listTable('sales_order_items', 'created_at'),
+    listTable('accounts_payable', 'due_date'),
+    listTable('accounts_receivable', 'due_date')
+  ]);
+
+  const grossRevenue = orders.data
+    .filter((item) => !['cancelled', 'returned'].includes(item.status))
+    .reduce((sum, item) => sum + Number(item.total_cents || 0), 0);
+  const discounts = orders.data.reduce((sum, item) => sum + Number(item.discount_cents || 0), 0);
+  const netRevenue = grossRevenue - discounts;
+  const cogs = orderItems.data.reduce((sum, item) => sum + (Number(item.unit_cost_cents || 0) * Number(item.quantity || 0)), 0);
+  const grossProfit = netRevenue - cogs;
+  const variableExpenses = payable.data
+    .filter((item) => item.status !== 'cancelled')
+    .reduce((sum, item) => sum + Number(item.net_amount_cents || item.amount_cents || 0), 0);
+  const contributionMargin = grossProfit - variableExpenses;
+  const operatingResult = contributionMargin;
+  const receivableOpen = receivable.data
+    .filter((item) => ['pending', 'partial'].includes(item.status))
+    .reduce((sum, item) => sum + Number(item.net_amount_cents || 0), 0);
+
+  return {
+    source: orders.source,
+    rows: [
+      { label: 'Receita bruta', amount_cents: grossRevenue },
+      { label: 'Descontos', amount_cents: -discounts },
+      { label: 'Receita líquida', amount_cents: netRevenue },
+      { label: 'CPV - custo dos produtos vendidos', amount_cents: -cogs },
+      { label: 'Lucro bruto', amount_cents: grossProfit },
+      { label: 'Despesas variáveis e operacionais', amount_cents: -variableExpenses },
+      { label: 'Margem de contribuição', amount_cents: contributionMargin },
+      { label: 'Resultado operacional', amount_cents: operatingResult }
+    ],
+    metrics: {
+      grossRevenue,
+      netRevenue,
+      cogs,
+      grossProfit,
+      variableExpenses,
+      contributionMargin,
+      operatingResult,
+      receivableOpen,
+      grossMarginPercent: netRevenue > 0 ? Math.round((grossProfit / netRevenue) * 100) : 0
+    }
+  };
+}
+
+function simulatePricing(input) {
+  const cost = Number(input.cost_cents || 0);
+  const packaging = Number(input.packaging_cents || 0);
+  const taxPercent = Number(input.tax_percent || 0);
+  const paymentFeePercent = Number(input.payment_fee_percent || 0);
+  const commissionPercent = Number(input.commission_percent || 0);
+  const marketplacePercent = Number(input.marketplace_percent || 0);
+  const marketing = Number(input.marketing_cents || 0);
+  const freight = Number(input.freight_cents || 0);
+  const desiredMarginPercent = Number(input.desired_margin_percent || 55);
+
+  const baseCost = cost + packaging + marketing + freight;
+  const variableRate = (taxPercent + paymentFeePercent + commissionPercent + marketplacePercent) / 100;
+  const desiredMarginRate = desiredMarginPercent / 100;
+  const denominator = Math.max(1 - variableRate - desiredMarginRate, 0.01);
+  const suggestedPrice = Math.ceil(baseCost / denominator);
+  const variableFees = Math.round(suggestedPrice * variableRate);
+  const totalCost = baseCost + variableFees;
+  const unitProfit = suggestedPrice - totalCost;
+  const grossMarginPercent = suggestedPrice > 0 ? Math.round((unitProfit / suggestedPrice) * 100) : 0;
+  const minimumPrice = Math.ceil(baseCost / Math.max(1 - variableRate, 0.01));
+  const resellerPrice = Math.ceil(suggestedPrice * 0.7);
+  const promotionalPrice = Math.ceil(suggestedPrice * 0.9);
+
+  return {
+    inputs: input,
+    baseCost,
+    variableRatePercent: Math.round(variableRate * 10000) / 100,
+    suggestedPrice,
+    minimumPrice,
+    resellerPrice,
+    promotionalPrice,
+    variableFees,
+    totalCost,
+    unitProfit,
+    grossMarginPercent,
+    alerts: [
+      ...(suggestedPrice <= baseCost ? ['Preço sugerido abaixo do custo base.'] : []),
+      ...(grossMarginPercent < desiredMarginPercent ? ['Margem abaixo da desejada.'] : []),
+      ...(minimumPrice <= 0 ? ['Preço mínimo inválido.'] : [])
+    ]
+  };
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -1044,6 +1138,14 @@ app.get('/api/admin/finance', requireAdminAuth, async (_req, res) => {
     costCenters,
     bankAccounts
   });
+});
+
+app.get('/api/admin/reports/dre', requireAdminAuth, async (_req, res) => {
+  res.json(await buildDreReport());
+});
+
+app.post('/api/admin/pricing/simulate', requireAdminAuth, (req, res) => {
+  res.json(simulatePricing(req.body || {}));
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {

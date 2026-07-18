@@ -835,6 +835,8 @@
         <a class="nav-link" href="/admin/receber"><i data-lucide="circle-dollar-sign"></i>A Receber</a>
         <a class="nav-link" href="/admin/pagar"><i data-lucide="receipt"></i>A Pagar</a>
         <a class="nav-link" href="/admin/caixa"><i data-lucide="landmark"></i>Fluxo de Caixa</a>
+        <a class="nav-link" href="/admin/dre"><i data-lucide="file-chart-column"></i>DRE</a>
+        <a class="nav-link" href="/admin/precificacao"><i data-lucide="badge-dollar-sign"></i>Precificação</a>
         <a class="nav-link" href="/admin/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/admin/modelo"><i data-lucide="network"></i>Modelo</a>
         <a class="nav-link" href="/admin/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
@@ -1334,6 +1336,76 @@
         <div class="table-wrap" id="cashFlowTable"></div>
       </section>
 
+      <section class="section panel" id="dre-admin">
+        <div class="panel-header">
+          <div>
+            <h2>DRE Gerencial</h2>
+            <p>Resultado gerencial calculado no backend a partir de vendas, custos e despesas.</p>
+          </div>
+          <span class="chip" id="dreMarginChip">0% margem</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="wallet"></i></div>
+            <div><div class="metric-value" id="dreRevenueMetric">R$ 0</div><div class="metric-label">Receita líquida</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="package-check"></i></div>
+            <div><div class="metric-value" id="dreGrossProfitMetric">R$ 0</div><div class="metric-label">Lucro bruto</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="landmark"></i></div>
+            <div><div class="metric-value" id="dreResultMetric">R$ 0</div><div class="metric-label">Resultado operacional</div></div>
+          </div>
+        </div>
+        <div class="table-wrap" id="dreTable"></div>
+      </section>
+
+      <section class="section panel" id="precificacao-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Precificação</h2>
+            <p>Simulador de preço mínimo, preço sugerido, margem e preço por canal.</p>
+          </div>
+          <span class="chip" id="pricingMarginChip">Simulador</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="pricingForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="pricingCost">Custo produto</label><input id="pricingCost" name="cost" type="number" min="0" step="0.01" value="22.00"></div>
+              <div class="field"><label for="pricingPackaging">Embalagem</label><input id="pricingPackaging" name="packaging" type="number" min="0" step="0.01" value="8.50"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="pricingTax">Impostos %</label><input id="pricingTax" name="tax_percent" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label for="pricingPayment">Taxa pagamento %</label><input id="pricingPayment" name="payment_fee_percent" type="number" min="0" step="0.01" value="4"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="pricingCommission">Comissão %</label><input id="pricingCommission" name="commission_percent" type="number" min="0" step="0.01" value="10"></div>
+              <div class="field"><label for="pricingMargin">Margem desejada %</label><input id="pricingMargin" name="desired_margin_percent" type="number" min="0" step="0.01" value="55"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="pricingMarketing">Marketing unitário</label><input id="pricingMarketing" name="marketing" type="number" min="0" step="0.01" value="2.00"></div>
+              <div class="field"><label for="pricingFreight">Frete subsidiado</label><input id="pricingFreight" name="freight" type="number" min="0" step="0.01" value="0"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="calculator"></i>Simular preço</button>
+            <div class="notice" id="pricingNotice">Os cálculos são feitos no backend.</div>
+          </form>
+          <div>
+            <div class="metrics" style="margin-top:0;">
+              <div class="metric">
+                <div class="metric-icon"><i data-lucide="tag"></i></div>
+                <div><div class="metric-value" id="pricingSuggestedMetric">R$ 0</div><div class="metric-label">Preço sugerido</div></div>
+              </div>
+              <div class="metric">
+                <div class="metric-icon"><i data-lucide="shield-alert"></i></div>
+                <div><div class="metric-value" id="pricingMinimumMetric">R$ 0</div><div class="metric-label">Preço mínimo</div></div>
+              </div>
+            </div>
+            <div class="table-wrap" id="pricingTable"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="section two-col" id="mercado">
         <div class="panel">
           <div class="panel-header">
@@ -1700,6 +1772,8 @@
       await loadProductionData();
       await loadCommercialData();
       await loadFinanceData();
+      await loadDreData();
+      await simulatePricingFromForm();
     }
 
     async function apiFetch(url, options = {}) {
@@ -1775,6 +1849,8 @@
       "/admin/receber": { title: "Contas a Receber | Aromas da Bíblia", label: "Contas a Receber", sections: ["receber-admin"] },
       "/admin/pagar": { title: "Contas a Pagar | Aromas da Bíblia", label: "Contas a Pagar", sections: ["pagar-admin"] },
       "/admin/caixa": { title: "Fluxo de Caixa | Aromas da Bíblia", label: "Fluxo de Caixa", sections: ["caixa-admin"] },
+      "/admin/dre": { title: "DRE | Aromas da Bíblia", label: "DRE Gerencial", sections: ["dre-admin"] },
+      "/admin/precificacao": { title: "Precificação | Aromas da Bíblia", label: "Precificação", sections: ["precificacao-admin"] },
       "/admin/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/admin/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
       "/admin/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
@@ -2255,6 +2331,77 @@
       }
     }
 
+    async function loadDreData() {
+      try {
+        const response = await apiFetch("/api/admin/reports/dre");
+        const dre = await response.json();
+        window.dreData = dre;
+
+        document.getElementById("dreMarginChip").textContent = `${dre.metrics.grossMarginPercent}% margem`;
+        document.getElementById("dreRevenueMetric").textContent = formatValue("netRevenue_cents", dre.metrics.netRevenue);
+        document.getElementById("dreGrossProfitMetric").textContent = formatValue("grossProfit_cents", dre.metrics.grossProfit);
+        document.getElementById("dreResultMetric").textContent = formatValue("operatingResult_cents", dre.metrics.operatingResult);
+
+        renderSimpleTable("dreTable", dre.rows, [
+          ["label", "Linha"],
+          ["amount_cents", "Valor"]
+        ], "Nenhuma linha de DRE disponível.");
+      } catch (error) {
+        document.getElementById("dreTable").innerHTML = `<div class="notice warn">Não foi possível carregar DRE.</div>`;
+      }
+    }
+
+    async function simulatePricingFromForm() {
+      const form = document.getElementById("pricingForm");
+      const notice = document.getElementById("pricingNotice");
+      if (!form) return;
+
+      const payload = formPayload(form);
+      const body = {
+        cost_cents: toCents(payload.cost),
+        packaging_cents: toCents(payload.packaging),
+        tax_percent: Number(payload.tax_percent || 0),
+        payment_fee_percent: Number(payload.payment_fee_percent || 0),
+        commission_percent: Number(payload.commission_percent || 0),
+        desired_margin_percent: Number(payload.desired_margin_percent || 55),
+        marketing_cents: toCents(payload.marketing),
+        freight_cents: toCents(payload.freight)
+      };
+
+      try {
+        const response = await apiFetch("/api/admin/pricing/simulate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const pricing = await response.json();
+
+        document.getElementById("pricingSuggestedMetric").textContent = formatValue("suggestedPrice_cents", pricing.suggestedPrice);
+        document.getElementById("pricingMinimumMetric").textContent = formatValue("minimumPrice_cents", pricing.minimumPrice);
+        document.getElementById("pricingMarginChip").textContent = `${pricing.grossMarginPercent}% margem`;
+
+        renderSimpleTable("pricingTable", [
+          { label: "Custo base", amount_cents: pricing.baseCost },
+          { label: "Taxas variáveis", amount_cents: pricing.variableFees },
+          { label: "Custo total", amount_cents: pricing.totalCost },
+          { label: "Lucro unitário", amount_cents: pricing.unitProfit },
+          { label: "Preço mínimo", amount_cents: pricing.minimumPrice },
+          { label: "Preço sugerido", amount_cents: pricing.suggestedPrice },
+          { label: "Preço revendedor", amount_cents: pricing.resellerPrice },
+          { label: "Preço promocional", amount_cents: pricing.promotionalPrice }
+        ], [
+          ["label", "Indicador"],
+          ["amount_cents", "Valor"]
+        ], "Nenhuma simulação disponível.");
+
+        notice.className = pricing.alerts.length ? "notice warn" : "notice";
+        notice.textContent = pricing.alerts.length ? pricing.alerts.join(" ") : "Preço calculado com margem positiva.";
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = "Não foi possível simular preço.";
+      }
+    }
+
     async function submitCatalogForm({ formId, noticeId, endpoint, transform }) {
       const form = document.getElementById(formId);
       const notice = document.getElementById(noticeId);
@@ -2545,6 +2692,11 @@
         notice.className = "notice warn";
         notice.textContent = error.message || "Não foi possível lançar conta.";
       }
+    });
+
+    document.getElementById("pricingForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await simulatePricingFromForm();
     });
 
     async function completeProductionOrder(orderId, plannedQuantity) {

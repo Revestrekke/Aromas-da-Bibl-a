@@ -295,3 +295,19 @@ Telas:
 - `/admin/receber`
 - `/admin/pagar`
 - `/admin/caixa`
+
+### Fase 5.1 - DRE e Precificação
+
+APIs administrativas:
+
+```text
+GET /api/admin/reports/dre
+POST /api/admin/pricing/simulate
+```
+
+Telas:
+
+- `/admin/dre`
+- `/admin/precificacao`
+
+Os cálculos de DRE e precificação são feitos no backend. A DRE usa pedidos, itens de pedido, contas a pagar e contas a receber. O simulador calcula preço mínimo, preço sugerido, preço revendedor, preço promocional, taxas variáveis, lucro unitário e alertas de margem.
