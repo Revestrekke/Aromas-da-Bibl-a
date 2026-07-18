@@ -171,3 +171,18 @@ Telas administrativas já possuem cadastro rápido para:
 - Fornecedores
 
 Os formulários enviam dados para APIs protegidas e exigem usuário autenticado no Supabase Auth.
+
+Movimentação de estoque:
+
+```text
+POST /api/admin/inventory/movements
+```
+
+Essa rota:
+
+- valida o tipo de item (`product`, `raw_material`, `packaging`);
+- calcula saldo anterior e saldo posterior no servidor;
+- bloqueia estoque negativo;
+- atualiza o saldo do item;
+- registra a movimentação;
+- grava auditoria quando o Supabase está configurado.

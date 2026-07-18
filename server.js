@@ -371,6 +371,123 @@ async function insertIntoTable(table, payload, user = null) {
   return { data, source: 'supabase' };
 }
 
+function stockColumnForItemType(itemType) {
+  if (itemType === 'product') return { table: 'products', stockColumn: 'current_stock' };
+  if (itemType === 'raw_material') return { table: 'raw_materials', stockColumn: 'quantity_on_hand' };
+  if (itemType === 'packaging') return { table: 'packaging_items', stockColumn: 'quantity_on_hand' };
+  return null;
+}
+
+function fallbackItemForMovement(itemType, itemId) {
+  const source = stockColumnForItemType(itemType);
+  if (!source) return null;
+  return (fallbackData[source.table] || []).find((item) => String(item.id) === String(itemId)) || null;
+}
+
+async function createInventoryMovement(payload, user = null) {
+  const validation = validatePayload('inventory_movements', payload);
+  if (!validation.ok) return { validationError: validation };
+
+  const movement = validation.payload;
+  const target = stockColumnForItemType(movement.item_type);
+
+  if (!target) {
+    return { validationError: { status: 400, error: 'Tipo de item inválido.' } };
+  }
+
+  const quantity = Number(movement.quantity || 0);
+  if (quantity <= 0) {
+    return { validationError: { status: 400, error: 'A quantidade deve ser maior que zero.' } };
+  }
+
+  if (!supabase) {
+    const item = fallbackItemForMovement(movement.item_type, movement.item_id);
+    const before = Number(item?.[target.stockColumn] || 0);
+    const direction = ['in', 'adjustment', 'release'].includes(movement.movement_type) ? 1 : -1;
+    const after = movement.movement_type === 'adjustment' ? quantity : before + (direction * quantity);
+
+    if (after < 0) {
+      return { validationError: { status: 409, error: 'Movimentação geraria estoque negativo.' } };
+    }
+
+    return {
+      source: 'fallback',
+      data: {
+        id: normalizeId(`mov-${Date.now()}`),
+        ...movement,
+        quantity_before: before,
+        quantity_after: after,
+        created_by: user?.id || null
+      }
+    };
+  }
+
+  const { data: item, error: itemError } = await supabase
+    .from(target.table)
+    .select(`id, ${target.stockColumn}`)
+    .eq('id', movement.item_id)
+    .maybeSingle();
+
+  if (itemError) {
+    return { data: movement, source: 'fallback', supabaseError: publicError(itemError) };
+  }
+
+  if (!item) {
+    return { validationError: { status: 404, error: 'Item de estoque não encontrado.' } };
+  }
+
+  const before = Number(item[target.stockColumn] || 0);
+  let after = before;
+
+  if (movement.movement_type === 'in' || movement.movement_type === 'release') after = before + quantity;
+  if (movement.movement_type === 'out' || movement.movement_type === 'reservation' || movement.movement_type === 'loss') after = before - quantity;
+  if (movement.movement_type === 'adjustment' || movement.movement_type === 'inventory') after = quantity;
+
+  if (after < 0) {
+    return { validationError: { status: 409, error: 'Movimentação geraria estoque negativo.' } };
+  }
+
+  const { data: updatedItem, error: updateError } = await supabase
+    .from(target.table)
+    .update({ [target.stockColumn]: after, updated_at: new Date().toISOString() })
+    .eq('id', movement.item_id)
+    .select('*')
+    .single();
+
+  if (updateError) {
+    return { data: movement, source: 'fallback', supabaseError: publicError(updateError) };
+  }
+
+  const movementRecord = {
+    id: movement.id || randomUUID(),
+    ...movement,
+    quantity_before: before,
+    quantity_after: after,
+    created_by: user?.id || null
+  };
+
+  const { data: savedMovement, error: movementError } = await supabase
+    .from('inventory_movements')
+    .insert(movementRecord)
+    .select('*')
+    .single();
+
+  if (movementError) {
+    return { data: movementRecord, source: 'fallback', supabaseError: publicError(movementError) };
+  }
+
+  await writeAuditLog({
+    user,
+    action: 'inventory_movement',
+    table: target.table,
+    recordId: movement.item_id,
+    before: item,
+    after: updatedItem
+  });
+
+  return { data: savedMovement, item: updatedItem, source: 'supabase' };
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -531,6 +648,14 @@ app.get('/api/admin/:table(fragrances|products|raw_materials|packaging_items|sup
 
 app.post('/api/admin/:table(fragrances|products|raw_materials|packaging_items|suppliers|inventory_movements)', requireAdminAuth, async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/inventory/movements', requireAdminAuth, async (req, res) => {
+  const result = await createInventoryMovement(req.body || {}, req.user);
   if (result.validationError) {
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }

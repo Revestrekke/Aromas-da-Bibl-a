@@ -824,6 +824,7 @@
         <a class="nav-link" href="/admin/aromas"><i data-lucide="flower-2"></i>Aromas</a>
         <a class="nav-link" href="/admin/insumos"><i data-lucide="flask-conical"></i>Insumos</a>
         <a class="nav-link" href="/admin/embalagens"><i data-lucide="package-open"></i>Embalagens</a>
+        <a class="nav-link" href="/admin/estoque"><i data-lucide="warehouse"></i>Estoque</a>
         <a class="nav-link" href="/admin/fornecedores"><i data-lucide="truck"></i>Fornecedores</a>
         <a class="nav-link" href="/admin/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/admin/modelo"><i data-lucide="network"></i>Modelo</a>
@@ -1039,6 +1040,67 @@
             <div class="notice" id="packagingNotice">Pronto para cadastrar embalagem.</div>
           </form>
           <div class="table-wrap" id="packagingTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="estoque-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Estoque</h2>
+            <p>Registre entradas, saídas, ajustes, perdas e inventários com validação no servidor.</p>
+          </div>
+          <span class="chip" id="inventoryMovementCount">0 movimentações</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="inventoryMovementForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field">
+                <label for="movementItemType">Tipo de item</label>
+                <select id="movementItemType" name="item_type" required>
+                  <option value="product">Produto acabado</option>
+                  <option value="raw_material">Insumo</option>
+                  <option value="packaging">Embalagem</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="movementType">Movimento</label>
+                <select id="movementType" name="movement_type" required>
+                  <option value="in">Entrada</option>
+                  <option value="out">Saída</option>
+                  <option value="adjustment">Ajuste</option>
+                  <option value="reservation">Reserva</option>
+                  <option value="release">Liberação</option>
+                  <option value="loss">Perda</option>
+                  <option value="inventory">Inventário</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="movementItemId">Item</label>
+              <select id="movementItemId" name="item_id" required></select>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="movementQuantity">Quantidade</label><input id="movementQuantity" name="quantity" type="number" min="0.001" step="0.001" required placeholder="10"></div>
+              <div class="field"><label for="movementCost">Custo unitário</label><input id="movementCost" name="unit_cost" type="number" min="0" step="0.01" placeholder="0.00"></div>
+            </div>
+            <div class="field"><label for="movementOrigin">Origem</label><input id="movementOrigin" name="origin" placeholder="compra, produção, venda, inventário"></div>
+            <div class="field"><label for="movementNotes">Observações</label><textarea id="movementNotes" name="notes" placeholder="Motivo, lote, conferência ou detalhe da movimentação."></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Registrar movimento</button>
+            <div class="notice" id="inventoryMovementNotice">Movimentações não permitem estoque negativo.</div>
+          </form>
+          <div>
+            <div class="metrics" style="margin-top:0;">
+              <div class="metric">
+                <div class="metric-icon"><i data-lucide="box"></i></div>
+                <div><div class="metric-value" id="finishedGoodsCount">0</div><div class="metric-label">Produtos acabados</div></div>
+              </div>
+              <div class="metric">
+                <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
+                <div><div class="metric-value" id="catalogLowStock">0</div><div class="metric-label">Alertas de saldo</div></div>
+              </div>
+            </div>
+            <div class="table-wrap" id="inventoryMovementsTable"></div>
+          </div>
         </div>
       </section>
 
@@ -1495,6 +1557,7 @@
       "/admin/aromas": { title: "Aromas | Aromas da Bíblia", label: "Aromas", sections: ["aromas"] },
       "/admin/insumos": { title: "Insumos | Aromas da Bíblia", label: "Insumos", sections: ["insumos"] },
       "/admin/embalagens": { title: "Embalagens | Aromas da Bíblia", label: "Embalagens", sections: ["embalagens"] },
+      "/admin/estoque": { title: "Estoque | Aromas da Bíblia", label: "Estoque", sections: ["estoque-admin"] },
       "/admin/fornecedores": { title: "Fornecedores | Aromas da Bíblia", label: "Fornecedores", sections: ["fornecedores"] },
       "/admin/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/admin/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
@@ -1530,7 +1593,7 @@
       });
 
       sidebar.classList.remove("open");
-      if (path === "/custos" && window.systemData?.custos) {
+      if (path === "/admin/custos" && window.systemData?.custos) {
         window.setTimeout(() => renderCostsPage(window.systemData.custos), 50);
       }
       if (!options.skipScroll) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1736,8 +1799,11 @@
           ["rating", "Avaliação"],
           ["status", "Status"]
         ], "Nenhum fornecedor cadastrado.");
+
+        renderInventoryMovements(catalog);
+        updateMovementItemOptions();
       } catch (error) {
-        ["fragrancesTable", "rawMaterialsTable", "packagingTable", "suppliersTable"].forEach((id) => {
+        ["fragrancesTable", "rawMaterialsTable", "packagingTable", "suppliersTable", "inventoryMovementsTable"].forEach((id) => {
           document.getElementById(id).innerHTML = `<div class="notice warn">Não foi possível carregar o catálogo.</div>`;
         });
       }
@@ -1753,6 +1819,44 @@
         if (data[key] === "") delete data[key];
       });
       return data;
+    }
+
+    function itemOptionsForType(itemType) {
+      const catalog = window.catalogData || {};
+      if (itemType === "product") return catalog.products?.data || [];
+      if (itemType === "raw_material") return catalog.rawMaterials?.data || [];
+      if (itemType === "packaging") return catalog.packagingItems?.data || [];
+      return [];
+    }
+
+    function itemLabel(item) {
+      return item.name || item.nome || item.trade_name || item.code || item.id;
+    }
+
+    function updateMovementItemOptions() {
+      const typeSelect = document.getElementById("movementItemType");
+      const itemSelect = document.getElementById("movementItemId");
+      if (!typeSelect || !itemSelect) return;
+
+      const items = itemOptionsForType(typeSelect.value);
+      itemSelect.innerHTML = items.map((item) => `<option value="${item.id}">${itemLabel(item)}</option>`).join("");
+      if (!items.length) itemSelect.innerHTML = `<option value="">Nenhum item disponível</option>`;
+    }
+
+    function renderInventoryMovements(catalog) {
+      const movements = catalog.movements?.data || [];
+      document.getElementById("inventoryMovementCount").textContent = `${movements.length} movimentações`;
+      document.getElementById("finishedGoodsCount").textContent = catalog.metrics?.activeProducts || 0;
+      document.getElementById("catalogLowStock").textContent = catalog.metrics?.lowStockAlerts || 0;
+
+      renderSimpleTable("inventoryMovementsTable", movements, [
+        ["item_type", "Tipo"],
+        ["movement_type", "Movimento"],
+        ["quantity", "Qtd."],
+        ["quantity_before", "Antes"],
+        ["quantity_after", "Depois"],
+        ["origin", "Origem"]
+      ], "Nenhuma movimentação registrada.");
     }
 
     async function submitCatalogForm({ formId, noticeId, endpoint, transform }) {
@@ -1850,6 +1954,48 @@
         ...payload,
         status: "active"
       })
+    });
+
+    document.getElementById("movementItemType").addEventListener("change", updateMovementItemOptions);
+
+    document.getElementById("inventoryMovementForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("inventoryMovementNotice");
+      notice.className = "notice";
+      notice.textContent = "Registrando movimentação...";
+
+      try {
+        const payload = formPayload(event.currentTarget);
+        const unitCost = payload.unit_cost;
+        delete payload.unit_cost;
+        payload.quantity = Number(payload.quantity || 0);
+        payload.unit_cost_cents = toCents(unitCost);
+
+        const response = await apiFetch("/api/admin/inventory/movements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Falha ao registrar movimentação.");
+        }
+
+        if (result.source === "supabase") {
+          notice.textContent = "Movimentação registrada e saldo atualizado.";
+          event.currentTarget.reset();
+        } else {
+          notice.className = "notice warn";
+          notice.textContent = "Movimentação validada. Aplique as migrations para persistir no Supabase.";
+        }
+
+        await loadCatalogData();
+        await loadSystemData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Não foi possível registrar movimentação.";
+      }
     });
 
     let costsPageChart;
