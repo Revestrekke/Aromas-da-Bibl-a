@@ -3315,17 +3315,64 @@
           ["status", "Status"]
         ], "Nenhum orçamento cadastrado.");
 
-        renderSimpleTable("ordersTable", commercial.orders.data, [
-          ["order_number", "Pedido"],
-          ["channel", "Canal"],
-          ["total_cents", "Total"],
-          ["payment_status", "Pagamento"],
-          ["status", "Status"]
-        ], "Nenhum pedido cadastrado.");
+        renderSalesOrdersTable(commercial.orders.data);
       } catch (error) {
         ["customersTable", "opportunitiesTable", "quotesTable", "ordersTable"].forEach((id) => {
           document.getElementById(id).innerHTML = `<div class="notice warn">Não foi possível carregar dados comerciais.</div>`;
         });
+      }
+    }
+
+    function renderSalesOrdersTable(rows) {
+      const target = document.getElementById("ordersTable");
+      if (!target) return;
+
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhum pedido cadastrado.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => {
+        const canSeparate = ["paid", "approved"].includes(item.payment_status) && !["ready_to_ship", "shipped", "delivered", "finished", "cancelled", "returned"].includes(item.status);
+        const action = canSeparate
+          ? `<button class="btn" type="button" data-separate-order="${escapeHtml(item.id)}"><i data-lucide="package-check"></i>Separar</button>`
+          : `<span class="chip">${escapeHtml(item.status || "Sem acao")}</span>`;
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(item.order_number || item.id)}</strong></td>
+            <td>${escapeHtml(item.channel || "-")}</td>
+            <td>${formatValue("total_cents", item.total_cents)}</td>
+            <td><span class="status ${statusClass(item.payment_status)}">${escapeHtml(item.payment_status || "-")}</span></td>
+            <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status || "-")}</span></td>
+            <td>${action}</td>
+          </tr>`;
+      }).join("");
+
+      target.innerHTML = `
+        <table>
+          <thead><tr><th>Pedido</th><th>Canal</th><th>Total</th><th>Pagamento</th><th>Status</th><th>Acao</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>`;
+
+      target.querySelectorAll("[data-separate-order]").forEach((button) => {
+        button.addEventListener("click", () => separateSalesOrder(button.dataset.separateOrder));
+      });
+      lucide.createIcons();
+    }
+
+    async function separateSalesOrder(id) {
+      try {
+        const response = await apiFetch(`/api/admin/sales/orders/${id}/separate`, { method: "POST" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao separar pedido.");
+        await loadCommercialData();
+        await loadCatalogData();
+        await loadLogisticsData();
+        await loadReportsData();
+        await loadNotificationsData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel separar o pedido.");
       }
     }
 

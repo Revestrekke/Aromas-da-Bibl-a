@@ -1350,6 +1350,123 @@ async function payAccountPayable(payableId, payload = {}, user = null) {
   };
 }
 
+async function separateSalesOrder(orderId, payload = {}, user = null) {
+  if (!supabase) {
+    const order = fallbackData.sales_orders.find((item) => String(item.id) === String(orderId));
+    if (!order) return { validationError: { status: 404, error: 'Pedido nao encontrado.' } };
+    if (!['paid', 'approved'].includes(order.payment_status)) {
+      return { validationError: { status: 409, error: 'Pedido ainda nao esta pago.' } };
+    }
+    const items = fallbackData.sales_order_items.filter((item) => String(item.order_id) === String(orderId));
+    const movements = [];
+    for (const item of items.filter((entry) => entry.product_id)) {
+      const movement = await createInventoryMovement({
+        item_type: 'product',
+        item_id: item.product_id,
+        movement_type: 'out',
+        quantity: Number(item.quantity || 1),
+        origin: `sales:${order.order_number}`,
+        unit_cost_cents: Number(item.unit_cost_cents || 0),
+        notes: `Separacao do pedido ${order.order_number}`
+      }, user);
+      if (movement.validationError) return movement;
+      movements.push(movement.data);
+    }
+    return {
+      source: 'fallback',
+      data: {
+        order: { ...order, status: 'ready_to_ship' },
+        movements
+      }
+    };
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from('sales_orders')
+    .select('*')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (orderError) return { validationError: { status: 400, error: publicError(orderError) } };
+  if (!order) return { validationError: { status: 404, error: 'Pedido nao encontrado.' } };
+  if (['ready_to_ship', 'shipped', 'delivered', 'finished'].includes(order.status)) {
+    return { validationError: { status: 409, error: 'Pedido ja foi separado ou enviado.' } };
+  }
+  if (!['paid', 'approved'].includes(order.payment_status)) {
+    return { validationError: { status: 409, error: 'Pedido ainda nao esta pago.' } };
+  }
+
+  const { data: items, error: itemsError } = await supabase
+    .from('sales_order_items')
+    .select('*')
+    .eq('order_id', order.id);
+
+  if (itemsError) return { validationError: { status: 400, error: publicError(itemsError) } };
+
+  const productItems = (items || []).filter((item) => item.product_id);
+  if (productItems.length) {
+    const productIds = [...new Set(productItems.map((item) => item.product_id))];
+    const { data: products, error: productsError } = await supabase
+      .from('products')
+      .select('id, current_stock')
+      .in('id', productIds);
+
+    if (productsError) return { validationError: { status: 400, error: publicError(productsError) } };
+
+    for (const item of productItems) {
+      const product = (products || []).find((entry) => String(entry.id) === String(item.product_id));
+      if (!product) return { validationError: { status: 404, error: `Produto do item ${item.description} nao encontrado.` } };
+      if (Number(product.current_stock || 0) < Number(item.quantity || 0)) {
+        return { validationError: { status: 409, error: `Estoque insuficiente para ${item.description}.` } };
+      }
+    }
+  }
+
+  const movements = [];
+  for (const item of productItems) {
+    const movement = await createInventoryMovement({
+      item_type: 'product',
+      item_id: item.product_id,
+      movement_type: 'out',
+      quantity: Number(item.quantity || 1),
+      origin: `sales:${order.order_number}`,
+      unit_cost_cents: Number(item.unit_cost_cents || 0),
+      notes: payload.notes || `Separacao do pedido ${order.order_number}`
+    }, user);
+    if (movement.validationError) return movement;
+    movements.push(movement.data);
+  }
+
+  const { data: updatedOrder, error: updateError } = await supabase
+    .from('sales_orders')
+    .update({
+      status: 'ready_to_ship',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', order.id)
+    .select('*')
+    .single();
+
+  if (updateError) return { validationError: { status: 400, error: publicError(updateError) } };
+
+  await writeAuditLog({
+    user,
+    action: 'separate_sales_order',
+    table: 'sales_orders',
+    recordId: order.id,
+    before: order,
+    after: updatedOrder
+  });
+
+  return {
+    source: 'supabase',
+    data: {
+      order: updatedOrder,
+      movements
+    }
+  };
+}
+
 async function buildPurchasingData() {
   const [requests, requestItems, quotes, orders, orderItems, suppliers, rawMaterials, packagingItems] = await Promise.all([
     listTable('purchase_requests', 'created_at'),
@@ -2824,6 +2941,14 @@ app.post('/api/admin/sales/orders/:id/receivable', requireAdminAuth, async (req,
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/sales/orders/:id/separate', requireAdminAuth, async (req, res) => {
+  const result = await separateSalesOrder(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
 });
 
 app.post('/api/admin/accounts-receivable/:id/receive', requireAdminAuth, async (req, res) => {
