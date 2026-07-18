@@ -409,3 +409,39 @@ Telas:
 - `/admin/rastreabilidade`
 
 Ao finalizar uma ordem de produção, o backend também pode gerar automaticamente um lote em quarentena e registrar o primeiro evento de rastreabilidade.
+
+### Fase 5.6 - Compras, Cotações e Reposição
+
+Migration:
+
+```text
+supabase/migrations/202607180008_purchasing.sql
+```
+
+Ela cria:
+
+- `purchase_requests`
+- `purchase_request_items`
+- `purchase_quotes`
+- `purchase_orders`
+- `purchase_order_items`
+
+APIs administrativas:
+
+```text
+GET /api/admin/purchasing
+POST /api/admin/purchase_requests
+POST /api/admin/purchase_request_items
+POST /api/admin/purchase_quotes
+POST /api/admin/purchase_orders
+POST /api/admin/purchase_order_items
+POST /api/admin/purchase-orders/:id/receive
+```
+
+Telas:
+
+- `/admin/solicitacoes`
+- `/admin/cotacoes`
+- `/admin/compras`
+
+O recebimento de compra gera entrada de estoque, conta a pagar e lançamento previsto no fluxo de caixa.

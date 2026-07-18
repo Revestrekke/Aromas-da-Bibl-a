@@ -84,6 +84,23 @@ const fallbackData = {
   suppliers: [
     { id: 'supplier-demo', trade_name: 'Fornecedor demonstrativo', category: 'Insumos e embalagens', contact_name: 'Contato comercial', status: 'active', rating: 4.5 }
   ],
+  purchase_requests: [
+    { id: 'pr-001', request_number: 'SC-0001', requester: 'Producao', priority: 'high', reason: 'Reposicao para lote piloto Home Spray Paz.', needed_by: '2026-07-25', status: 'ordered' }
+  ],
+  purchase_request_items: [
+    { id: 'pri-001', purchase_request_id: 'pr-001', item_type: 'raw_material', item_id: 'raw-base', description: 'Base para aromatizador', quantity: 2000, unit: 'ml', estimated_unit_cost_cents: 8 },
+    { id: 'pri-002', purchase_request_id: 'pr-001', item_type: 'packaging', item_id: 'pkg-frasco', description: 'Frasco ambar 200 ml', quantity: 50, unit: 'un', estimated_unit_cost_cents: 540 }
+  ],
+  purchase_quotes: [
+    { id: 'pq-001', quote_number: 'COT-0001', purchase_request_id: 'pr-001', supplier_id: 'supplier-demo', quoted_at: '2026-07-18', valid_until: '2026-08-02', freight_cents: 3000, total_cents: 46000, payment_terms: 'Pix ou boleto 7 dias', delivery_days: 5, status: 'approved' }
+  ],
+  purchase_orders: [
+    { id: 'po-001', order_number: 'OC-0001', purchase_request_id: 'pr-001', purchase_quote_id: 'pq-001', supplier_id: 'supplier-demo', order_date: '2026-07-18', expected_date: '2026-07-23', subtotal_cents: 43000, freight_cents: 3000, total_cents: 46000, status: 'sent' }
+  ],
+  purchase_order_items: [
+    { id: 'poi-001', purchase_order_id: 'po-001', item_type: 'raw_material', item_id: 'raw-base', description: 'Base para aromatizador', quantity: 2000, received_quantity: 0, unit: 'ml', unit_cost_cents: 8, total_cents: 16000 },
+    { id: 'poi-002', purchase_order_id: 'po-001', item_type: 'packaging', item_id: 'pkg-frasco', description: 'Frasco ambar 200 ml', quantity: 50, received_quantity: 0, unit: 'un', unit_cost_cents: 540, total_cents: 27000 }
+  ],
   inventory_movements: [
     { id: 'mov-001', item_type: 'product', item_id: 'product-paz', movement_type: 'in', origin: 'seed', quantity: 42, quantity_after: 42, unit_cost_cents: 3050 }
   ],
@@ -360,6 +377,26 @@ const tableValidation = {
   suppliers: {
     required: ['trade_name'],
     numeric: ['average_lead_time_days', 'minimum_order_cents', 'rating']
+  },
+  purchase_requests: {
+    required: ['request_number'],
+    numeric: []
+  },
+  purchase_request_items: {
+    required: ['purchase_request_id', 'item_type', 'item_id', 'quantity'],
+    numeric: ['quantity', 'estimated_unit_cost_cents']
+  },
+  purchase_quotes: {
+    required: ['quote_number'],
+    numeric: ['freight_cents', 'discount_cents', 'total_cents', 'delivery_days']
+  },
+  purchase_orders: {
+    required: ['order_number'],
+    numeric: ['subtotal_cents', 'freight_cents', 'discount_cents', 'total_cents']
+  },
+  purchase_order_items: {
+    required: ['purchase_order_id', 'item_type', 'item_id', 'quantity'],
+    numeric: ['quantity', 'received_quantity', 'unit_cost_cents', 'total_cents']
   },
   inventory_movements: {
     required: ['item_type', 'item_id', 'movement_type', 'quantity'],
@@ -1039,6 +1076,150 @@ async function createReceivableFromOrder(orderId, payload, user = null) {
   });
 
   return { data: receivable, source: 'supabase' };
+}
+
+async function buildPurchasingData() {
+  const [requests, requestItems, quotes, orders, orderItems, suppliers, rawMaterials, packagingItems] = await Promise.all([
+    listTable('purchase_requests', 'created_at'),
+    listTable('purchase_request_items', 'created_at'),
+    listTable('purchase_quotes', 'created_at'),
+    listTable('purchase_orders', 'created_at'),
+    listTable('purchase_order_items', 'created_at'),
+    listTable('suppliers', 'created_at'),
+    listTable('raw_materials', 'created_at'),
+    listTable('packaging_items', 'created_at')
+  ]);
+
+  const openRequests = requests.data.filter((item) => !['received', 'cancelled'].includes(item.status));
+  const openOrders = orders.data.filter((item) => !['received', 'cancelled'].includes(item.status));
+  const totalOpenCents = openOrders.reduce((sum, item) => sum + Number(item.total_cents || 0), 0);
+  const lowStock = [
+    ...rawMaterials.data.filter((item) => Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0)).map((item) => ({ ...item, item_type: 'raw_material' })),
+    ...packagingItems.data.filter((item) => Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0)).map((item) => ({ ...item, item_type: 'packaging' }))
+  ];
+
+  return {
+    source: orders.source,
+    metrics: {
+      requests: requests.data.length,
+      openRequests: openRequests.length,
+      quotes: quotes.data.length,
+      openOrders: openOrders.length,
+      totalOpenCents,
+      lowStock: lowStock.length
+    },
+    requests,
+    requestItems,
+    quotes,
+    orders,
+    orderItems,
+    suppliers,
+    rawMaterials,
+    packagingItems,
+    lowStock: { data: lowStock, source: rawMaterials.source === 'supabase' || packagingItems.source === 'supabase' ? 'supabase' : 'fallback' }
+  };
+}
+
+async function receivePurchaseOrder(orderId, payload, user = null) {
+  const dueDate = payload.due_date || new Date().toISOString().slice(0, 10);
+
+  if (!supabase) {
+    const order = fallbackData.purchase_orders.find((item) => String(item.id) === String(orderId));
+    if (!order) return { validationError: { status: 404, error: 'Pedido de compra nao encontrado.' } };
+    return { source: 'fallback', data: { ...order, status: 'received', received_at: new Date().toISOString().slice(0, 10), due_date: dueDate } };
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from('purchase_orders')
+    .select('*')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (orderError) return { data: null, source: 'fallback', supabaseError: publicError(orderError) };
+  if (!order) return { validationError: { status: 404, error: 'Pedido de compra nao encontrado.' } };
+  if (order.status === 'received') return { validationError: { status: 409, error: 'Pedido de compra ja recebido.' } };
+
+  const { data: items, error: itemsError } = await supabase
+    .from('purchase_order_items')
+    .select('*')
+    .eq('purchase_order_id', order.id);
+
+  if (itemsError) return { data: null, source: 'fallback', supabaseError: publicError(itemsError) };
+
+  for (const item of items || []) {
+    const quantity = Number(item.quantity || 0);
+    if (quantity <= 0) continue;
+
+    const movement = await createInventoryMovement({
+      item_type: item.item_type,
+      item_id: item.item_id,
+      movement_type: 'in',
+      quantity,
+      origin: `purchase:${order.order_number}`,
+      unit_cost_cents: Number(item.unit_cost_cents || 0),
+      notes: `Entrada da compra ${order.order_number}`
+    }, user);
+
+    if (movement.validationError) return movement;
+
+    await supabase
+      .from('purchase_order_items')
+      .update({ received_quantity: quantity })
+      .eq('id', item.id);
+  }
+
+  const patch = {
+    status: 'received',
+    received_at: new Date().toISOString().slice(0, 10),
+    updated_at: new Date().toISOString()
+  };
+
+  const { data: updatedOrder, error: updateError } = await supabase
+    .from('purchase_orders')
+    .update(patch)
+    .eq('id', order.id)
+    .select('*')
+    .single();
+
+  if (updateError) return { data: patch, source: 'fallback', supabaseError: publicError(updateError) };
+
+  const { data: payable } = await supabase
+    .from('accounts_payable')
+    .insert({
+      supplier_id: order.supplier_id,
+      description: `Compra ${order.order_number}`,
+      competence_date: order.order_date,
+      due_date: dueDate,
+      amount_cents: Number(order.total_cents || 0),
+      net_amount_cents: Number(order.total_cents || 0),
+      status: 'pending',
+      notes: payload.notes || null
+    })
+    .select('*')
+    .single();
+
+  if (payable) {
+    await supabase.from('cash_flow_entries').insert({
+      entry_date: dueDate,
+      source_type: 'payable',
+      source_id: payable.id,
+      direction: 'out',
+      description: payable.description,
+      amount_cents: payable.net_amount_cents,
+      status: 'planned'
+    });
+  }
+
+  await writeAuditLog({
+    user,
+    action: 'receive_purchase_order',
+    table: 'purchase_orders',
+    recordId: order.id,
+    before: order,
+    after: updatedOrder
+  });
+
+  return { data: updatedOrder, payable, source: 'supabase' };
 }
 
 async function buildDreReport() {
@@ -1807,6 +1988,26 @@ app.post('/api/admin/product-batches/:id/status', requireAdminAuth, async (req, 
   });
 
   res.json({ data, source: 'supabase' });
+});
+
+app.get('/api/admin/purchasing', requireAdminAuth, async (_req, res) => {
+  res.json(await buildPurchasingData());
+});
+
+app.post('/api/admin/:table(purchase_requests|purchase_request_items|purchase_quotes|purchase_orders|purchase_order_items)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/purchase-orders/:id/receive', requireAdminAuth, async (req, res) => {
+  const result = await receivePurchaseOrder(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {

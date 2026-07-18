@@ -826,6 +826,9 @@
         <a class="nav-link" href="/admin/embalagens"><i data-lucide="package-open"></i>Embalagens</a>
         <a class="nav-link" href="/admin/estoque"><i data-lucide="warehouse"></i>Estoque</a>
         <a class="nav-link" href="/admin/fornecedores"><i data-lucide="truck"></i>Fornecedores</a>
+        <a class="nav-link" href="/admin/solicitacoes"><i data-lucide="clipboard-plus"></i>Solicitações</a>
+        <a class="nav-link" href="/admin/cotacoes"><i data-lucide="messages-square"></i>Cotações</a>
+        <a class="nav-link" href="/admin/compras"><i data-lucide="shopping-bag"></i>Compras</a>
         <a class="nav-link" href="/admin/formulas"><i data-lucide="clipboard-list"></i>Fórmulas</a>
         <a class="nav-link" href="/admin/producao"><i data-lucide="kanban"></i>Produção</a>
         <a class="nav-link" href="/admin/lotes"><i data-lucide="boxes"></i>Lotes</a>
@@ -1146,6 +1149,95 @@
             <div class="notice" id="supplierNotice">Pronto para cadastrar fornecedor.</div>
           </form>
           <div class="table-wrap" id="suppliersTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="solicitacoes-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Solicitacoes de Compra</h2>
+            <p>Necessidades de reposicao vindas de estoque, producao ou administracao.</p>
+          </div>
+          <span class="chip" id="purchaseSource">Aguardando dados</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric"><div class="metric-icon"><i data-lucide="clipboard-plus"></i></div><div><div class="metric-value" id="purchaseRequestsMetric">0</div><div class="metric-label">Solicitacoes</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="triangle-alert"></i></div><div><div class="metric-value" id="purchaseLowStockMetric">0</div><div class="metric-label">Reposicoes sugeridas</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="shopping-bag"></i></div><div><div class="metric-value" id="purchaseOrdersMetric">0</div><div class="metric-label">Compras abertas</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="wallet"></i></div><div><div class="metric-value" id="purchaseOpenValueMetric">R$ 0</div><div class="metric-label">Valor aberto</div></div></div>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="purchaseRequestForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="purchaseRequestNumber">Numero</label><input id="purchaseRequestNumber" name="request_number" required placeholder="SC-0002"></div>
+              <div class="field"><label for="purchasePriority">Prioridade</label><select id="purchasePriority" name="priority"><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option><option value="low">Baixa</option></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="purchaseRequester">Solicitante</label><input id="purchaseRequester" name="requester" placeholder="Producao"></div>
+              <div class="field"><label for="purchaseNeededBy">Necessario ate</label><input id="purchaseNeededBy" name="needed_by" type="date"></div>
+            </div>
+            <div class="field"><label for="purchaseReason">Motivo</label><textarea id="purchaseReason" name="reason" placeholder="Reposicao para lote, estoque minimo ou nova campanha."></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar solicitacao</button>
+            <div class="notice" id="purchaseRequestNotice">Pronto para registrar solicitacao.</div>
+          </form>
+          <div>
+            <div class="table-wrap" id="purchaseRequestsTable"></div>
+            <div class="table-wrap" id="purchaseLowStockTable" style="margin-top:14px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section panel" id="cotacoes-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Cotacoes</h2>
+            <p>Comparacao inicial de fornecedores, prazos, frete e condicoes comerciais.</p>
+          </div>
+          <span class="chip" id="purchaseQuotesMetric">0 cotacoes</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="purchaseQuoteForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="quoteNumber">Numero</label><input id="quoteNumber" name="quote_number" required placeholder="COT-0002"></div>
+              <div class="field"><label for="quoteRequestId">Solicitacao</label><select id="quoteRequestId" name="purchase_request_id"></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="quoteSupplierId">Fornecedor</label><select id="quoteSupplierId" name="supplier_id"></select></div>
+              <div class="field"><label for="quoteValidUntil">Validade</label><input id="quoteValidUntil" name="valid_until" type="date"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="quoteTotal">Total</label><input id="quoteTotal" name="total" type="number" min="0" step="0.01" required></div>
+              <div class="field"><label for="quoteDeliveryDays">Prazo dias</label><input id="quoteDeliveryDays" name="delivery_days" type="number" min="0" step="1"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Registrar cotacao</button>
+            <div class="notice" id="purchaseQuoteNotice">Pronto para registrar cotacao.</div>
+          </form>
+          <div class="table-wrap" id="purchaseQuotesTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="compras-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Ordens de Compra</h2>
+            <p>Pedidos enviados a fornecedores, recebimento, entrada de estoque e conta a pagar.</p>
+          </div>
+          <span class="chip" id="purchaseOrdersChip">0 abertas</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="purchaseOrderForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="purchaseOrderNumber">Numero</label><input id="purchaseOrderNumber" name="order_number" required placeholder="OC-0002"></div>
+              <div class="field"><label for="purchaseOrderSupplierId">Fornecedor</label><select id="purchaseOrderSupplierId" name="supplier_id"></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="purchaseExpectedDate">Previsao</label><input id="purchaseExpectedDate" name="expected_date" type="date"></div>
+              <div class="field"><label for="purchaseOrderTotal">Total</label><input id="purchaseOrderTotal" name="total" type="number" min="0" step="0.01" required></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar ordem</button>
+            <div class="notice" id="purchaseOrderNotice">Ao receber, o sistema gera estoque e conta a pagar.</div>
+          </form>
+          <div class="table-wrap" id="purchaseOrdersTable"></div>
         </div>
       </section>
 
@@ -1989,6 +2081,7 @@
       await refreshHealth();
       await loadSystemData();
       await loadCatalogData();
+      await loadPurchasingData();
       await loadProductionData();
       await loadQualityData();
       await loadCommercialData();
@@ -2064,6 +2157,9 @@
       "/admin/embalagens": { title: "Embalagens | Aromas da Bíblia", label: "Embalagens", sections: ["embalagens"] },
       "/admin/estoque": { title: "Estoque | Aromas da Bíblia", label: "Estoque", sections: ["estoque-admin"] },
       "/admin/fornecedores": { title: "Fornecedores | Aromas da Bíblia", label: "Fornecedores", sections: ["fornecedores"] },
+      "/admin/solicitacoes": { title: "Solicitacoes | Aromas da Biblia", label: "Solicitacoes de Compra", sections: ["solicitacoes-admin"] },
+      "/admin/cotacoes": { title: "Cotacoes | Aromas da Biblia", label: "Cotacoes", sections: ["cotacoes-admin"] },
+      "/admin/compras": { title: "Compras | Aromas da Biblia", label: "Ordens de Compra", sections: ["compras-admin"] },
       "/admin/formulas": { title: "Fórmulas | Aromas da Bíblia", label: "Fórmulas", sections: ["formulas"] },
       "/admin/producao": { title: "Produção | Aromas da Bíblia", label: "Produção", sections: ["producao"] },
       "/admin/lotes": { title: "Lotes | Aromas da Biblia", label: "Lotes", sections: ["lotes-admin"] },
@@ -2435,6 +2531,87 @@
         ["quantity_after", "Depois"],
         ["origin", "Origem"]
       ], "Nenhuma movimentação registrada.");
+    }
+
+    function updatePurchasingOptions() {
+      const purchasing = window.purchasingData || {};
+      const suppliers = purchasing.suppliers?.data || window.catalogData?.suppliers?.data || [];
+      const requests = purchasing.requests?.data || [];
+
+      const supplierOptions = suppliers.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.trade_name)}</option>`).join("") || `<option value="">Nenhum fornecedor</option>`;
+      const requestOptions = requests.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.request_number)}</option>`).join("") || `<option value="">Nenhuma solicitacao</option>`;
+
+      document.getElementById("quoteSupplierId").innerHTML = supplierOptions;
+      document.getElementById("purchaseOrderSupplierId").innerHTML = supplierOptions;
+      document.getElementById("quoteRequestId").innerHTML = requestOptions;
+    }
+
+    function renderPurchaseOrders(rows) {
+      const target = document.getElementById("purchaseOrdersTable");
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhuma ordem de compra cadastrada.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => `
+        <tr>
+          <td><strong>${escapeHtml(item.order_number)}</strong></td>
+          <td>${escapeHtml(item.order_date || "-")}</td>
+          <td>${escapeHtml(item.expected_date || "-")}</td>
+          <td>${formatValue("total_cents", item.total_cents || 0)}</td>
+          <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status)}</span></td>
+          <td><button class="btn" type="button" data-receive-purchase="${escapeHtml(item.id)}"><i data-lucide="package-check"></i>Receber</button></td>
+        </tr>`).join("");
+
+      target.innerHTML = `<table><thead><tr><th>Ordem</th><th>Emissao</th><th>Previsao</th><th>Total</th><th>Status</th><th>Acao</th></tr></thead><tbody>${body}</tbody></table>`;
+      target.querySelectorAll("[data-receive-purchase]").forEach((button) => {
+        button.addEventListener("click", () => receivePurchaseOrder(button.dataset.receivePurchase));
+      });
+      lucide.createIcons();
+    }
+
+    async function loadPurchasingData() {
+      try {
+        const response = await apiFetch("/api/admin/purchasing");
+        const data = await response.json();
+        window.purchasingData = data;
+
+        document.getElementById("purchaseSource").textContent = data.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("purchaseRequestsMetric").textContent = data.metrics?.openRequests || 0;
+        document.getElementById("purchaseLowStockMetric").textContent = data.metrics?.lowStock || 0;
+        document.getElementById("purchaseOrdersMetric").textContent = data.metrics?.openOrders || 0;
+        document.getElementById("purchaseOpenValueMetric").textContent = formatValue("totalOpenCents_cents", data.metrics?.totalOpenCents || 0);
+        document.getElementById("purchaseQuotesMetric").textContent = `${data.metrics?.quotes || 0} cotacoes`;
+        document.getElementById("purchaseOrdersChip").textContent = `${data.metrics?.openOrders || 0} abertas`;
+
+        renderSimpleTable("purchaseRequestsTable", data.requests?.data || [], [
+          ["request_number", "Numero"],
+          ["requester", "Solicitante"],
+          ["priority", "Prioridade"],
+          ["needed_by", "Necessario"],
+          ["status", "Status"]
+        ], "Nenhuma solicitacao cadastrada.");
+        renderSimpleTable("purchaseLowStockTable", data.lowStock?.data || [], [
+          ["item_type", "Tipo"],
+          ["code", "Codigo"],
+          ["name", "Item"],
+          ["quantity_on_hand", "Saldo"],
+          ["minimum_stock", "Minimo"]
+        ], "Nenhuma reposicao sugerida.");
+        renderSimpleTable("purchaseQuotesTable", data.quotes?.data || [], [
+          ["quote_number", "Cotacao"],
+          ["valid_until", "Validade"],
+          ["total_cents", "Total"],
+          ["delivery_days", "Prazo"],
+          ["status", "Status"]
+        ], "Nenhuma cotacao cadastrada.");
+        renderPurchaseOrders(data.orders?.data || []);
+        updatePurchasingOptions();
+      } catch (error) {
+        ["purchaseRequestsTable", "purchaseLowStockTable", "purchaseQuotesTable", "purchaseOrdersTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar compras.</div>`;
+        });
+      }
     }
 
     function updateProductionOptions() {
@@ -3006,6 +3183,58 @@
       }
     }
 
+    async function submitPurchasingForm({ formId, noticeId, endpoint, transform }) {
+      const form = document.getElementById(formId);
+      const notice = document.getElementById(noticeId);
+      if (!form || !notice) return;
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        notice.className = "notice";
+        notice.textContent = "Salvando...";
+
+        try {
+          const payload = transform(formPayload(form));
+          const response = await apiFetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Falha ao salvar.");
+
+          notice.textContent = result.source === "supabase" ? "Registro salvo no Supabase." : "Registro validado em modo demonstrativo.";
+          if (result.source === "supabase") form.reset();
+          await loadPurchasingData();
+        } catch (error) {
+          notice.className = "notice warn";
+          notice.textContent = error.message || "Nao foi possivel salvar.";
+        }
+      });
+    }
+
+    async function receivePurchaseOrder(orderId) {
+      const dueDate = window.prompt("Vencimento da conta a pagar (AAAA-MM-DD):", new Date().toISOString().slice(0, 10));
+      if (!dueDate) return;
+
+      try {
+        const response = await apiFetch(`/api/admin/purchase-orders/${orderId}/receive`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ due_date: dueDate })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao receber compra.");
+
+        await loadPurchasingData();
+        await loadCatalogData();
+        await loadFinanceData();
+        await loadSystemData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel receber compra.");
+      }
+    }
+
     async function exportReport(type) {
       try {
         const response = await apiFetch(`/api/admin/reports/${type}.csv`);
@@ -3348,6 +3577,40 @@
         check_date: new Date().toISOString().slice(0, 10)
       }),
       onDone: async (check) => createTraceEventForBatch(check?.batch_id, "Inspecao de qualidade registrada.")
+    });
+
+    submitPurchasingForm({
+      formId: "purchaseRequestForm",
+      noticeId: "purchaseRequestNotice",
+      endpoint: "/api/admin/purchase_requests",
+      transform: (payload) => ({
+        ...payload,
+        status: "draft"
+      })
+    });
+
+    submitPurchasingForm({
+      formId: "purchaseQuoteForm",
+      noticeId: "purchaseQuoteNotice",
+      endpoint: "/api/admin/purchase_quotes",
+      transform: (payload) => ({
+        ...payload,
+        total_cents: toCents(payload.total),
+        delivery_days: Number(payload.delivery_days || 0),
+        status: "received"
+      })
+    });
+
+    submitPurchasingForm({
+      formId: "purchaseOrderForm",
+      noticeId: "purchaseOrderNotice",
+      endpoint: "/api/admin/purchase_orders",
+      transform: (payload) => ({
+        ...payload,
+        total_cents: toCents(payload.total),
+        subtotal_cents: toCents(payload.total),
+        status: "sent"
+      })
     });
 
     async function completeProductionOrder(orderId, plannedQuantity) {
