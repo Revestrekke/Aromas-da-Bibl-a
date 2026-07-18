@@ -103,6 +103,16 @@ const fallbackData = {
   production_orders: [
     { id: 'op-001', order_number: 'OP-0001', product_id: 'product-paz', formula_id: 'formula-paz', formula_version_id: 'formula-version-paz-v1', planned_quantity: 10, status: 'planned', responsible: 'Produção' }
   ],
+  product_batches: [
+    { id: 'batch-paz-0001', batch_code: 'LOTE-PAZ-0001', production_order_id: 'op-001', product_id: 'product-paz', formula_version_id: 'formula-version-paz-v1', quantity: 10, unit: 'un', manufactured_at: '2026-07-18', expires_at: '2027-07-18', status: 'quarantine', storage_location: 'Prateleira A1', notes: 'Lote demonstrativo para rastreabilidade inicial.' }
+  ],
+  quality_checks: [
+    { id: 'qc-paz-0001', batch_id: 'batch-paz-0001', production_order_id: 'op-001', check_date: '2026-07-18', inspector: 'Qualidade', aroma_result: 'approved', label_result: 'approved', packaging_result: 'approved', leakage_result: 'pending', final_status: 'pending', notes: 'Aguardando teste final de vazamento.' }
+  ],
+  batch_trace_events: [
+    { id: 'trace-paz-created', batch_id: 'batch-paz-0001', event_type: 'created', description: 'Lote criado a partir da ordem de producao OP-0001.', quantity: 10, responsible: 'Producao', created_at: '2026-07-18T12:00:00Z' },
+    { id: 'trace-paz-qc', batch_id: 'batch-paz-0001', event_type: 'quality_check', description: 'Inspecao visual e conferencia de rotulo registradas.', quantity: 10, responsible: 'Qualidade', created_at: '2026-07-18T13:00:00Z' }
+  ],
   customers: [
     { id: 'customer-igreja', person_type: 'company', name: 'Igreja Vida Plena', whatsapp: '(00) 90000-0000', email: 'contato@vidaplena.example', type: 'church', status: 'lead', acquisition_channel: 'WhatsApp' },
     { id: 'customer-livraria', person_type: 'company', name: 'Livraria Caminho', whatsapp: '(00) 91111-1111', email: 'compras@livrariacaminho.example', type: 'reseller', status: 'active', acquisition_channel: 'Instagram' }
@@ -371,6 +381,18 @@ const tableValidation = {
     required: ['order_number', 'product_id', 'planned_quantity'],
     numeric: ['planned_quantity', 'produced_quantity', 'approved_quantity', 'lost_quantity', 'estimated_cost_cents', 'real_cost_cents']
   },
+  product_batches: {
+    required: ['batch_code', 'product_id', 'quantity'],
+    numeric: ['quantity']
+  },
+  quality_checks: {
+    required: ['batch_id'],
+    numeric: []
+  },
+  batch_trace_events: {
+    required: ['batch_id', 'event_type', 'description'],
+    numeric: ['quantity']
+  },
   customers: {
     required: ['name'],
     numeric: []
@@ -630,6 +652,45 @@ async function buildAdminControl() {
   };
 }
 
+async function buildQualityData() {
+  const [batches, qualityChecks, traceEvents, productionOrders, products] = await Promise.all([
+    listTable('product_batches', 'created_at'),
+    listTable('quality_checks', 'created_at'),
+    listTable('batch_trace_events', 'created_at'),
+    listTable('production_orders', 'created_at'),
+    listTable('products', 'created_at')
+  ]);
+
+  const batchRows = batches.data || [];
+  const checkRows = qualityChecks.data || [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return {
+    source: batches.source,
+    metrics: {
+      batches: batchRows.length,
+      quarantine: batchRows.filter((item) => item.status === 'quarantine').length,
+      approved: batchRows.filter((item) => ['approved', 'released'].includes(item.status)).length,
+      rejected: batchRows.filter((item) => item.status === 'rejected').length,
+      pendingChecks: checkRows.filter((item) => ['pending', 'rework'].includes(item.final_status)).length,
+      expiringSoon: batchRows.filter((item) => {
+        const days = daysFromToday(item.expires_at);
+        return days !== null && days >= 0 && days <= 60;
+      }).length,
+      expired: batchRows.filter((item) => {
+        const expiresAt = item.expires_at ? new Date(item.expires_at) : null;
+        return expiresAt && expiresAt < today;
+      }).length
+    },
+    batches,
+    qualityChecks,
+    traceEvents,
+    productionOrders,
+    products
+  };
+}
+
 function stockColumnForItemType(itemType) {
   if (itemType === 'product') return { table: 'products', stockColumn: 'current_stock' };
   if (itemType === 'raw_material') return { table: 'raw_materials', stockColumn: 'quantity_on_hand' };
@@ -825,6 +886,7 @@ async function completeProductionOrder(orderId, payload, user = null) {
 
   if (productMovement.validationError) return productMovement;
 
+  const generatedLot = payload.generated_lot || `LOTE-${order.order_number}`;
   const patch = {
     status: 'finished',
     produced_quantity: Number(payload.produced_quantity || approvedQuantity),
@@ -832,7 +894,7 @@ async function completeProductionOrder(orderId, payload, user = null) {
     lost_quantity: Number(payload.lost_quantity || 0),
     loss_reason: payload.loss_reason || null,
     completed_at: new Date().toISOString(),
-    generated_lot: payload.generated_lot || `LOTE-${order.order_number}`,
+    generated_lot: generatedLot,
     expires_at: payload.expires_at || null,
     updated_at: new Date().toISOString()
   };
@@ -854,6 +916,41 @@ async function completeProductionOrder(orderId, payload, user = null) {
     before: order,
     after: updatedOrder
   });
+
+  const { data: existingBatch } = await supabase
+    .from('product_batches')
+    .select('*')
+    .eq('batch_code', generatedLot)
+    .maybeSingle();
+
+  if (!existingBatch) {
+    const { data: batch } = await supabase
+      .from('product_batches')
+      .insert({
+        batch_code: generatedLot,
+        production_order_id: order.id,
+        product_id: order.product_id,
+        formula_version_id: order.formula_version_id,
+        quantity: approvedQuantity,
+        manufactured_at: new Date().toISOString().slice(0, 10),
+        expires_at: patch.expires_at,
+        status: 'quarantine',
+        notes: 'Lote gerado automaticamente ao finalizar producao.',
+        created_by: user?.id || null
+      })
+      .select('*')
+      .single();
+
+    if (batch) {
+      await supabase.from('batch_trace_events').insert({
+        batch_id: batch.id,
+        event_type: 'created_from_production',
+        description: `Lote criado a partir da ordem ${order.order_number}.`,
+        quantity: approvedQuantity,
+        responsible: user?.email || order.responsible || 'Producao'
+      });
+    }
+  }
 
   return { data: updatedOrder, source: 'supabase' };
 }
@@ -1659,6 +1756,57 @@ app.put('/api/admin/settings/:key', requireAdminAuth, async (req, res) => {
 
 app.get('/api/admin/audit-logs', requireAdminAuth, async (_req, res) => {
   res.json(await listTable('audit_logs', 'created_at'));
+});
+
+app.get('/api/admin/quality', requireAdminAuth, async (_req, res) => {
+  res.json(await buildQualityData());
+});
+
+app.post('/api/admin/:table(product_batches|quality_checks|batch_trace_events)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/product-batches/:id/status', requireAdminAuth, async (req, res) => {
+  const status = String(req.body?.status || '');
+  if (!['quarantine', 'approved', 'rejected', 'released', 'recalled'].includes(status)) {
+    return res.status(400).json({ error: 'Status de lote invalido.' });
+  }
+
+  if (!supabase) {
+    return res.status(202).json({ data: { id: req.params.id, status }, source: 'fallback' });
+  }
+
+  const { data: before } = await supabase.from('product_batches').select('*').eq('id', req.params.id).maybeSingle();
+  const { data, error } = await supabase
+    .from('product_batches')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', req.params.id)
+    .select('*')
+    .single();
+
+  if (error) return res.status(404).json({ error: publicError(error) });
+
+  await writeAuditLog({
+    user: req.user,
+    action: `batch_${status}`,
+    table: 'product_batches',
+    recordId: req.params.id,
+    before,
+    after: data
+  });
+
+  await supabase.from('batch_trace_events').insert({
+    batch_id: req.params.id,
+    event_type: `status_${status}`,
+    description: `Status do lote alterado para ${status}.`,
+    responsible: req.user?.email || 'Sistema'
+  });
+
+  res.json({ data, source: 'supabase' });
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {

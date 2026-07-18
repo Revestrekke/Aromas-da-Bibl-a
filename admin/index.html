@@ -828,6 +828,9 @@
         <a class="nav-link" href="/admin/fornecedores"><i data-lucide="truck"></i>Fornecedores</a>
         <a class="nav-link" href="/admin/formulas"><i data-lucide="clipboard-list"></i>Fórmulas</a>
         <a class="nav-link" href="/admin/producao"><i data-lucide="kanban"></i>Produção</a>
+        <a class="nav-link" href="/admin/lotes"><i data-lucide="boxes"></i>Lotes</a>
+        <a class="nav-link" href="/admin/qualidade"><i data-lucide="badge-check"></i>Qualidade</a>
+        <a class="nav-link" href="/admin/rastreabilidade"><i data-lucide="route"></i>Rastreabilidade</a>
         <a class="nav-link" href="/admin/clientes"><i data-lucide="users"></i>Clientes</a>
         <a class="nav-link" href="/admin/crm"><i data-lucide="columns-3"></i>CRM</a>
         <a class="nav-link" href="/admin/orcamentos"><i data-lucide="file-text"></i>Orçamentos</a>
@@ -1199,6 +1202,87 @@
             <div class="table-wrap" id="productionOrdersTable"></div>
           </div>
         </div>
+      </section>
+
+      <section class="section panel" id="lotes-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Lotes</h2>
+            <p>Controle de lotes fabricados, validade, local de armazenamento e status de liberacao.</p>
+          </div>
+          <span class="chip" id="batchesSource">Aguardando dados</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric"><div class="metric-icon"><i data-lucide="boxes"></i></div><div><div class="metric-value" id="batchesCountMetric">0</div><div class="metric-label">Lotes</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="hourglass"></i></div><div><div class="metric-value" id="batchesQuarantineMetric">0</div><div class="metric-label">Quarentena</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="badge-check"></i></div><div><div class="metric-value" id="batchesApprovedMetric">0</div><div class="metric-label">Liberados</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="calendar-warning"></i></div><div><div class="metric-value" id="batchesExpiringMetric">0</div><div class="metric-label">Vencem em 60 dias</div></div></div>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="batchForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="batchCode">Codigo do lote</label><input id="batchCode" name="batch_code" required placeholder="LOTE-PAZ-0002"></div>
+              <div class="field"><label for="batchProductId">Produto</label><select id="batchProductId" name="product_id" required></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="batchQuantity">Quantidade</label><input id="batchQuantity" name="quantity" type="number" min="0" step="1" required></div>
+              <div class="field"><label for="batchUnit">Unidade</label><input id="batchUnit" name="unit" value="un"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="batchManufacturedAt">Fabricacao</label><input id="batchManufacturedAt" name="manufactured_at" type="date"></div>
+              <div class="field"><label for="batchExpiresAt">Validade</label><input id="batchExpiresAt" name="expires_at" type="date"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="batchStatus">Status</label><select id="batchStatus" name="status"><option value="quarantine">Quarentena</option><option value="approved">Aprovado</option><option value="released">Liberado</option><option value="rejected">Rejeitado</option></select></div>
+              <div class="field"><label for="batchLocation">Local</label><input id="batchLocation" name="storage_location" placeholder="Prateleira A1"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar lote</button>
+            <div class="notice" id="batchNotice">Pronto para cadastrar lote.</div>
+          </form>
+          <div class="table-wrap" id="batchesTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="qualidade-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Qualidade</h2>
+            <p>Inspecoes de aroma, rotulo, embalagem, vazamento e status final.</p>
+          </div>
+          <span class="chip" id="qualityPendingChip">0 pendentes</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="qualityForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="qualityBatchId">Lote</label><select id="qualityBatchId" name="batch_id" required></select></div>
+              <div class="field"><label for="qualityInspector">Responsavel</label><input id="qualityInspector" name="inspector" placeholder="Qualidade"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="qualityAroma">Aroma</label><select id="qualityAroma" name="aroma_result"><option value="approved">Aprovado</option><option value="pending">Pendente</option><option value="rejected">Rejeitado</option></select></div>
+              <div class="field"><label for="qualityLabel">Rotulo</label><select id="qualityLabel" name="label_result"><option value="approved">Aprovado</option><option value="pending">Pendente</option><option value="rejected">Rejeitado</option></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="qualityPackaging">Embalagem</label><select id="qualityPackaging" name="packaging_result"><option value="approved">Aprovado</option><option value="pending">Pendente</option><option value="rejected">Rejeitado</option></select></div>
+              <div class="field"><label for="qualityLeakage">Vazamento</label><select id="qualityLeakage" name="leakage_result"><option value="pending">Pendente</option><option value="approved">Aprovado</option><option value="rejected">Rejeitado</option></select></div>
+            </div>
+            <div class="field"><label for="qualityFinalStatus">Status final</label><select id="qualityFinalStatus" name="final_status"><option value="pending">Pendente</option><option value="approved">Aprovado</option><option value="rework">Retrabalho</option><option value="rejected">Rejeitado</option></select></div>
+            <div class="field"><label for="qualityNotes">Observacoes</label><textarea id="qualityNotes" name="notes"></textarea></div>
+            <button class="btn primary" type="submit"><i data-lucide="badge-check"></i>Registrar qualidade</button>
+            <div class="notice" id="qualityNotice">Pronto para registrar inspecao.</div>
+          </form>
+          <div class="table-wrap" id="qualityChecksTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="rastreabilidade-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Rastreabilidade</h2>
+            <p>Linha do tempo de eventos do lote, da producao ate liberacao.</p>
+          </div>
+          <span class="chip" id="traceEventsChip">0 eventos</span>
+        </div>
+        <div class="table-wrap" id="traceEventsTable"></div>
       </section>
 
       <section class="section panel" id="clientes-admin">
@@ -1906,6 +1990,7 @@
       await loadSystemData();
       await loadCatalogData();
       await loadProductionData();
+      await loadQualityData();
       await loadCommercialData();
       await loadFinanceData();
       await loadDreData();
@@ -1981,6 +2066,9 @@
       "/admin/fornecedores": { title: "Fornecedores | Aromas da Bíblia", label: "Fornecedores", sections: ["fornecedores"] },
       "/admin/formulas": { title: "Fórmulas | Aromas da Bíblia", label: "Fórmulas", sections: ["formulas"] },
       "/admin/producao": { title: "Produção | Aromas da Bíblia", label: "Produção", sections: ["producao"] },
+      "/admin/lotes": { title: "Lotes | Aromas da Biblia", label: "Lotes", sections: ["lotes-admin"] },
+      "/admin/qualidade": { title: "Qualidade | Aromas da Biblia", label: "Qualidade", sections: ["qualidade-admin"] },
+      "/admin/rastreabilidade": { title: "Rastreabilidade | Aromas da Biblia", label: "Rastreabilidade", sections: ["rastreabilidade-admin"] },
       "/admin/clientes": { title: "Clientes | Aromas da Bíblia", label: "Clientes", sections: ["clientes-admin"] },
       "/admin/crm": { title: "CRM | Aromas da Bíblia", label: "CRM", sections: ["crm-admin"] },
       "/admin/orcamentos": { title: "Orçamentos | Aromas da Bíblia", label: "Orçamentos", sections: ["orcamentos-admin"] },
@@ -2437,6 +2525,85 @@
       }
     }
 
+    function updateQualityOptions() {
+      const quality = window.qualityData || {};
+      const products = quality.products?.data || window.catalogData?.products?.data || [];
+      const batches = quality.batches?.data || [];
+      const productOptions = products.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("");
+      const batchOptions = batches.map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.batch_code)}</option>`).join("");
+
+      document.getElementById("batchProductId").innerHTML = productOptions || `<option value="">Nenhum produto</option>`;
+      document.getElementById("qualityBatchId").innerHTML = batchOptions || `<option value="">Nenhum lote</option>`;
+    }
+
+    function renderBatches(rows) {
+      const target = document.getElementById("batchesTable");
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhum lote cadastrado.</div>`;
+        return;
+      }
+
+      const body = rows.map((item) => `
+        <tr>
+          <td><strong>${escapeHtml(item.batch_code)}</strong></td>
+          <td>${escapeHtml(item.quantity)} ${escapeHtml(item.unit || "un")}</td>
+          <td>${escapeHtml(item.manufactured_at || "-")}</td>
+          <td>${escapeHtml(item.expires_at || "-")}</td>
+          <td><span class="status ${statusClass(item.status)}">${escapeHtml(item.status)}</span></td>
+          <td>${escapeHtml(item.storage_location || "-")}</td>
+          <td>
+            <button class="btn" type="button" data-batch-status="${escapeHtml(item.id)}" data-status="released"><i data-lucide="check"></i>Liberar</button>
+            <button class="btn" type="button" data-batch-status="${escapeHtml(item.id)}" data-status="rejected"><i data-lucide="x"></i>Rejeitar</button>
+          </td>
+        </tr>`).join("");
+
+      target.innerHTML = `<table><thead><tr><th>Lote</th><th>Qtd.</th><th>Fabricacao</th><th>Validade</th><th>Status</th><th>Local</th><th>Acoes</th></tr></thead><tbody>${body}</tbody></table>`;
+      target.querySelectorAll("[data-batch-status]").forEach((button) => {
+        button.addEventListener("click", () => updateBatchStatus(button.dataset.batchStatus, button.dataset.status));
+      });
+      lucide.createIcons();
+    }
+
+    async function loadQualityData() {
+      try {
+        const response = await apiFetch("/api/admin/quality");
+        const data = await response.json();
+        window.qualityData = data;
+
+        document.getElementById("batchesSource").textContent = data.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("batchesCountMetric").textContent = data.metrics?.batches || 0;
+        document.getElementById("batchesQuarantineMetric").textContent = data.metrics?.quarantine || 0;
+        document.getElementById("batchesApprovedMetric").textContent = data.metrics?.approved || 0;
+        document.getElementById("batchesExpiringMetric").textContent = data.metrics?.expiringSoon || 0;
+        document.getElementById("qualityPendingChip").textContent = `${data.metrics?.pendingChecks || 0} pendentes`;
+        document.getElementById("traceEventsChip").textContent = `${data.traceEvents?.data?.length || 0} eventos`;
+
+        renderBatches(data.batches?.data || []);
+        renderSimpleTable("qualityChecksTable", data.qualityChecks?.data || [], [
+          ["check_date", "Data"],
+          ["inspector", "Responsavel"],
+          ["aroma_result", "Aroma"],
+          ["label_result", "Rotulo"],
+          ["packaging_result", "Embalagem"],
+          ["leakage_result", "Vazamento"],
+          ["final_status", "Status"]
+        ], "Nenhuma inspecao cadastrada.");
+        renderSimpleTable("traceEventsTable", data.traceEvents?.data || [], [
+          ["created_at", "Data"],
+          ["event_type", "Evento"],
+          ["description", "Descricao"],
+          ["quantity", "Qtd."],
+          ["responsible", "Responsavel"]
+        ], "Nenhum evento de rastreabilidade encontrado.");
+
+        updateQualityOptions();
+      } catch (error) {
+        ["batchesTable", "qualityChecksTable", "traceEventsTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Nao foi possivel carregar qualidade.</div>`;
+        });
+      }
+    }
+
     async function loadCommercialData() {
       try {
         const response = await apiFetch("/api/admin/commercial");
@@ -2779,6 +2946,66 @@
       }
     }
 
+    async function submitQualityForm({ formId, noticeId, endpoint, transform, onDone }) {
+      const form = document.getElementById(formId);
+      const notice = document.getElementById(noticeId);
+      if (!form || !notice) return;
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        notice.className = "notice";
+        notice.textContent = "Salvando...";
+
+        try {
+          const payload = transform(formPayload(form));
+          const response = await apiFetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Falha ao salvar.");
+
+          notice.textContent = result.source === "supabase" ? "Registro salvo no Supabase." : "Registro validado em modo demonstrativo.";
+          form.reset();
+          if (onDone) await onDone(result.data);
+          await loadQualityData();
+        } catch (error) {
+          notice.className = "notice warn";
+          notice.textContent = error.message || "Nao foi possivel salvar.";
+        }
+      });
+    }
+
+    async function createTraceEventForBatch(batchId, description) {
+      if (!batchId) return;
+      await apiFetch("/api/admin/batch_trace_events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          batch_id: batchId,
+          event_type: "manual",
+          description,
+          responsible: "Sistema"
+        })
+      });
+    }
+
+    async function updateBatchStatus(batchId, status) {
+      try {
+        const response = await apiFetch(`/api/admin/product-batches/${batchId}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao atualizar lote.");
+        await loadQualityData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel atualizar lote.");
+      }
+    }
+
     async function exportReport(type) {
       try {
         const response = await apiFetch(`/api/admin/reports/${type}.csv`);
@@ -3099,6 +3326,29 @@
     });
 
     document.getElementById("settingsForm").addEventListener("submit", saveSettings);
+
+    submitQualityForm({
+      formId: "batchForm",
+      noticeId: "batchNotice",
+      endpoint: "/api/admin/product_batches",
+      transform: (payload) => ({
+        ...payload,
+        quantity: Number(payload.quantity || 0),
+        status: payload.status || "quarantine"
+      }),
+      onDone: async (batch) => createTraceEventForBatch(batch?.id, "Lote cadastrado manualmente no painel.")
+    });
+
+    submitQualityForm({
+      formId: "qualityForm",
+      noticeId: "qualityNotice",
+      endpoint: "/api/admin/quality_checks",
+      transform: (payload) => ({
+        ...payload,
+        check_date: new Date().toISOString().slice(0, 10)
+      }),
+      onDone: async (check) => createTraceEventForBatch(check?.batch_id, "Inspecao de qualidade registrada.")
+    });
 
     async function completeProductionOrder(orderId, plannedQuantity) {
       const approved = window.prompt("Quantidade aprovada para entrada no estoque:", plannedQuantity || "0");

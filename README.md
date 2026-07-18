@@ -377,3 +377,35 @@ Telas:
 - `/admin/auditoria`
 
 Essa fase usa as tabelas da migration de fundação: `profiles`, `roles`, `settings` e `audit_logs`. O painel permite ajustar configurações de empresa, estoque e precificação, visualizar perfis/papéis e acompanhar eventos auditados.
+
+### Fase 5.5 - Qualidade, Lotes e Rastreabilidade
+
+Migration:
+
+```text
+supabase/migrations/202607180007_quality_batches.sql
+```
+
+Ela cria:
+
+- `product_batches`
+- `quality_checks`
+- `batch_trace_events`
+
+APIs administrativas:
+
+```text
+GET /api/admin/quality
+POST /api/admin/product_batches
+POST /api/admin/quality_checks
+POST /api/admin/batch_trace_events
+POST /api/admin/product-batches/:id/status
+```
+
+Telas:
+
+- `/admin/lotes`
+- `/admin/qualidade`
+- `/admin/rastreabilidade`
+
+Ao finalizar uma ordem de produção, o backend também pode gerar automaticamente um lote em quarentena e registrar o primeiro evento de rastreabilidade.
