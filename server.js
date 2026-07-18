@@ -150,6 +150,24 @@ const fallbackData = {
     { id: 'notif-stock-label', type: 'stock_low', severity: 'warning', title: 'Rótulo Paz abaixo do mínimo', message: 'Item demonstrativo com saldo inferior ao estoque mínimo.', entity_table: 'packaging_items', entity_id: 'pkg-rotulo', status: 'unread' },
     { id: 'notif-production-open', type: 'production_open', severity: 'info', title: 'Ordem de produção em aberto', message: 'Há ordem planejada aguardando execução.', entity_table: 'production_orders', entity_id: 'op-001', status: 'unread' }
   ],
+  profiles: [
+    { id: '00000000-0000-0000-0000-000000000001', full_name: 'Administrador Aromas', email: 'admin@aromasdabiblia.com', status: 'active', last_login_at: '2026-07-18T12:00:00Z' }
+  ],
+  roles: [
+    { id: 'role-admin', slug: 'admin', name: 'Administrador', description: 'Acesso completo ao painel administrativo.' },
+    { id: 'role-financeiro', slug: 'financeiro', name: 'Financeiro', description: 'Acesso a contas, custos e precificacao.' },
+    { id: 'role-comercial', slug: 'comercial', name: 'Comercial', description: 'Acesso a clientes, pedidos e CRM.' },
+    { id: 'role-producao', slug: 'producao', name: 'Producao', description: 'Acesso a formulas, producao e qualidade.' }
+  ],
+  settings: [
+    { id: 'setting-company', key: 'company', value: { name: 'Aromas da Biblia', timezone: 'America/Sao_Paulo', currency: 'BRL' }, description: 'Dados basicos da empresa' },
+    { id: 'setting-inventory', key: 'inventory_rules', value: { allow_negative_stock: false, default_low_stock_alert: true }, description: 'Regras gerais de estoque' },
+    { id: 'setting-pricing', key: 'pricing_rules', value: { minimum_margin_percent: 45, default_tax_percent: 0 }, description: 'Regras padrao de precificacao' }
+  ],
+  audit_logs: [
+    { id: 'audit-demo-001', user_id: '00000000-0000-0000-0000-000000000001', action: 'create', entity_table: 'products', entity_id: 'product-paz-spray', created_at: '2026-07-18T12:00:00Z' },
+    { id: 'audit-demo-002', user_id: '00000000-0000-0000-0000-000000000001', action: 'resolved', entity_table: 'notifications', entity_id: 'notif-stock-label', created_at: '2026-07-18T12:15:00Z' }
+  ],
   produtos: [
     {
       id: 'paz-home-spray',
@@ -405,6 +423,10 @@ const tableValidation = {
     required: ['type', 'title'],
     numeric: []
   },
+  settings: {
+    required: ['key'],
+    numeric: []
+  },
   produtos: {
     required: ['nome'],
     numeric: ['custo', 'preco', 'estoque']
@@ -542,6 +564,70 @@ async function updateNotificationStatus(id, status, user = null) {
   });
 
   return { data, source: 'supabase' };
+}
+
+async function upsertSetting(key, payload, user = null) {
+  const value = payload?.value && typeof payload.value === 'object' ? payload.value : {};
+  const description = payload?.description || null;
+  const record = {
+    key,
+    value,
+    description,
+    updated_at: new Date().toISOString()
+  };
+
+  if (!supabase) {
+    return {
+      data: { id: normalizeId(`setting-${key}`), ...record },
+      source: 'fallback',
+      message: 'Aplique as migrations no Supabase para persistir configuracoes.'
+    };
+  }
+
+  const { data: before } = await supabase.from('settings').select('*').eq('key', key).maybeSingle();
+  const { data, error } = await supabase
+    .from('settings')
+    .upsert(record, { onConflict: 'key' })
+    .select('*')
+    .single();
+
+  if (error) {
+    return { validationError: { status: 400, error: publicError(error) } };
+  }
+
+  await writeAuditLog({
+    user,
+    action: before ? 'update' : 'create',
+    table: 'settings',
+    recordId: data.id,
+    before,
+    after: data
+  });
+
+  return { data, source: 'supabase' };
+}
+
+async function buildAdminControl() {
+  const [profiles, roles, settings, auditLogs] = await Promise.all([
+    listTable('profiles', 'created_at'),
+    listTable('roles', 'created_at'),
+    listTable('settings', 'updated_at'),
+    listTable('audit_logs', 'created_at')
+  ]);
+
+  return {
+    source: settings.source,
+    metrics: {
+      users: profiles.data.length,
+      roles: roles.data.length,
+      settings: settings.data.length,
+      auditLogs: auditLogs.data.length
+    },
+    profiles,
+    roles,
+    settings,
+    auditLogs
+  };
 }
 
 function stockColumnForItemType(itemType) {
@@ -1553,6 +1639,26 @@ app.post('/api/admin/notifications/:id/resolve', requireAdminAuth, async (req, r
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.get('/api/admin/admin-control', requireAdminAuth, async (_req, res) => {
+  res.json(await buildAdminControl());
+});
+
+app.get('/api/admin/settings', requireAdminAuth, async (_req, res) => {
+  res.json(await listTable('settings', 'updated_at'));
+});
+
+app.put('/api/admin/settings/:key', requireAdminAuth, async (req, res) => {
+  const result = await upsertSetting(req.params.key, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.get('/api/admin/audit-logs', requireAdminAuth, async (_req, res) => {
+  res.json(await listTable('audit_logs', 'created_at'));
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {

@@ -853,6 +853,9 @@
         <a class="nav-link" href="/admin/sistema"><i data-lucide="database"></i>Módulos</a>
         <a class="nav-link" href="/admin/indicadores"><i data-lucide="activity"></i>Indicadores</a>
         <a class="nav-link" href="/admin/gestao"><i data-lucide="table-properties"></i>Gestão</a>
+        <a class="nav-link" href="/admin/configuracoes"><i data-lucide="settings"></i>Configurações</a>
+        <a class="nav-link" href="/admin/usuarios"><i data-lucide="user-cog"></i>Usuários</a>
+        <a class="nav-link" href="/admin/auditoria"><i data-lucide="shield-check"></i>Auditoria</a>
       </nav>
 
       <div class="sidebar-card">
@@ -1777,6 +1780,71 @@
           </div>
         </div>
       </section>
+
+      <section class="section panel" id="configuracoes-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Configuracoes</h2>
+            <p>Parametros centrais para empresa, estoque e precificacao.</p>
+          </div>
+          <span class="chip" id="settingsSource">Aguardando dados</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="settingsForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="settingCompanyName">Empresa</label><input id="settingCompanyName" name="company_name" required></div>
+              <div class="field"><label for="settingCurrency">Moeda</label><input id="settingCurrency" name="currency" value="BRL" required></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="settingTimezone">Fuso horario</label><input id="settingTimezone" name="timezone" value="America/Sao_Paulo" required></div>
+              <div class="field"><label for="settingMinMargin">Margem minima %</label><input id="settingMinMargin" name="minimum_margin_percent" type="number" min="0" step="1"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="settingTax">Imposto padrao %</label><input id="settingTax" name="default_tax_percent" type="number" min="0" step="0.01"></div>
+              <div class="field"><label for="settingLowStock">Alerta estoque baixo</label><select id="settingLowStock" name="default_low_stock_alert"><option value="true">Ativo</option><option value="false">Inativo</option></select></div>
+            </div>
+            <div class="field"><label for="settingNegativeStock">Estoque negativo</label><select id="settingNegativeStock" name="allow_negative_stock"><option value="false">Bloquear</option><option value="true">Permitir</option></select></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Salvar configuracoes</button>
+            <div class="notice" id="settingsNotice">Pronto para salvar no Supabase.</div>
+          </form>
+          <div>
+            <div class="metrics" style="margin-top:0;">
+              <div class="metric"><div class="metric-icon"><i data-lucide="settings"></i></div><div><div class="metric-value" id="settingsCountMetric">0</div><div class="metric-label">Configuracoes</div></div></div>
+              <div class="metric"><div class="metric-icon"><i data-lucide="shield-check"></i></div><div><div class="metric-value" id="auditCountMetric">0</div><div class="metric-label">Eventos auditados</div></div></div>
+            </div>
+            <div class="table-wrap" id="settingsTable"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section panel" id="usuarios-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Usuarios e Papeis</h2>
+            <p>Perfis administrativos, papeis de acesso e responsabilidades internas.</p>
+          </div>
+          <span class="chip" id="usersSource">Supabase Auth</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric"><div class="metric-icon"><i data-lucide="users"></i></div><div><div class="metric-value" id="usersCountMetric">0</div><div class="metric-label">Usuarios</div></div></div>
+          <div class="metric"><div class="metric-icon"><i data-lucide="key-round"></i></div><div><div class="metric-value" id="rolesCountMetric">0</div><div class="metric-label">Papeis</div></div></div>
+        </div>
+        <div class="two-col">
+          <div class="table-wrap" id="profilesTable"></div>
+          <div class="table-wrap" id="rolesTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="auditoria-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Auditoria</h2>
+            <p>Historico de criacao, alteracao e resolucao nos modulos do sistema.</p>
+          </div>
+          <span class="chip" id="auditSource">Aguardando dados</span>
+        </div>
+        <div class="table-wrap" id="auditLogsTable"></div>
+      </section>
     </main>
   </div>
 
@@ -1844,6 +1912,7 @@
       await simulatePricingFromForm();
       await loadReportsData();
       await loadNotificationsData();
+      await loadAdminControlData();
     }
 
     async function apiFetch(url, options = {}) {
@@ -1932,7 +2001,10 @@
       "/admin/roadmap": { title: "Roadmap | Aromas da Bíblia", label: "Roadmap", sections: ["roadmap"] },
       "/admin/sistema": { title: "Sistema Futuro | Aromas da Bíblia", label: "Sistema Futuro", sections: ["sistema"] },
       "/admin/indicadores": { title: "Indicadores | Aromas da Bíblia", label: "Indicadores", sections: ["indicadores"] },
-      "/admin/gestao": { title: "Gestão Operacional | Aromas da Bíblia", label: "Gestão Operacional", sections: ["gestao"] }
+      "/admin/gestao": { title: "Gestão Operacional | Aromas da Bíblia", label: "Gestão Operacional", sections: ["gestao"] },
+      "/admin/configuracoes": { title: "Configuracoes | Aromas da Biblia", label: "Configuracoes", sections: ["configuracoes-admin"] },
+      "/admin/usuarios": { title: "Usuarios | Aromas da Biblia", label: "Usuarios e Papeis", sections: ["usuarios-admin"] },
+      "/admin/auditoria": { title: "Auditoria | Aromas da Biblia", label: "Auditoria", sections: ["auditoria-admin"] }
     };
 
     const routeSectionIds = [...new Set(Object.values(routes).flatMap((route) => route.sections))];
@@ -2585,6 +2657,128 @@
       }
     }
 
+    function findSetting(settings, key) {
+      return (settings || []).find((item) => item.key === key)?.value || {};
+    }
+
+    function renderSettingsTable(settings) {
+      renderSimpleTable("settingsTable", (settings || []).map((item) => ({
+        key: item.key,
+        description: item.description || "-",
+        value: JSON.stringify(item.value || {})
+      })), [
+        ["key", "Chave"],
+        ["description", "Descricao"],
+        ["value", "Valor"]
+      ], "Nenhuma configuracao encontrada.");
+    }
+
+    async function loadAdminControlData() {
+      try {
+        const response = await apiFetch("/api/admin/admin-control");
+        const data = await response.json();
+        window.adminControlData = data;
+
+        const settings = data.settings?.data || [];
+        const company = findSetting(settings, "company");
+        const pricing = findSetting(settings, "pricing_rules");
+        const inventory = findSetting(settings, "inventory_rules");
+
+        document.getElementById("settingsSource").textContent = data.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("auditSource").textContent = data.auditLogs?.source === "supabase" ? "Supabase ativo" : "Dados demonstrativos";
+        document.getElementById("usersSource").textContent = data.profiles?.source === "supabase" ? "Supabase Auth" : "Dados demonstrativos";
+
+        document.getElementById("settingsCountMetric").textContent = data.metrics?.settings || 0;
+        document.getElementById("auditCountMetric").textContent = data.metrics?.auditLogs || 0;
+        document.getElementById("usersCountMetric").textContent = data.metrics?.users || 0;
+        document.getElementById("rolesCountMetric").textContent = data.metrics?.roles || 0;
+
+        document.getElementById("settingCompanyName").value = company.name || "Aromas da Biblia";
+        document.getElementById("settingCurrency").value = company.currency || "BRL";
+        document.getElementById("settingTimezone").value = company.timezone || "America/Sao_Paulo";
+        document.getElementById("settingMinMargin").value = pricing.minimum_margin_percent ?? 45;
+        document.getElementById("settingTax").value = pricing.default_tax_percent ?? 0;
+        document.getElementById("settingLowStock").value = String(inventory.default_low_stock_alert ?? true);
+        document.getElementById("settingNegativeStock").value = String(inventory.allow_negative_stock ?? false);
+
+        renderSettingsTable(settings);
+        renderSimpleTable("profilesTable", data.profiles?.data || [], [
+          ["full_name", "Nome"],
+          ["email", "E-mail"],
+          ["status", "Status"],
+          ["last_login_at", "Ultimo login"]
+        ], "Nenhum perfil encontrado.");
+        renderSimpleTable("rolesTable", data.roles?.data || [], [
+          ["slug", "Papel"],
+          ["name", "Nome"],
+          ["description", "Descricao"]
+        ], "Nenhum papel encontrado.");
+        renderSimpleTable("auditLogsTable", data.auditLogs?.data || [], [
+          ["created_at", "Data"],
+          ["action", "Acao"],
+          ["entity_table", "Tabela"],
+          ["entity_id", "Registro"],
+          ["user_id", "Usuario"]
+        ], "Nenhum evento de auditoria encontrado.");
+      } catch (error) {
+        document.getElementById("settingsTable").innerHTML = `<div class="notice warn">Nao foi possivel carregar administracao.</div>`;
+        document.getElementById("profilesTable").innerHTML = `<div class="notice warn">Nao foi possivel carregar usuarios.</div>`;
+        document.getElementById("auditLogsTable").innerHTML = `<div class="notice warn">Nao foi possivel carregar auditoria.</div>`;
+      }
+    }
+
+    async function saveSettings(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const notice = document.getElementById("settingsNotice");
+      const payload = formPayload(form);
+
+      notice.className = "notice";
+      notice.textContent = "Salvando configuracoes...";
+
+      const updates = [
+        {
+          key: "company",
+          value: { name: payload.company_name, timezone: payload.timezone, currency: payload.currency },
+          description: "Dados basicos da empresa"
+        },
+        {
+          key: "pricing_rules",
+          value: {
+            minimum_margin_percent: Number(payload.minimum_margin_percent || 0),
+            default_tax_percent: Number(payload.default_tax_percent || 0)
+          },
+          description: "Regras padrao de precificacao"
+        },
+        {
+          key: "inventory_rules",
+          value: {
+            allow_negative_stock: payload.allow_negative_stock === "true",
+            default_low_stock_alert: payload.default_low_stock_alert === "true"
+          },
+          description: "Regras gerais de estoque"
+        }
+      ];
+
+      try {
+        for (const item of updates) {
+          const response = await apiFetch(`/api/admin/settings/${item.key}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ value: item.value, description: item.description })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Falha ao salvar configuracao.");
+        }
+
+        notice.textContent = "Configuracoes salvas.";
+        await loadAdminControlData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Nao foi possivel salvar configuracoes.";
+      }
+    }
+
     async function exportReport(type) {
       try {
         const response = await apiFetch(`/api/admin/reports/${type}.csv`);
@@ -2903,6 +3097,8 @@
     document.querySelectorAll("[data-export-report]").forEach((button) => {
       button.addEventListener("click", () => exportReport(button.dataset.exportReport));
     });
+
+    document.getElementById("settingsForm").addEventListener("submit", saveSettings);
 
     async function completeProductionOrder(orderId, plannedQuantity) {
       const approved = window.prompt("Quantidade aprovada para entrada no estoque:", plannedQuantity || "0");

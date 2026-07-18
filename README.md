@@ -358,3 +358,22 @@ Tela:
 - `/admin/notificacoes`
 
 A central combina notificações salvas no Supabase com alertas calculados pelo backend, incluindo estoque baixo, contas a receber ou pagar próximas do vencimento, produções abertas e follow-ups atrasados.
+
+### Fase 5.4 - Administração, Configurações e Auditoria
+
+APIs administrativas:
+
+```text
+GET /api/admin/admin-control
+GET /api/admin/settings
+PUT /api/admin/settings/:key
+GET /api/admin/audit-logs
+```
+
+Telas:
+
+- `/admin/configuracoes`
+- `/admin/usuarios`
+- `/admin/auditoria`
+
+Essa fase usa as tabelas da migration de fundação: `profiles`, `roles`, `settings` e `audit_logs`. O painel permite ajustar configurações de empresa, estoque e precificação, visualizar perfis/papéis e acompanhar eventos auditados.
