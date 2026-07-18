@@ -1899,6 +1899,131 @@ async function updateShipmentStatus(shipmentId, payload, user = null) {
   return { data, source: 'supabase' };
 }
 
+async function createShipmentFromOrder(orderId, payload = {}, user = null) {
+  const expectedDelivery = payload.expected_delivery || addDays(new Date().toISOString().slice(0, 10), 3);
+
+  if (!supabase) {
+    const order = fallbackData.sales_orders.find((item) => String(item.id) === String(orderId));
+    if (!order) return { validationError: { status: 404, error: 'Pedido nao encontrado.' } };
+    if (order.status !== 'ready_to_ship') {
+      return { validationError: { status: 409, error: 'Pedido precisa estar pronto para envio.' } };
+    }
+    const customer = fallbackData.customers.find((item) => String(item.id) === String(order.customer_id));
+    const carrier = fallbackData.carriers[0] || null;
+    const shipment = {
+      id: normalizeId(`shipment-${order.order_number}`),
+      shipment_number: payload.shipment_number || `ENV-${order.order_number || Date.now()}`,
+      sales_order_id: order.id,
+      customer_id: order.customer_id || null,
+      carrier_id: carrier?.id || null,
+      shipping_method: payload.shipping_method || carrier?.service_type || 'Entrega',
+      tracking_code: payload.tracking_code || null,
+      shipping_cost_cents: Number(payload.shipping_cost_cents || 0),
+      charged_shipping_cents: Number(payload.charged_shipping_cents || 0),
+      expected_delivery: expectedDelivery,
+      recipient_name: payload.recipient_name || customer?.name || null,
+      address: payload.address || order.shipping_address || null,
+      status: 'label_ready',
+      notes: payload.notes || `Entrega gerada a partir do pedido ${order.order_number}.`
+    };
+    return {
+      source: 'fallback',
+      data: {
+        shipment,
+        order: { ...order, status: 'ready_to_ship' }
+      }
+    };
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from('sales_orders')
+    .select('*')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (orderError) return { validationError: { status: 400, error: publicError(orderError) } };
+  if (!order) return { validationError: { status: 404, error: 'Pedido nao encontrado.' } };
+  if (order.status !== 'ready_to_ship') {
+    return { validationError: { status: 409, error: 'Pedido precisa estar pronto para envio.' } };
+  }
+
+  const { data: existing } = await supabase
+    .from('shipments')
+    .select('*')
+    .eq('sales_order_id', order.id)
+    .neq('status', 'cancelled')
+    .maybeSingle();
+
+  if (existing) {
+    return { validationError: { status: 409, error: 'Este pedido ja possui entrega ativa.' } };
+  }
+
+  const [{ data: customer }, { data: carriers }] = await Promise.all([
+    supabase.from('customers').select('*').eq('id', order.customer_id).maybeSingle(),
+    supabase.from('carriers').select('*').eq('active', true).order('created_at', { ascending: true }).limit(1)
+  ]);
+  const carrier = (carriers || [])[0] || null;
+  if (!carrier && !payload.carrier_id) {
+    return { validationError: { status: 409, error: 'Cadastre uma transportadora ativa antes de gerar entrega.' } };
+  }
+
+  const shipmentPayload = {
+    shipment_number: payload.shipment_number || `ENV-${order.order_number || Date.now()}`,
+    sales_order_id: order.id,
+    customer_id: order.customer_id || null,
+    carrier_id: payload.carrier_id || carrier?.id || null,
+    shipping_method: payload.shipping_method || carrier?.service_type || 'Entrega',
+    tracking_code: payload.tracking_code || null,
+    shipping_cost_cents: Number(payload.shipping_cost_cents || 0),
+    charged_shipping_cents: Number(payload.charged_shipping_cents || order.freight_cents || 0),
+    expected_delivery: payload.expected_delivery || addDays(new Date().toISOString().slice(0, 10), Number(carrier?.average_delivery_days || 3)),
+    recipient_name: payload.recipient_name || customer?.name || null,
+    address: payload.address || order.shipping_address || null,
+    status: 'label_ready',
+    notes: payload.notes || `Entrega gerada a partir do pedido ${order.order_number}.`,
+    created_by: user?.id || null
+  };
+
+  const { data: shipment, error: shipmentError } = await supabase
+    .from('shipments')
+    .insert(shipmentPayload)
+    .select('*')
+    .single();
+
+  if (shipmentError) return { validationError: { status: 400, error: publicError(shipmentError) } };
+
+  await supabase.from('shipment_events').insert({
+    shipment_id: shipment.id,
+    status: 'label_ready',
+    description: `Entrega gerada para o pedido ${order.order_number}.`,
+    location: 'Painel Aromas da Biblia'
+  });
+
+  await supabase
+    .from('sales_orders')
+    .update({
+      tracking_code: shipment.tracking_code,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', order.id);
+
+  await writeAuditLog({
+    user,
+    action: 'create_shipment_from_order',
+    table: 'shipments',
+    recordId: shipment.id,
+    after: shipment
+  });
+
+  return {
+    source: 'supabase',
+    data: {
+      shipment,
+      order
+    }
+  };
+}
+
 async function receivePurchaseOrder(orderId, payload, user = null) {
   const dueDate = payload.due_date || new Date().toISOString().slice(0, 10);
 
@@ -2839,6 +2964,14 @@ app.post('/api/admin/shipments/:id/status', requireAdminAuth, async (req, res) =
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.post('/api/admin/sales/orders/:id/shipment', requireAdminAuth, async (req, res) => {
+  const result = await createShipmentFromOrder(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
 });
 
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {

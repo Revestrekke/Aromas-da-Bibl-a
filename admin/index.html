@@ -3334,9 +3334,12 @@
 
       const body = rows.map((item) => {
         const canSeparate = ["paid", "approved"].includes(item.payment_status) && !["ready_to_ship", "shipped", "delivered", "finished", "cancelled", "returned"].includes(item.status);
-        const action = canSeparate
-          ? `<button class="btn" type="button" data-separate-order="${escapeHtml(item.id)}"><i data-lucide="package-check"></i>Separar</button>`
-          : `<span class="chip">${escapeHtml(item.status || "Sem acao")}</span>`;
+        let action = `<span class="chip">${escapeHtml(item.status || "Sem acao")}</span>`;
+        if (canSeparate) {
+          action = `<button class="btn" type="button" data-separate-order="${escapeHtml(item.id)}"><i data-lucide="package-check"></i>Separar</button>`;
+        } else if (item.status === "ready_to_ship") {
+          action = `<button class="btn" type="button" data-create-shipment="${escapeHtml(item.id)}"><i data-lucide="truck"></i>Gerar entrega</button>`;
+        }
 
         return `
           <tr>
@@ -3358,6 +3361,9 @@
       target.querySelectorAll("[data-separate-order]").forEach((button) => {
         button.addEventListener("click", () => separateSalesOrder(button.dataset.separateOrder));
       });
+      target.querySelectorAll("[data-create-shipment]").forEach((button) => {
+        button.addEventListener("click", () => createShipmentFromOrder(button.dataset.createShipment));
+      });
       lucide.createIcons();
     }
 
@@ -3373,6 +3379,20 @@
         await loadNotificationsData();
       } catch (error) {
         window.alert(error.message || "Nao foi possivel separar o pedido.");
+      }
+    }
+
+    async function createShipmentFromOrder(id) {
+      try {
+        const response = await apiFetch(`/api/admin/sales/orders/${id}/shipment`, { method: "POST" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao gerar entrega.");
+        await loadCommercialData();
+        await loadLogisticsData();
+        await loadReportsData();
+        await loadNotificationsData();
+      } catch (error) {
+        window.alert(error.message || "Nao foi possivel gerar a entrega.");
       }
     }
 
