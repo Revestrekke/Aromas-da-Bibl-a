@@ -828,6 +828,10 @@
         <a class="nav-link" href="/admin/fornecedores"><i data-lucide="truck"></i>Fornecedores</a>
         <a class="nav-link" href="/admin/formulas"><i data-lucide="clipboard-list"></i>Fórmulas</a>
         <a class="nav-link" href="/admin/producao"><i data-lucide="kanban"></i>Produção</a>
+        <a class="nav-link" href="/admin/clientes"><i data-lucide="users"></i>Clientes</a>
+        <a class="nav-link" href="/admin/crm"><i data-lucide="columns-3"></i>CRM</a>
+        <a class="nav-link" href="/admin/orcamentos"><i data-lucide="file-text"></i>Orçamentos</a>
+        <a class="nav-link" href="/admin/pedidos"><i data-lucide="shopping-cart"></i>Pedidos</a>
         <a class="nav-link" href="/admin/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/admin/modelo"><i data-lucide="network"></i>Modelo</a>
         <a class="nav-link" href="/admin/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
@@ -1185,6 +1189,77 @@
             <div class="table-wrap" id="productionOrdersTable"></div>
           </div>
         </div>
+      </section>
+
+      <section class="section panel" id="clientes-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Clientes</h2>
+            <p>Cadastro de consumidores, igrejas, revendedores, representantes e eventos.</p>
+          </div>
+          <span class="chip" id="customerCount">0 clientes</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="customerForm" style="margin-top:0;">
+            <div class="field"><label for="customerName">Nome</label><input id="customerName" name="name" required placeholder="Igreja, cliente ou revendedor"></div>
+            <div class="inline-fields">
+              <div class="field"><label for="customerType">Tipo</label><select id="customerType" name="type"><option value="consumer">Consumidor</option><option value="church">Igreja</option><option value="reseller">Revendedor</option><option value="company">Empresa</option><option value="event">Evento</option></select></div>
+              <div class="field"><label for="customerChannel">Canal</label><input id="customerChannel" name="acquisition_channel" placeholder="WhatsApp"></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="customerWhatsapp">WhatsApp</label><input id="customerWhatsapp" name="whatsapp" placeholder="(00) 90000-0000"></div>
+              <div class="field"><label for="customerEmail">E-mail</label><input id="customerEmail" name="email" type="email" placeholder="cliente@email.com"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Cadastrar cliente</button>
+            <div class="notice" id="customerNotice">Clientes alimentam CRM, orçamentos e pedidos.</div>
+          </form>
+          <div class="table-wrap" id="customersTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="crm-admin">
+        <div class="panel-header">
+          <div>
+            <h2>CRM</h2>
+            <p>Funil comercial com oportunidades, valores estimados e próximas ações.</p>
+          </div>
+          <span class="chip" id="opportunityCount">0 oportunidades</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="opportunityForm" style="margin-top:0;">
+            <div class="field"><label for="opportunityTitle">Oportunidade</label><input id="opportunityTitle" name="title" required placeholder="Kit para evento"></div>
+            <div class="inline-fields">
+              <div class="field"><label for="opportunityStage">Etapa</label><select id="opportunityStage" name="stage"><option value="new_contact">Novo contato</option><option value="contacted">Contato realizado</option><option value="interest_identified">Interesse identificado</option><option value="quote_sent">Orçamento enviado</option><option value="negotiation">Negociação</option><option value="waiting_decision">Aguardando decisão</option><option value="approved">Aprovado</option><option value="lost">Perdido</option><option value="after_sales">Pós-venda</option></select></div>
+              <div class="field"><label for="opportunityValue">Valor estimado</label><input id="opportunityValue" name="estimated_value" type="number" min="0" step="0.01" placeholder="1398.00"></div>
+            </div>
+            <div class="field"><label for="opportunityNext">Próxima ação</label><input id="opportunityNext" name="next_action" placeholder="Enviar orçamento"></div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar oportunidade</button>
+            <div class="notice" id="opportunityNotice">Oportunidades medem conversão e previsão de vendas.</div>
+          </form>
+          <div class="table-wrap" id="opportunitiesTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="orcamentos-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Orçamentos</h2>
+            <p>Propostas comerciais para clientes finais, igrejas, eventos e revenda.</p>
+          </div>
+          <span class="chip" id="quoteCount">0 orçamentos</span>
+        </div>
+        <div class="table-wrap" id="quotesTable"></div>
+      </section>
+
+      <section class="section panel" id="pedidos-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Pedidos</h2>
+            <p>Pedidos comerciais e status de pagamento, separação, envio e conclusão.</p>
+          </div>
+          <span class="chip" id="orderCount">0 pedidos</span>
+        </div>
+        <div class="table-wrap" id="ordersTable"></div>
       </section>
 
       <section class="section two-col" id="mercado">
@@ -1551,6 +1626,7 @@
       await loadSystemData();
       await loadCatalogData();
       await loadProductionData();
+      await loadCommercialData();
     }
 
     async function apiFetch(url, options = {}) {
@@ -1619,6 +1695,10 @@
       "/admin/fornecedores": { title: "Fornecedores | Aromas da Bíblia", label: "Fornecedores", sections: ["fornecedores"] },
       "/admin/formulas": { title: "Fórmulas | Aromas da Bíblia", label: "Fórmulas", sections: ["formulas"] },
       "/admin/producao": { title: "Produção | Aromas da Bíblia", label: "Produção", sections: ["producao"] },
+      "/admin/clientes": { title: "Clientes | Aromas da Bíblia", label: "Clientes", sections: ["clientes-admin"] },
+      "/admin/crm": { title: "CRM | Aromas da Bíblia", label: "CRM", sections: ["crm-admin"] },
+      "/admin/orcamentos": { title: "Orçamentos | Aromas da Bíblia", label: "Orçamentos", sections: ["orcamentos-admin"] },
+      "/admin/pedidos": { title: "Pedidos | Aromas da Bíblia", label: "Pedidos", sections: ["pedidos-admin"] },
       "/admin/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/admin/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
       "/admin/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
@@ -2007,6 +2087,55 @@
       }
     }
 
+    async function loadCommercialData() {
+      try {
+        const response = await apiFetch("/api/admin/commercial");
+        const commercial = await response.json();
+        window.commercialData = commercial;
+
+        document.getElementById("customerCount").textContent = `${commercial.metrics.customers} clientes`;
+        document.getElementById("opportunityCount").textContent = `${commercial.metrics.opportunities} oportunidades`;
+        document.getElementById("quoteCount").textContent = `${commercial.metrics.quotes} orçamentos · ${commercial.metrics.quoteConversion}% conversão`;
+        document.getElementById("orderCount").textContent = `${commercial.metrics.orders} pedidos · ${formatValue("orderRevenue_cents", commercial.metrics.orderRevenue)}`;
+
+        renderSimpleTable("customersTable", commercial.customers.data, [
+          ["name", "Nome"],
+          ["type", "Tipo"],
+          ["acquisition_channel", "Canal"],
+          ["whatsapp", "WhatsApp"],
+          ["status", "Status"]
+        ], "Nenhum cliente cadastrado.");
+
+        renderSimpleTable("opportunitiesTable", commercial.opportunities.data, [
+          ["title", "Oportunidade"],
+          ["stage", "Etapa"],
+          ["estimated_value_cents", "Valor"],
+          ["probability_percent", "Prob."],
+          ["next_action", "Próxima ação"]
+        ], "Nenhuma oportunidade cadastrada.");
+
+        renderSimpleTable("quotesTable", commercial.quotes.data, [
+          ["quote_number", "Número"],
+          ["channel", "Canal"],
+          ["total_cents", "Total"],
+          ["valid_until", "Validade"],
+          ["status", "Status"]
+        ], "Nenhum orçamento cadastrado.");
+
+        renderSimpleTable("ordersTable", commercial.orders.data, [
+          ["order_number", "Pedido"],
+          ["channel", "Canal"],
+          ["total_cents", "Total"],
+          ["payment_status", "Pagamento"],
+          ["status", "Status"]
+        ], "Nenhum pedido cadastrado.");
+      } catch (error) {
+        ["customersTable", "opportunitiesTable", "quotesTable", "ordersTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Não foi possível carregar dados comerciais.</div>`;
+        });
+      }
+    }
+
     async function submitCatalogForm({ formId, noticeId, endpoint, transform }) {
       const form = document.getElementById(formId);
       const notice = document.getElementById(noticeId);
@@ -2178,6 +2307,64 @@
       } catch (error) {
         notice.className = "notice warn";
         notice.textContent = error.message || "Não foi possível criar ordem.";
+      }
+    });
+
+    document.getElementById("customerForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("customerNotice");
+      notice.className = "notice";
+      notice.textContent = "Salvando cliente...";
+
+      try {
+        const payload = {
+          ...formPayload(event.currentTarget),
+          person_type: "company",
+          status: "lead",
+          marketing_consent: true
+        };
+        const response = await apiFetch("/api/admin/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao salvar cliente.");
+        notice.textContent = result.source === "supabase" ? "Cliente salvo no Supabase." : "Cliente validado. Aplique as migrations para persistir.";
+        if (result.source === "supabase") event.currentTarget.reset();
+        await loadCommercialData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Não foi possível salvar cliente.";
+      }
+    });
+
+    document.getElementById("opportunityForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("opportunityNotice");
+      notice.className = "notice";
+      notice.textContent = "Salvando oportunidade...";
+
+      try {
+        const payload = formPayload(event.currentTarget);
+        const estimatedValue = payload.estimated_value;
+        delete payload.estimated_value;
+        payload.estimated_value_cents = toCents(estimatedValue);
+        payload.probability_percent = payload.stage === "approved" ? 100 : 50;
+
+        const response = await apiFetch("/api/admin/sales_opportunities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao salvar oportunidade.");
+        notice.textContent = result.source === "supabase" ? "Oportunidade salva no Supabase." : "Oportunidade validada. Aplique as migrations para persistir.";
+        if (result.source === "supabase") event.currentTarget.reset();
+        await loadCommercialData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Não foi possível salvar oportunidade.";
       }
     });
 

@@ -103,6 +103,26 @@ const fallbackData = {
   production_orders: [
     { id: 'op-001', order_number: 'OP-0001', product_id: 'product-paz', formula_id: 'formula-paz', formula_version_id: 'formula-version-paz-v1', planned_quantity: 10, status: 'planned', responsible: 'Produção' }
   ],
+  customers: [
+    { id: 'customer-igreja', person_type: 'company', name: 'Igreja Vida Plena', whatsapp: '(00) 90000-0000', email: 'contato@vidaplena.example', type: 'church', status: 'lead', acquisition_channel: 'WhatsApp' },
+    { id: 'customer-livraria', person_type: 'company', name: 'Livraria Caminho', whatsapp: '(00) 91111-1111', email: 'compras@livrariacaminho.example', type: 'reseller', status: 'active', acquisition_channel: 'Instagram' }
+  ],
+  sales_opportunities: [
+    { id: 'opp-001', customer_id: 'customer-igreja', title: 'Kit devocional para encontro de mulheres', estimated_value_cents: 139800, quantity: 20, stage: 'interest_identified', probability_percent: 65, next_action: 'Enviar orçamento formal' },
+    { id: 'opp-002', customer_id: 'customer-livraria', title: 'Revenda linha Aromas da Bíblia', estimated_value_cents: 349500, quantity: 50, stage: 'negotiation', probability_percent: 55, next_action: 'Negociar tabela de revenda' }
+  ],
+  sales_quotes: [
+    { id: 'quote-001', quote_number: 'ORC-0001', customer_id: 'customer-igreja', channel: 'WhatsApp', subtotal_cents: 139800, total_cents: 139800, status: 'sent', seller: 'Comercial' }
+  ],
+  sales_quote_items: [
+    { id: 'quote-item-001', quote_id: 'quote-001', product_id: 'product-paz', description: 'Home Spray Paz 200 ml', quantity: 20, unit_price_cents: 6990, total_cents: 139800 }
+  ],
+  sales_orders: [
+    { id: 'order-001', order_number: 'PED-0001', quote_id: 'quote-001', customer_id: 'customer-igreja', channel: 'WhatsApp', subtotal_cents: 139800, total_cents: 139800, payment_status: 'pending', status: 'awaiting_payment' }
+  ],
+  sales_order_items: [
+    { id: 'order-item-001', order_id: 'order-001', product_id: 'product-paz', description: 'Home Spray Paz 200 ml', quantity: 20, unit_price_cents: 6990, total_cents: 139800, unit_cost_cents: 3050, margin_cents: 78800 }
+  ],
   produtos: [
     {
       id: 'paz-home-spray',
@@ -305,6 +325,30 @@ const tableValidation = {
   production_orders: {
     required: ['order_number', 'product_id', 'planned_quantity'],
     numeric: ['planned_quantity', 'produced_quantity', 'approved_quantity', 'lost_quantity', 'estimated_cost_cents', 'real_cost_cents']
+  },
+  customers: {
+    required: ['name'],
+    numeric: []
+  },
+  sales_opportunities: {
+    required: ['title', 'stage'],
+    numeric: ['estimated_value_cents', 'quantity', 'probability_percent']
+  },
+  sales_quotes: {
+    required: ['quote_number'],
+    numeric: ['subtotal_cents', 'discount_cents', 'freight_cents', 'total_cents']
+  },
+  sales_quote_items: {
+    required: ['quote_id', 'description', 'quantity'],
+    numeric: ['quantity', 'unit_price_cents', 'discount_cents', 'total_cents']
+  },
+  sales_orders: {
+    required: ['order_number'],
+    numeric: ['subtotal_cents', 'discount_cents', 'freight_cents', 'total_cents']
+  },
+  sales_order_items: {
+    required: ['order_id', 'description', 'quantity'],
+    numeric: ['quantity', 'unit_price_cents', 'discount_cents', 'total_cents', 'unit_cost_cents', 'margin_cents']
   },
   produtos: {
     required: ['nome'],
@@ -794,6 +838,46 @@ app.get('/api/admin/production', requireAdminAuth, async (_req, res) => {
   });
 });
 
+app.get('/api/admin/commercial', requireAdminAuth, async (_req, res) => {
+  const [customers, opportunities, quotes, quoteItems, orders, orderItems] = await Promise.all([
+    listTable('customers', 'created_at'),
+    listTable('sales_opportunities', 'created_at'),
+    listTable('sales_quotes', 'created_at'),
+    listTable('sales_quote_items', 'created_at'),
+    listTable('sales_orders', 'created_at'),
+    listTable('sales_order_items', 'created_at')
+  ]);
+
+  const openOrders = orders.data.filter((item) => !['finished', 'cancelled', 'returned'].includes(item.status));
+  const approvedOpportunities = opportunities.data.filter((item) => item.stage === 'approved').length;
+  const quoteConversion = quotes.data.length > 0
+    ? Math.round((orders.data.length / quotes.data.length) * 100)
+    : 0;
+  const pipelineValue = opportunities.data.reduce((sum, item) => sum + Number(item.estimated_value_cents || 0), 0);
+  const orderRevenue = orders.data.reduce((sum, item) => sum + Number(item.total_cents || 0), 0);
+
+  res.json({
+    source: customers.source,
+    metrics: {
+      customers: customers.data.length,
+      opportunities: opportunities.data.length,
+      approvedOpportunities,
+      quotes: quotes.data.length,
+      quoteConversion,
+      orders: orders.data.length,
+      openOrders: openOrders.length,
+      pipelineValue,
+      orderRevenue
+    },
+    customers,
+    opportunities,
+    quotes,
+    quoteItems,
+    orders,
+    orderItems
+  });
+});
+
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
   const result = await listTable(req.params.table);
   res.json(result);
@@ -847,6 +931,19 @@ app.post('/api/admin/production/orders/:id/complete', requireAdminAuth, async (r
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 200 : 202).json(result);
+});
+
+app.get('/api/admin/:table(customers|sales_opportunities|sales_quotes|sales_quote_items|sales_orders|sales_order_items)', requireAdminAuth, async (req, res) => {
+  const result = await listTable(req.params.table);
+  res.json(result);
+});
+
+app.post('/api/admin/:table(customers|sales_opportunities|sales_quotes|sales_quote_items|sales_orders|sales_order_items)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
 });
 
 app.get(['/admin', '/admin/*'], (_req, res) => {

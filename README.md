@@ -224,3 +224,39 @@ Ao finalizar uma ordem de produção, o backend:
 - registra entrada de produto acabado;
 - atualiza a ordem como finalizada;
 - grava auditoria.
+
+### Fase 4 - Comercial Inicial
+
+Migration:
+
+```text
+supabase/migrations/202607180004_commercial.sql
+```
+
+Ela cria:
+
+- `customers`
+- `sales_opportunities`
+- `sales_quotes`
+- `sales_quote_items`
+- `sales_orders`
+- `sales_order_items`
+
+APIs administrativas:
+
+```text
+GET /api/admin/commercial
+GET /api/admin/customers
+GET /api/admin/sales_opportunities
+GET /api/admin/sales_quotes
+GET /api/admin/sales_orders
+POST /api/admin/customers
+POST /api/admin/sales_opportunities
+```
+
+Telas:
+
+- `/admin/clientes`
+- `/admin/crm`
+- `/admin/orcamentos`
+- `/admin/pedidos`
