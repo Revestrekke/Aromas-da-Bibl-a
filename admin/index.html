@@ -832,6 +832,9 @@
         <a class="nav-link" href="/admin/crm"><i data-lucide="columns-3"></i>CRM</a>
         <a class="nav-link" href="/admin/orcamentos"><i data-lucide="file-text"></i>Orçamentos</a>
         <a class="nav-link" href="/admin/pedidos"><i data-lucide="shopping-cart"></i>Pedidos</a>
+        <a class="nav-link" href="/admin/receber"><i data-lucide="circle-dollar-sign"></i>A Receber</a>
+        <a class="nav-link" href="/admin/pagar"><i data-lucide="receipt"></i>A Pagar</a>
+        <a class="nav-link" href="/admin/caixa"><i data-lucide="landmark"></i>Fluxo de Caixa</a>
         <a class="nav-link" href="/admin/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/admin/modelo"><i data-lucide="network"></i>Modelo</a>
         <a class="nav-link" href="/admin/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
@@ -1262,6 +1265,75 @@
         <div class="table-wrap" id="ordersTable"></div>
       </section>
 
+      <section class="section panel" id="receber-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Contas a Receber</h2>
+            <p>Parcelas de vendas, vencimentos, status de recebimento e previsão de entrada.</p>
+          </div>
+          <span class="chip" id="receivableCount">0 em aberto</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="receivableForm" style="margin-top:0;">
+            <div class="field"><label for="receivableDescription">Descrição</label><input id="receivableDescription" name="description" required placeholder="Venda direta - Home Spray Paz"></div>
+            <div class="inline-fields">
+              <div class="field"><label for="receivableDueDate">Vencimento</label><input id="receivableDueDate" name="due_date" type="date" required></div>
+              <div class="field"><label for="receivableAmount">Valor</label><input id="receivableAmount" name="gross_amount" type="number" min="0" step="0.01" required placeholder="699.00"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Lançar recebível</button>
+            <div class="notice" id="receivableNotice">Recebíveis entram no fluxo de caixa previsto.</div>
+          </form>
+          <div class="table-wrap" id="receivableTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="pagar-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Contas a Pagar</h2>
+            <p>Fornecedores, compras, despesas, vencimentos e saídas previstas.</p>
+          </div>
+          <span class="chip" id="payableCount">0 em aberto</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="payableForm" style="margin-top:0;">
+            <div class="field"><label for="payableDescription">Descrição</label><input id="payableDescription" name="description" required placeholder="Compra de frascos"></div>
+            <div class="inline-fields">
+              <div class="field"><label for="payableDueDate">Vencimento</label><input id="payableDueDate" name="due_date" type="date" required></div>
+              <div class="field"><label for="payableAmount">Valor</label><input id="payableAmount" name="amount" type="number" min="0" step="0.01" required placeholder="850.00"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Lançar conta</button>
+            <div class="notice" id="payableNotice">Contas a pagar alimentam o fluxo de caixa.</div>
+          </form>
+          <div class="table-wrap" id="payableTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="caixa-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Fluxo de Caixa</h2>
+            <p>Entradas, saídas e saldo projetado a partir de contas a pagar e receber.</p>
+          </div>
+          <span class="chip" id="cashFlowCount">0 lançamentos</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="arrow-down-circle"></i></div>
+            <div><div class="metric-value" id="financeReceivableMetric">R$ 0</div><div class="metric-label">A receber</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="arrow-up-circle"></i></div>
+            <div><div class="metric-value" id="financePayableMetric">R$ 0</div><div class="metric-label">A pagar</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="activity"></i></div>
+            <div><div class="metric-value" id="financeBalanceMetric">R$ 0</div><div class="metric-label">Saldo projetado</div></div>
+          </div>
+        </div>
+        <div class="table-wrap" id="cashFlowTable"></div>
+      </section>
+
       <section class="section two-col" id="mercado">
         <div class="panel">
           <div class="panel-header">
@@ -1627,6 +1699,7 @@
       await loadCatalogData();
       await loadProductionData();
       await loadCommercialData();
+      await loadFinanceData();
     }
 
     async function apiFetch(url, options = {}) {
@@ -1699,6 +1772,9 @@
       "/admin/crm": { title: "CRM | Aromas da Bíblia", label: "CRM", sections: ["crm-admin"] },
       "/admin/orcamentos": { title: "Orçamentos | Aromas da Bíblia", label: "Orçamentos", sections: ["orcamentos-admin"] },
       "/admin/pedidos": { title: "Pedidos | Aromas da Bíblia", label: "Pedidos", sections: ["pedidos-admin"] },
+      "/admin/receber": { title: "Contas a Receber | Aromas da Bíblia", label: "Contas a Receber", sections: ["receber-admin"] },
+      "/admin/pagar": { title: "Contas a Pagar | Aromas da Bíblia", label: "Contas a Pagar", sections: ["pagar-admin"] },
+      "/admin/caixa": { title: "Fluxo de Caixa | Aromas da Bíblia", label: "Fluxo de Caixa", sections: ["caixa-admin"] },
       "/admin/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/admin/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
       "/admin/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
@@ -2136,6 +2212,49 @@
       }
     }
 
+    async function loadFinanceData() {
+      try {
+        const response = await apiFetch("/api/admin/finance");
+        const finance = await response.json();
+        window.financeData = finance;
+
+        document.getElementById("receivableCount").textContent = `${finance.metrics.receivableOpen} em aberto`;
+        document.getElementById("payableCount").textContent = `${finance.metrics.payableOpen} em aberto`;
+        document.getElementById("cashFlowCount").textContent = `${finance.metrics.cashFlowEntries} lançamentos`;
+        document.getElementById("financeReceivableMetric").textContent = formatValue("totalReceivable_cents", finance.metrics.totalReceivable);
+        document.getElementById("financePayableMetric").textContent = formatValue("totalPayable_cents", finance.metrics.totalPayable);
+        document.getElementById("financeBalanceMetric").textContent = formatValue("projectedBalance_cents", finance.metrics.projectedBalance);
+
+        renderSimpleTable("receivableTable", finance.receivable.data, [
+          ["description", "Descrição"],
+          ["due_date", "Vencimento"],
+          ["net_amount_cents", "Valor líquido"],
+          ["payment_method", "Forma"],
+          ["status", "Status"]
+        ], "Nenhuma conta a receber cadastrada.");
+
+        renderSimpleTable("payableTable", finance.payable.data, [
+          ["description", "Descrição"],
+          ["due_date", "Vencimento"],
+          ["net_amount_cents", "Valor líquido"],
+          ["payment_method", "Forma"],
+          ["status", "Status"]
+        ], "Nenhuma conta a pagar cadastrada.");
+
+        renderSimpleTable("cashFlowTable", finance.cashFlow.data, [
+          ["entry_date", "Data"],
+          ["direction", "Tipo"],
+          ["description", "Descrição"],
+          ["amount_cents", "Valor"],
+          ["status", "Status"]
+        ], "Nenhum lançamento no fluxo de caixa.");
+      } catch (error) {
+        ["receivableTable", "payableTable", "cashFlowTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Não foi possível carregar financeiro.</div>`;
+        });
+      }
+    }
+
     async function submitCatalogForm({ formId, noticeId, endpoint, transform }) {
       const form = document.getElementById(formId);
       const notice = document.getElementById(noticeId);
@@ -2365,6 +2484,66 @@
       } catch (error) {
         notice.className = "notice warn";
         notice.textContent = error.message || "Não foi possível salvar oportunidade.";
+      }
+    });
+
+    document.getElementById("receivableForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("receivableNotice");
+      notice.className = "notice";
+      notice.textContent = "Lançando recebível...";
+
+      try {
+        const payload = formPayload(event.currentTarget);
+        const amount = toCents(payload.gross_amount);
+        delete payload.gross_amount;
+        payload.gross_amount_cents = amount;
+        payload.net_amount_cents = amount;
+        payload.status = "pending";
+
+        const response = await apiFetch("/api/admin/accounts_receivable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao lançar recebível.");
+        notice.textContent = result.source === "supabase" ? "Conta a receber lançada." : "Recebível validado. Aplique as migrations para persistir.";
+        if (result.source === "supabase") event.currentTarget.reset();
+        await loadFinanceData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Não foi possível lançar recebível.";
+      }
+    });
+
+    document.getElementById("payableForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("payableNotice");
+      notice.className = "notice";
+      notice.textContent = "Lançando conta...";
+
+      try {
+        const payload = formPayload(event.currentTarget);
+        const amount = toCents(payload.amount);
+        delete payload.amount;
+        payload.amount_cents = amount;
+        payload.net_amount_cents = amount;
+        payload.status = "pending";
+
+        const response = await apiFetch("/api/admin/accounts_payable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao lançar conta.");
+        notice.textContent = result.source === "supabase" ? "Conta a pagar lançada." : "Conta validada. Aplique as migrations para persistir.";
+        if (result.source === "supabase") event.currentTarget.reset();
+        await loadFinanceData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Não foi possível lançar conta.";
       }
     });
 

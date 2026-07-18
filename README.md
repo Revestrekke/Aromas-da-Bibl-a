@@ -260,3 +260,38 @@ Telas:
 - `/admin/crm`
 - `/admin/orcamentos`
 - `/admin/pedidos`
+
+### Fase 5 - Financeiro Inicial
+
+Migration:
+
+```text
+supabase/migrations/202607180005_finance.sql
+```
+
+Ela cria:
+
+- `financial_categories`
+- `cost_centers`
+- `bank_accounts`
+- `accounts_receivable`
+- `accounts_payable`
+- `cash_flow_entries`
+
+APIs administrativas:
+
+```text
+GET /api/admin/finance
+GET /api/admin/accounts_receivable
+GET /api/admin/accounts_payable
+GET /api/admin/cash_flow_entries
+POST /api/admin/accounts_receivable
+POST /api/admin/accounts_payable
+POST /api/admin/sales/orders/:id/receivable
+```
+
+Telas:
+
+- `/admin/receber`
+- `/admin/pagar`
+- `/admin/caixa`

@@ -123,6 +123,29 @@ const fallbackData = {
   sales_order_items: [
     { id: 'order-item-001', order_id: 'order-001', product_id: 'product-paz', description: 'Home Spray Paz 200 ml', quantity: 20, unit_price_cents: 6990, total_cents: 139800, unit_cost_cents: 3050, margin_cents: 78800 }
   ],
+  financial_categories: [
+    { id: 'cat-sales', name: 'Venda de produtos', type: 'revenue', active: true },
+    { id: 'cat-supplies', name: 'Compra de insumos', type: 'expense', active: true },
+    { id: 'cat-packaging', name: 'Embalagens', type: 'expense', active: true }
+  ],
+  cost_centers: [
+    { id: 'cc-general', code: 'GERAL', name: 'Geral', active: true },
+    { id: 'cc-prod', code: 'PROD', name: 'Produção', active: true },
+    { id: 'cc-com', code: 'COM', name: 'Comercial', active: true }
+  ],
+  bank_accounts: [
+    { id: 'bank-main', name: 'Conta principal', bank_name: 'Banco demonstrativo', current_balance_cents: 0, active: true }
+  ],
+  accounts_receivable: [
+    { id: 'ar-001', customer_id: 'customer-igreja', sales_order_id: 'order-001', description: 'Pedido PED-0001 - Home Spray Paz', due_date: '2026-07-25', gross_amount_cents: 139800, net_amount_cents: 139800, status: 'pending' }
+  ],
+  accounts_payable: [
+    { id: 'ap-001', supplier_id: 'supplier-demo', description: 'Compra demonstrativa de frascos e insumos', due_date: '2026-07-28', amount_cents: 85000, net_amount_cents: 85000, status: 'pending' }
+  ],
+  cash_flow_entries: [
+    { id: 'cf-001', entry_date: '2026-07-25', source_type: 'receivable', source_id: 'ar-001', direction: 'in', description: 'Pedido PED-0001 - Home Spray Paz', amount_cents: 139800, status: 'planned' },
+    { id: 'cf-002', entry_date: '2026-07-28', source_type: 'payable', source_id: 'ap-001', direction: 'out', description: 'Compra demonstrativa de frascos e insumos', amount_cents: 85000, status: 'planned' }
+  ],
   produtos: [
     {
       id: 'paz-home-spray',
@@ -349,6 +372,30 @@ const tableValidation = {
   sales_order_items: {
     required: ['order_id', 'description', 'quantity'],
     numeric: ['quantity', 'unit_price_cents', 'discount_cents', 'total_cents', 'unit_cost_cents', 'margin_cents']
+  },
+  financial_categories: {
+    required: ['name', 'type'],
+    numeric: []
+  },
+  cost_centers: {
+    required: ['code', 'name'],
+    numeric: []
+  },
+  bank_accounts: {
+    required: ['name'],
+    numeric: ['opening_balance_cents', 'current_balance_cents']
+  },
+  accounts_receivable: {
+    required: ['description', 'due_date'],
+    numeric: ['installment_number', 'gross_amount_cents', 'fee_cents', 'net_amount_cents']
+  },
+  accounts_payable: {
+    required: ['description', 'due_date'],
+    numeric: ['amount_cents', 'interest_cents', 'fine_cents', 'discount_cents', 'net_amount_cents', 'installment_number']
+  },
+  cash_flow_entries: {
+    required: ['entry_date', 'source_type', 'direction', 'description'],
+    numeric: ['amount_cents']
   },
   produtos: {
     required: ['nome'],
@@ -675,6 +722,92 @@ async function completeProductionOrder(orderId, payload, user = null) {
   return { data: updatedOrder, source: 'supabase' };
 }
 
+async function createReceivableFromOrder(orderId, payload, user = null) {
+  const dueDate = payload.due_date;
+  if (!dueDate) {
+    return { validationError: { status: 400, error: 'Informe a data de vencimento.' } };
+  }
+
+  if (!supabase) {
+    const order = fallbackData.sales_orders.find((item) => String(item.id) === String(orderId));
+    if (!order) return { validationError: { status: 404, error: 'Pedido não encontrado.' } };
+    return {
+      source: 'fallback',
+      data: {
+        id: normalizeId(`ar-${order.order_number}`),
+        customer_id: order.customer_id,
+        sales_order_id: order.id,
+        description: `Pedido ${order.order_number}`,
+        due_date: dueDate,
+        gross_amount_cents: Number(order.total_cents || 0),
+        net_amount_cents: Number(order.total_cents || 0),
+        status: 'pending'
+      }
+    };
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from('sales_orders')
+    .select('*')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (orderError) return { data: null, source: 'fallback', supabaseError: publicError(orderError) };
+  if (!order) return { validationError: { status: 404, error: 'Pedido não encontrado.' } };
+
+  const { data: existing } = await supabase
+    .from('accounts_receivable')
+    .select('*')
+    .eq('sales_order_id', order.id)
+    .neq('status', 'cancelled')
+    .maybeSingle();
+
+  if (existing) {
+    return { validationError: { status: 409, error: 'Este pedido já possui conta a receber.' } };
+  }
+
+  const receivablePayload = {
+    customer_id: order.customer_id,
+    sales_order_id: order.id,
+    description: payload.description || `Pedido ${order.order_number}`,
+    due_date: dueDate,
+    gross_amount_cents: Number(order.total_cents || 0),
+    fee_cents: Number(payload.fee_cents || 0),
+    net_amount_cents: Number(order.total_cents || 0) - Number(payload.fee_cents || 0),
+    payment_method: payload.payment_method || null,
+    status: 'pending',
+    notes: payload.notes || null
+  };
+
+  const { data: receivable, error: receivableError } = await supabase
+    .from('accounts_receivable')
+    .insert(receivablePayload)
+    .select('*')
+    .single();
+
+  if (receivableError) return { data: receivablePayload, source: 'fallback', supabaseError: publicError(receivableError) };
+
+  await supabase.from('cash_flow_entries').insert({
+    entry_date: dueDate,
+    source_type: 'receivable',
+    source_id: receivable.id,
+    direction: 'in',
+    description: receivable.description,
+    amount_cents: receivable.net_amount_cents,
+    status: 'planned'
+  });
+
+  await writeAuditLog({
+    user,
+    action: 'create_receivable_from_order',
+    table: 'accounts_receivable',
+    recordId: receivable.id,
+    after: receivable
+  });
+
+  return { data: receivable, source: 'supabase' };
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -878,6 +1011,41 @@ app.get('/api/admin/commercial', requireAdminAuth, async (_req, res) => {
   });
 });
 
+app.get('/api/admin/finance', requireAdminAuth, async (_req, res) => {
+  const [receivable, payable, cashFlow, categories, costCenters, bankAccounts] = await Promise.all([
+    listTable('accounts_receivable', 'due_date'),
+    listTable('accounts_payable', 'due_date'),
+    listTable('cash_flow_entries', 'entry_date'),
+    listTable('financial_categories', 'created_at'),
+    listTable('cost_centers', 'created_at'),
+    listTable('bank_accounts', 'created_at')
+  ]);
+
+  const receivableOpen = receivable.data.filter((item) => item.status === 'pending' || item.status === 'partial');
+  const payableOpen = payable.data.filter((item) => item.status === 'pending' || item.status === 'partial');
+  const totalReceivable = receivableOpen.reduce((sum, item) => sum + Number(item.net_amount_cents || 0), 0);
+  const totalPayable = payableOpen.reduce((sum, item) => sum + Number(item.net_amount_cents || item.amount_cents || 0), 0);
+  const projectedBalance = totalReceivable - totalPayable;
+
+  res.json({
+    source: receivable.source,
+    metrics: {
+      receivableOpen: receivableOpen.length,
+      payableOpen: payableOpen.length,
+      totalReceivable,
+      totalPayable,
+      projectedBalance,
+      cashFlowEntries: cashFlow.data.length
+    },
+    receivable,
+    payable,
+    cashFlow,
+    categories,
+    costCenters,
+    bankAccounts
+  });
+});
+
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
   const result = await listTable(req.params.table);
   res.json(result);
@@ -940,6 +1108,27 @@ app.get('/api/admin/:table(customers|sales_opportunities|sales_quotes|sales_quot
 
 app.post('/api/admin/:table(customers|sales_opportunities|sales_quotes|sales_quote_items|sales_orders|sales_order_items)', requireAdminAuth, async (req, res) => {
   const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.get('/api/admin/:table(financial_categories|cost_centers|bank_accounts|accounts_receivable|accounts_payable|cash_flow_entries)', requireAdminAuth, async (req, res) => {
+  const result = await listTable(req.params.table);
+  res.json(result);
+});
+
+app.post('/api/admin/:table(financial_categories|cost_centers|bank_accounts|accounts_receivable|accounts_payable|cash_flow_entries)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/sales/orders/:id/receivable', requireAdminAuth, async (req, res) => {
+  const result = await createReceivableFromOrder(req.params.id, req.body || {}, req.user);
   if (result.validationError) {
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
