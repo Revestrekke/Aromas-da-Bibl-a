@@ -1887,6 +1887,38 @@ async function updateShipmentStatus(shipmentId, payload, user = null) {
     }
   }
 
+  let followup = null;
+  if (status === 'delivered') {
+    const followupDate = payload.followup_date || addDays(data.delivered_at || new Date().toISOString().slice(0, 10), 3);
+    const { data: existingFollowup } = await supabase
+      .from('after_sales_followups')
+      .select('*')
+      .eq('shipment_id', data.id)
+      .neq('status', 'cancelled')
+      .maybeSingle();
+
+    if (!existingFollowup) {
+      const { data: createdFollowup } = await supabase
+        .from('after_sales_followups')
+        .insert({
+          sales_order_id: data.sales_order_id || null,
+          customer_id: data.customer_id || null,
+          shipment_id: data.id,
+          followup_date: followupDate,
+          channel: payload.followup_channel || 'WhatsApp',
+          objective: payload.followup_objective || 'Confirmar recebimento, experiencia com o aroma e oportunidade de recompra.',
+          next_action: payload.followup_next_action || 'Solicitar feedback e NPS.',
+          status: 'planned',
+          created_by: user?.id || null
+        })
+        .select('*')
+        .single();
+      followup = createdFollowup || null;
+    } else {
+      followup = existingFollowup;
+    }
+  }
+
   await writeAuditLog({
     user,
     action: `shipment_${status}`,
@@ -1896,7 +1928,7 @@ async function updateShipmentStatus(shipmentId, payload, user = null) {
     after: data
   });
 
-  return { data, source: 'supabase' };
+  return { data, followup, source: 'supabase' };
 }
 
 async function createShipmentFromOrder(orderId, payload = {}, user = null) {

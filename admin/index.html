@@ -4130,12 +4130,17 @@
         const response = await apiFetch(`/api/admin/shipments/${shipmentId}/status`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, description: `Status atualizado para ${status}.` })
+          body: JSON.stringify({
+            status,
+            description: `Status atualizado para ${status}.`,
+            followup_objective: status === "delivered" ? "Confirmar recebimento, experiencia com o aroma e oportunidade de recompra." : undefined
+          })
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Falha ao atualizar entrega.");
         await loadLogisticsData();
         await loadCommercialData();
+        await loadNotificationsData();
       } catch (error) {
         window.alert(error.message || "Nao foi possivel atualizar entrega.");
       }
