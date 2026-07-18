@@ -311,3 +311,23 @@ Telas:
 - `/admin/precificacao`
 
 Os cálculos de DRE e precificação são feitos no backend. A DRE usa pedidos, itens de pedido, contas a pagar e contas a receber. O simulador calcula preço mínimo, preço sugerido, preço revendedor, preço promocional, taxas variáveis, lucro unitário e alertas de margem.
+
+### Fase 5.2 - Relatórios e Exportação CSV
+
+APIs administrativas:
+
+```text
+GET /api/admin/reports
+GET /api/admin/reports/sales.csv
+GET /api/admin/reports/stock.csv
+GET /api/admin/reports/customers.csv
+GET /api/admin/reports/receivable.csv
+GET /api/admin/reports/payable.csv
+GET /api/admin/reports/production.csv
+```
+
+Tela:
+
+- `/admin/relatorios`
+
+Todos os relatórios são protegidos por autenticação e os CSVs são gerados no backend.

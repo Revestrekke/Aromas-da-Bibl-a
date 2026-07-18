@@ -902,6 +902,162 @@ function simulatePricing(input) {
   };
 }
 
+function csvEscape(value) {
+  if (value === null || value === undefined) return '';
+  const text = String(value);
+  if (/[",\n\r;]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+  return text;
+}
+
+function toCsv(rows, columns) {
+  const header = columns.map((column) => csvEscape(column.label)).join(';');
+  const body = rows.map((row) =>
+    columns.map((column) => csvEscape(row[column.key])).join(';')
+  );
+  return [header, ...body].join('\n');
+}
+
+async function buildReports() {
+  const [commercial, finance, catalog, production] = await Promise.all([
+    Promise.all([
+      listTable('sales_orders', 'created_at'),
+      listTable('sales_order_items', 'created_at'),
+      listTable('customers', 'created_at'),
+      listTable('sales_opportunities', 'created_at')
+    ]),
+    Promise.all([
+      listTable('accounts_receivable', 'due_date'),
+      listTable('accounts_payable', 'due_date'),
+      listTable('cash_flow_entries', 'entry_date')
+    ]),
+    Promise.all([
+      listTable('products', 'created_at'),
+      listTable('raw_materials', 'created_at'),
+      listTable('packaging_items', 'created_at'),
+      listTable('fragrances', 'created_at')
+    ]),
+    Promise.all([
+      listTable('production_orders', 'created_at'),
+      listTable('inventory_movements', 'created_at')
+    ])
+  ]);
+
+  const [orders, orderItems, customers, opportunities] = commercial;
+  const [receivable, payable, cashFlow] = finance;
+  const [products, rawMaterials, packagingItems, fragrances] = catalog;
+  const [productionOrders, inventoryMovements] = production;
+
+  const salesByStatus = Object.entries(orders.data.reduce((acc, order) => {
+    acc[order.status || 'sem_status'] = (acc[order.status || 'sem_status'] || 0) + Number(order.total_cents || 0);
+    return acc;
+  }, {})).map(([status, total_cents]) => ({ status, total_cents }));
+
+  const stockAlerts = [
+    ...products.data
+      .filter((item) => Number(item.current_stock || 0) <= Number(item.minimum_stock || 0))
+      .map((item) => ({ type: 'product', name: item.name, stock: item.current_stock, minimum: item.minimum_stock })),
+    ...rawMaterials.data
+      .filter((item) => Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0))
+      .map((item) => ({ type: 'raw_material', name: item.name, stock: item.quantity_on_hand, minimum: item.minimum_stock })),
+    ...packagingItems.data
+      .filter((item) => Number(item.quantity_on_hand || 0) <= Number(item.minimum_stock || 0))
+      .map((item) => ({ type: 'packaging', name: item.name, stock: item.quantity_on_hand, minimum: item.minimum_stock }))
+  ];
+
+  const customerSummary = customers.data.map((customer) => ({
+    name: customer.name,
+    type: customer.type,
+    channel: customer.acquisition_channel,
+    status: customer.status
+  }));
+
+  return {
+    generatedAt: new Date().toISOString(),
+    source: orders.source,
+    reports: {
+      salesByStatus,
+      salesItems: orderItems.data,
+      stockAlerts,
+      customers: customerSummary,
+      opportunities: opportunities.data,
+      receivable: receivable.data,
+      payable: payable.data,
+      cashFlow: cashFlow.data,
+      productionOrders: productionOrders.data,
+      inventoryMovements: inventoryMovements.data,
+      products: products.data,
+      rawMaterials: rawMaterials.data,
+      packagingItems: packagingItems.data,
+      fragrances: fragrances.data
+    },
+    metrics: {
+      totalOrders: orders.data.length,
+      totalRevenue: orders.data.reduce((sum, item) => sum + Number(item.total_cents || 0), 0),
+      totalCustomers: customers.data.length,
+      totalOpportunities: opportunities.data.length,
+      stockAlerts: stockAlerts.length,
+      receivableOpen: receivable.data.filter((item) => ['pending', 'partial'].includes(item.status)).length,
+      payableOpen: payable.data.filter((item) => ['pending', 'partial'].includes(item.status)).length,
+      productionOpen: productionOrders.data.filter((item) => !['finished', 'cancelled'].includes(item.status)).length
+    }
+  };
+}
+
+const reportExports = {
+  sales: {
+    getRows: (reports) => reports.reports.salesByStatus,
+    columns: [
+      { key: 'status', label: 'Status' },
+      { key: 'total_cents', label: 'Total em centavos' }
+    ]
+  },
+  stock: {
+    getRows: (reports) => reports.reports.stockAlerts,
+    columns: [
+      { key: 'type', label: 'Tipo' },
+      { key: 'name', label: 'Item' },
+      { key: 'stock', label: 'Estoque' },
+      { key: 'minimum', label: 'Mínimo' }
+    ]
+  },
+  customers: {
+    getRows: (reports) => reports.reports.customers,
+    columns: [
+      { key: 'name', label: 'Nome' },
+      { key: 'type', label: 'Tipo' },
+      { key: 'channel', label: 'Canal' },
+      { key: 'status', label: 'Status' }
+    ]
+  },
+  receivable: {
+    getRows: (reports) => reports.reports.receivable,
+    columns: [
+      { key: 'description', label: 'Descrição' },
+      { key: 'due_date', label: 'Vencimento' },
+      { key: 'net_amount_cents', label: 'Valor líquido em centavos' },
+      { key: 'status', label: 'Status' }
+    ]
+  },
+  payable: {
+    getRows: (reports) => reports.reports.payable,
+    columns: [
+      { key: 'description', label: 'Descrição' },
+      { key: 'due_date', label: 'Vencimento' },
+      { key: 'net_amount_cents', label: 'Valor líquido em centavos' },
+      { key: 'status', label: 'Status' }
+    ]
+  },
+  production: {
+    getRows: (reports) => reports.reports.productionOrders,
+    columns: [
+      { key: 'order_number', label: 'Ordem' },
+      { key: 'planned_quantity', label: 'Planejado' },
+      { key: 'approved_quantity', label: 'Aprovado' },
+      { key: 'status', label: 'Status' }
+    ]
+  }
+};
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -1142,6 +1298,25 @@ app.get('/api/admin/finance', requireAdminAuth, async (_req, res) => {
 
 app.get('/api/admin/reports/dre', requireAdminAuth, async (_req, res) => {
   res.json(await buildDreReport());
+});
+
+app.get('/api/admin/reports', requireAdminAuth, async (_req, res) => {
+  res.json(await buildReports());
+});
+
+app.get('/api/admin/reports/:type.csv', requireAdminAuth, async (req, res) => {
+  const definition = reportExports[req.params.type];
+  if (!definition) {
+    return res.status(404).json({ error: 'Relatório não encontrado.' });
+  }
+
+  const reports = await buildReports();
+  const rows = definition.getRows(reports);
+  const csv = toCsv(rows, definition.columns);
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${req.params.type}-aromas-da-biblia.csv"`);
+  res.send(`\uFEFF${csv}`);
 });
 
 app.post('/api/admin/pricing/simulate', requireAdminAuth, (req, res) => {

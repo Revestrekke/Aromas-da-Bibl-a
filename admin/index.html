@@ -837,6 +837,7 @@
         <a class="nav-link" href="/admin/caixa"><i data-lucide="landmark"></i>Fluxo de Caixa</a>
         <a class="nav-link" href="/admin/dre"><i data-lucide="file-chart-column"></i>DRE</a>
         <a class="nav-link" href="/admin/precificacao"><i data-lucide="badge-dollar-sign"></i>Precificação</a>
+        <a class="nav-link" href="/admin/relatorios"><i data-lucide="files"></i>Relatórios</a>
         <a class="nav-link" href="/admin/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/admin/modelo"><i data-lucide="network"></i>Modelo</a>
         <a class="nav-link" href="/admin/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
@@ -1406,6 +1407,43 @@
         </div>
       </section>
 
+      <section class="section panel" id="relatorios-admin">
+        <div class="panel-header">
+          <div>
+            <h2>Relatórios</h2>
+            <p>Central de relatórios operacionais com exportação CSV protegida.</p>
+          </div>
+          <span class="chip" id="reportsGeneratedAt">Aguardando dados</span>
+        </div>
+        <div class="metrics" style="margin-top:0;">
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="shopping-cart"></i></div>
+            <div><div class="metric-value" id="reportOrdersMetric">0</div><div class="metric-label">Pedidos</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="wallet"></i></div>
+            <div><div class="metric-value" id="reportRevenueMetric">R$ 0</div><div class="metric-label">Receita</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="triangle-alert"></i></div>
+            <div><div class="metric-value" id="reportStockMetric">0</div><div class="metric-label">Alertas estoque</div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-icon"><i data-lucide="factory"></i></div>
+            <div><div class="metric-value" id="reportProductionMetric">0</div><div class="metric-label">Produções abertas</div></div>
+          </div>
+        </div>
+        <div class="module-grid">
+          <article class="module-card"><div class="module-title"><i data-lucide="download"></i>Vendas</div><p>Receita por status de pedido.</p><button class="btn" type="button" data-export-report="sales">Exportar CSV</button></article>
+          <article class="module-card"><div class="module-title"><i data-lucide="download"></i>Estoque crítico</div><p>Produtos, insumos e embalagens abaixo do mínimo.</p><button class="btn" type="button" data-export-report="stock">Exportar CSV</button></article>
+          <article class="module-card"><div class="module-title"><i data-lucide="download"></i>Clientes</div><p>Clientes por tipo, canal e status.</p><button class="btn" type="button" data-export-report="customers">Exportar CSV</button></article>
+          <article class="module-card"><div class="module-title"><i data-lucide="download"></i>A receber</div><p>Contas a receber e vencimentos.</p><button class="btn" type="button" data-export-report="receivable">Exportar CSV</button></article>
+          <article class="module-card"><div class="module-title"><i data-lucide="download"></i>A pagar</div><p>Contas a pagar e vencimentos.</p><button class="btn" type="button" data-export-report="payable">Exportar CSV</button></article>
+          <article class="module-card"><div class="module-title"><i data-lucide="download"></i>Produção</div><p>Ordens e status de produção.</p><button class="btn" type="button" data-export-report="production">Exportar CSV</button></article>
+        </div>
+        <div class="table-wrap" id="reportsSummaryTable" style="margin-top:14px;"></div>
+      </section>
+
       <section class="section two-col" id="mercado">
         <div class="panel">
           <div class="panel-header">
@@ -1774,6 +1812,7 @@
       await loadFinanceData();
       await loadDreData();
       await simulatePricingFromForm();
+      await loadReportsData();
     }
 
     async function apiFetch(url, options = {}) {
@@ -1851,6 +1890,7 @@
       "/admin/caixa": { title: "Fluxo de Caixa | Aromas da Bíblia", label: "Fluxo de Caixa", sections: ["caixa-admin"] },
       "/admin/dre": { title: "DRE | Aromas da Bíblia", label: "DRE Gerencial", sections: ["dre-admin"] },
       "/admin/precificacao": { title: "Precificação | Aromas da Bíblia", label: "Precificação", sections: ["precificacao-admin"] },
+      "/admin/relatorios": { title: "Relatórios | Aromas da Bíblia", label: "Relatórios", sections: ["relatorios-admin"] },
       "/admin/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/admin/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
       "/admin/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
@@ -2402,6 +2442,52 @@
       }
     }
 
+    async function loadReportsData() {
+      try {
+        const response = await apiFetch("/api/admin/reports");
+        const report = await response.json();
+        window.reportsData = report;
+
+        document.getElementById("reportsGeneratedAt").textContent = `Gerado em ${new Date(report.generatedAt).toLocaleString("pt-BR")}`;
+        document.getElementById("reportOrdersMetric").textContent = report.metrics.totalOrders;
+        document.getElementById("reportRevenueMetric").textContent = formatValue("totalRevenue_cents", report.metrics.totalRevenue);
+        document.getElementById("reportStockMetric").textContent = report.metrics.stockAlerts;
+        document.getElementById("reportProductionMetric").textContent = report.metrics.productionOpen;
+
+        renderSimpleTable("reportsSummaryTable", [
+          { indicator: "Clientes", value: report.metrics.totalCustomers },
+          { indicator: "Oportunidades", value: report.metrics.totalOpportunities },
+          { indicator: "Contas a receber em aberto", value: report.metrics.receivableOpen },
+          { indicator: "Contas a pagar em aberto", value: report.metrics.payableOpen },
+          { indicator: "Pedidos", value: report.metrics.totalOrders },
+          { indicator: "Receita", value: formatValue("totalRevenue_cents", report.metrics.totalRevenue) }
+        ], [
+          ["indicator", "Indicador"],
+          ["value", "Valor"]
+        ], "Nenhum relatório disponível.");
+      } catch (error) {
+        document.getElementById("reportsSummaryTable").innerHTML = `<div class="notice warn">Não foi possível carregar relatórios.</div>`;
+      }
+    }
+
+    async function exportReport(type) {
+      try {
+        const response = await apiFetch(`/api/admin/reports/${type}.csv`);
+        if (!response.ok) throw new Error("Falha ao exportar relatório.");
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${type}-aromas-da-biblia.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        window.alert(error.message || "Não foi possível exportar relatório.");
+      }
+    }
+
     async function submitCatalogForm({ formId, noticeId, endpoint, transform }) {
       const form = document.getElementById(formId);
       const notice = document.getElementById(noticeId);
@@ -2697,6 +2783,10 @@
     document.getElementById("pricingForm").addEventListener("submit", async (event) => {
       event.preventDefault();
       await simulatePricingFromForm();
+    });
+
+    document.querySelectorAll("[data-export-report]").forEach((button) => {
+      button.addEventListener("click", () => exportReport(button.dataset.exportReport));
     });
 
     async function completeProductionOrder(orderId, plannedQuantity) {
