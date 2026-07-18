@@ -186,3 +186,41 @@ Essa rota:
 - atualiza o saldo do item;
 - registra a movimentação;
 - grava auditoria quando o Supabase está configurado.
+
+### Fase 3 - Fórmulas e Produção Inicial
+
+Migration:
+
+```text
+supabase/migrations/202607180003_formulas_production.sql
+```
+
+Ela cria:
+
+- `formulas`
+- `formula_versions`
+- `formula_items`
+- `production_orders`
+- `production_order_items`
+- `production_losses`
+
+APIs administrativas:
+
+```text
+GET /api/admin/production
+GET /api/admin/formulas
+GET /api/admin/formula_versions
+GET /api/admin/formula_items
+GET /api/admin/production_orders
+POST /api/admin/production_orders
+POST /api/admin/production/orders/:id/complete
+```
+
+Ao finalizar uma ordem de produção, o backend:
+
+- carrega os itens da fórmula;
+- consome insumos e embalagens por movimentação de estoque;
+- bloqueia estoque negativo;
+- registra entrada de produto acabado;
+- atualiza a ordem como finalizada;
+- grava auditoria.

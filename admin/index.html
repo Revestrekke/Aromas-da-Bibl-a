@@ -826,6 +826,8 @@
         <a class="nav-link" href="/admin/embalagens"><i data-lucide="package-open"></i>Embalagens</a>
         <a class="nav-link" href="/admin/estoque"><i data-lucide="warehouse"></i>Estoque</a>
         <a class="nav-link" href="/admin/fornecedores"><i data-lucide="truck"></i>Fornecedores</a>
+        <a class="nav-link" href="/admin/formulas"><i data-lucide="clipboard-list"></i>Fórmulas</a>
+        <a class="nav-link" href="/admin/producao"><i data-lucide="kanban"></i>Produção</a>
         <a class="nav-link" href="/admin/mercado"><i data-lucide="store"></i>Mercado</a>
         <a class="nav-link" href="/admin/modelo"><i data-lucide="network"></i>Modelo</a>
         <a class="nav-link" href="/admin/financeiro"><i data-lucide="chart-no-axes-combined"></i>Financeiro</a>
@@ -1127,6 +1129,61 @@
             <div class="notice" id="supplierNotice">Pronto para cadastrar fornecedor.</div>
           </form>
           <div class="table-wrap" id="suppliersTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="formulas">
+        <div class="panel-header">
+          <div>
+            <h2>Fórmulas</h2>
+            <p>Versionamento de fórmulas e fichas técnicas para produção.</p>
+          </div>
+          <span class="chip" id="formulaCount">0 fórmulas</span>
+        </div>
+        <div class="two-col">
+          <div class="table-wrap" id="formulasTable"></div>
+          <div class="table-wrap" id="formulaItemsTable"></div>
+        </div>
+      </section>
+
+      <section class="section panel" id="producao">
+        <div class="panel-header">
+          <div>
+            <h2>Produção</h2>
+            <p>Ordens de produção, consumo de materiais e entrada de produto acabado.</p>
+          </div>
+          <span class="chip" id="productionOrderCount">0 ordens abertas</span>
+        </div>
+        <div class="ops-grid">
+          <form class="panel form-grid" id="productionOrderForm" style="margin-top:0;">
+            <div class="inline-fields">
+              <div class="field"><label for="productionOrderNumber">Número</label><input id="productionOrderNumber" name="order_number" required placeholder="OP-0002"></div>
+              <div class="field"><label for="productionProductId">Produto</label><select id="productionProductId" name="product_id" required></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="productionFormulaId">Fórmula</label><select id="productionFormulaId" name="formula_id"></select></div>
+              <div class="field"><label for="productionFormulaVersionId">Versão</label><select id="productionFormulaVersionId" name="formula_version_id"></select></div>
+            </div>
+            <div class="inline-fields">
+              <div class="field"><label for="productionQuantity">Quantidade planejada</label><input id="productionQuantity" name="planned_quantity" type="number" min="1" step="1" required placeholder="10"></div>
+              <div class="field"><label for="productionResponsible">Responsável</label><input id="productionResponsible" name="responsible" placeholder="Produção"></div>
+            </div>
+            <button class="btn primary" type="submit"><i data-lucide="save"></i>Criar ordem</button>
+            <div class="notice" id="productionOrderNotice">Crie uma ordem e finalize para consumir materiais.</div>
+          </form>
+          <div>
+            <div class="metrics" style="margin-top:0;">
+              <div class="metric">
+                <div class="metric-icon"><i data-lucide="clipboard-check"></i></div>
+                <div><div class="metric-value" id="finishedProductionCount">0</div><div class="metric-label">Finalizadas</div></div>
+              </div>
+              <div class="metric">
+                <div class="metric-icon"><i data-lucide="timer"></i></div>
+                <div><div class="metric-value" id="openProductionCount">0</div><div class="metric-label">Em aberto</div></div>
+              </div>
+            </div>
+            <div class="table-wrap" id="productionOrdersTable"></div>
+          </div>
         </div>
       </section>
 
@@ -1493,6 +1550,7 @@
       await refreshHealth();
       await loadSystemData();
       await loadCatalogData();
+      await loadProductionData();
     }
 
     async function apiFetch(url, options = {}) {
@@ -1559,6 +1617,8 @@
       "/admin/embalagens": { title: "Embalagens | Aromas da Bíblia", label: "Embalagens", sections: ["embalagens"] },
       "/admin/estoque": { title: "Estoque | Aromas da Bíblia", label: "Estoque", sections: ["estoque-admin"] },
       "/admin/fornecedores": { title: "Fornecedores | Aromas da Bíblia", label: "Fornecedores", sections: ["fornecedores"] },
+      "/admin/formulas": { title: "Fórmulas | Aromas da Bíblia", label: "Fórmulas", sections: ["formulas"] },
+      "/admin/producao": { title: "Produção | Aromas da Bíblia", label: "Produção", sections: ["producao"] },
       "/admin/mercado": { title: "Mercado | Aromas da Bíblia", label: "Mercado", sections: ["mercado"] },
       "/admin/modelo": { title: "Modelo de Negócio | Aromas da Bíblia", label: "Modelo de Negócio", sections: ["modelo"] },
       "/admin/financeiro": { title: "Financeiro | Aromas da Bíblia", label: "Financeiro", sections: ["financeiro"] },
@@ -1859,6 +1919,94 @@
       ], "Nenhuma movimentação registrada.");
     }
 
+    function updateProductionOptions() {
+      const catalog = window.catalogData || {};
+      const production = window.productionData || {};
+      const productSelect = document.getElementById("productionProductId");
+      const formulaSelect = document.getElementById("productionFormulaId");
+      const versionSelect = document.getElementById("productionFormulaVersionId");
+      if (!productSelect || !formulaSelect || !versionSelect) return;
+
+      productSelect.innerHTML = (catalog.products?.data || [])
+        .map((item) => `<option value="${item.id}">${item.name}</option>`)
+        .join("") || `<option value="">Nenhum produto</option>`;
+
+      formulaSelect.innerHTML = (production.formulas?.data || [])
+        .map((item) => `<option value="${item.id}">${item.name}</option>`)
+        .join("") || `<option value="">Nenhuma fórmula</option>`;
+
+      versionSelect.innerHTML = (production.formulaVersions?.data || [])
+        .map((item) => `<option value="${item.id}">Versão ${item.version_number} · ${item.planned_yield} ${item.yield_unit}</option>`)
+        .join("") || `<option value="">Nenhuma versão</option>`;
+    }
+
+    function orderActionButton(order) {
+      if (order.status === "finished" || order.status === "cancelled") return "";
+      return `<button class="btn" type="button" data-complete-production="${order.id}" data-planned="${order.planned_quantity}">Finalizar</button>`;
+    }
+
+    function renderProductionOrders(rows) {
+      const target = document.getElementById("productionOrdersTable");
+      if (!rows?.length) {
+        target.innerHTML = `<div class="notice warn">Nenhuma ordem de produção cadastrada.</div>`;
+        return;
+      }
+
+      const body = rows.map((row) => `
+        <tr>
+          <td>${formatValue("order_number", row.order_number)}</td>
+          <td>${formatValue("planned_quantity", row.planned_quantity)}</td>
+          <td><span class="status ${statusClass(row.status)}">${formatValue("status", row.status)}</span></td>
+          <td>${formatValue("responsible", row.responsible)}</td>
+          <td>${orderActionButton(row)}</td>
+        </tr>
+      `).join("");
+
+      target.innerHTML = `
+        <table>
+          <thead><tr><th>Ordem</th><th>Planejado</th><th>Status</th><th>Responsável</th><th>Ação</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table>
+      `;
+
+      target.querySelectorAll("[data-complete-production]").forEach((button) => {
+        button.addEventListener("click", () => completeProductionOrder(button.dataset.completeProduction, button.dataset.planned));
+      });
+    }
+
+    async function loadProductionData() {
+      try {
+        const response = await apiFetch("/api/admin/production");
+        const production = await response.json();
+        window.productionData = production;
+
+        document.getElementById("formulaCount").textContent = `${production.metrics.formulas} fórmulas`;
+        document.getElementById("productionOrderCount").textContent = `${production.metrics.openOrders} ordens abertas`;
+        document.getElementById("finishedProductionCount").textContent = production.metrics.finishedOrders;
+        document.getElementById("openProductionCount").textContent = production.metrics.openOrders;
+
+        renderSimpleTable("formulasTable", production.formulas.data, [
+          ["code", "Código"],
+          ["name", "Fórmula"],
+          ["status", "Status"]
+        ], "Nenhuma fórmula cadastrada.");
+
+        renderSimpleTable("formulaItemsTable", production.formulaItems.data, [
+          ["item_type", "Tipo"],
+          ["quantity", "Quantidade"],
+          ["unit", "Unidade"],
+          ["sort_order", "Ordem"]
+        ], "Nenhum item de fórmula cadastrado.");
+
+        renderProductionOrders(production.productionOrders.data);
+        updateProductionOptions();
+      } catch (error) {
+        ["formulasTable", "formulaItemsTable", "productionOrdersTable"].forEach((id) => {
+          document.getElementById(id).innerHTML = `<div class="notice warn">Não foi possível carregar produção.</div>`;
+        });
+      }
+    }
+
     async function submitCatalogForm({ formId, noticeId, endpoint, transform }) {
       const form = document.getElementById(formId);
       const notice = document.getElementById(noticeId);
@@ -1997,6 +2145,66 @@
         notice.textContent = error.message || "Não foi possível registrar movimentação.";
       }
     });
+
+    document.getElementById("productionOrderForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const notice = document.getElementById("productionOrderNotice");
+      notice.className = "notice";
+      notice.textContent = "Criando ordem...";
+
+      try {
+        const payload = formPayload(event.currentTarget);
+        payload.planned_quantity = Number(payload.planned_quantity || 0);
+        payload.status = "planned";
+
+        const response = await apiFetch("/api/admin/production_orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+
+        if (!response.ok) throw new Error(result.error || "Falha ao criar ordem.");
+
+        if (result.source === "supabase") {
+          notice.textContent = "Ordem criada no Supabase.";
+          event.currentTarget.reset();
+        } else {
+          notice.className = "notice warn";
+          notice.textContent = "Ordem validada. Aplique as migrations para persistir.";
+        }
+
+        await loadProductionData();
+      } catch (error) {
+        notice.className = "notice warn";
+        notice.textContent = error.message || "Não foi possível criar ordem.";
+      }
+    });
+
+    async function completeProductionOrder(orderId, plannedQuantity) {
+      const approved = window.prompt("Quantidade aprovada para entrada no estoque:", plannedQuantity || "0");
+      if (!approved) return;
+
+      try {
+        const response = await apiFetch(`/api/admin/production/orders/${orderId}/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            approved_quantity: Number(approved),
+            produced_quantity: Number(approved),
+            generated_lot: `LOTE-${Date.now()}`
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao finalizar produção.");
+
+        await loadCatalogData();
+        await loadProductionData();
+        await loadSystemData();
+      } catch (error) {
+        window.alert(error.message || "Não foi possível finalizar produção.");
+      }
+    }
 
     let costsPageChart;
 

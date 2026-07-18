@@ -87,6 +87,22 @@ const fallbackData = {
   inventory_movements: [
     { id: 'mov-001', item_type: 'product', item_id: 'product-paz', movement_type: 'in', origin: 'seed', quantity: 42, quantity_after: 42, unit_cost_cents: 3050 }
   ],
+  formulas: [
+    { id: 'formula-paz', code: 'FORM-HS-PAZ-200', name: 'Home Spray Paz 200 ml', product_id: 'product-paz', status: 'testing' }
+  ],
+  formula_versions: [
+    { id: 'formula-version-paz-v1', formula_id: 'formula-paz', version_number: 1, planned_yield: 10, yield_unit: 'un', loss_percent: 3, status: 'draft' }
+  ],
+  formula_items: [
+    { id: 'formula-item-base', formula_version_id: 'formula-version-paz-v1', item_type: 'raw_material', item_id: 'raw-base', quantity: 1800, unit: 'ml', sort_order: 1 },
+    { id: 'formula-item-essence', formula_version_id: 'formula-version-paz-v1', item_type: 'raw_material', item_id: 'raw-ess-paz', quantity: 200, unit: 'ml', sort_order: 2 },
+    { id: 'formula-item-bottle', formula_version_id: 'formula-version-paz-v1', item_type: 'packaging', item_id: 'pkg-frasco', quantity: 10, unit: 'un', sort_order: 3 },
+    { id: 'formula-item-valve', formula_version_id: 'formula-version-paz-v1', item_type: 'packaging', item_id: 'pkg-valvula', quantity: 10, unit: 'un', sort_order: 4 },
+    { id: 'formula-item-label', formula_version_id: 'formula-version-paz-v1', item_type: 'packaging', item_id: 'pkg-rotulo', quantity: 10, unit: 'un', sort_order: 5 }
+  ],
+  production_orders: [
+    { id: 'op-001', order_number: 'OP-0001', product_id: 'product-paz', formula_id: 'formula-paz', formula_version_id: 'formula-version-paz-v1', planned_quantity: 10, status: 'planned', responsible: 'Produção' }
+  ],
   produtos: [
     {
       id: 'paz-home-spray',
@@ -273,6 +289,22 @@ const tableValidation = {
   inventory_movements: {
     required: ['item_type', 'item_id', 'movement_type', 'quantity'],
     numeric: ['quantity', 'quantity_before', 'quantity_after', 'unit_cost_cents']
+  },
+  formulas: {
+    required: ['code', 'name'],
+    numeric: []
+  },
+  formula_versions: {
+    required: ['formula_id', 'version_number', 'planned_yield'],
+    numeric: ['version_number', 'planned_yield', 'loss_percent']
+  },
+  formula_items: {
+    required: ['formula_version_id', 'item_type', 'item_id', 'quantity'],
+    numeric: ['quantity', 'percentage', 'cost_cents', 'sort_order']
+  },
+  production_orders: {
+    required: ['order_number', 'product_id', 'planned_quantity'],
+    numeric: ['planned_quantity', 'produced_quantity', 'approved_quantity', 'lost_quantity', 'estimated_cost_cents', 'real_cost_cents']
   },
   produtos: {
     required: ['nome'],
@@ -488,6 +520,117 @@ async function createInventoryMovement(payload, user = null) {
   return { data: savedMovement, item: updatedItem, source: 'supabase' };
 }
 
+async function getFormulaItems(formulaVersionId) {
+  if (!supabase) {
+    return fallbackData.formula_items.filter((item) => item.formula_version_id === formulaVersionId);
+  }
+
+  const { data, error } = await supabase
+    .from('formula_items')
+    .select('*')
+    .eq('formula_version_id', formulaVersionId)
+    .order('sort_order');
+
+  if (error) return fallbackData.formula_items.filter((item) => item.formula_version_id === formulaVersionId);
+  return data || [];
+}
+
+async function completeProductionOrder(orderId, payload, user = null) {
+  const approvedQuantity = Number(payload.approved_quantity || payload.produced_quantity || 0);
+  if (approvedQuantity <= 0) {
+    return { validationError: { status: 400, error: 'Quantidade aprovada deve ser maior que zero.' } };
+  }
+
+  if (!supabase) {
+    const order = fallbackData.production_orders.find((item) => String(item.id) === String(orderId));
+    if (!order) return { validationError: { status: 404, error: 'Ordem de produção não encontrada.' } };
+    return {
+      source: 'fallback',
+      data: {
+        ...order,
+        status: 'finished',
+        approved_quantity: approvedQuantity,
+        produced_quantity: Number(payload.produced_quantity || approvedQuantity),
+        completed_at: new Date().toISOString(),
+        generated_lot: payload.generated_lot || `LOTE-${Date.now()}`
+      }
+    };
+  }
+
+  const { data: order, error: orderError } = await supabase
+    .from('production_orders')
+    .select('*')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (orderError) return { data: null, source: 'fallback', supabaseError: publicError(orderError) };
+  if (!order) return { validationError: { status: 404, error: 'Ordem de produção não encontrada.' } };
+  if (order.status === 'finished') return { validationError: { status: 409, error: 'Ordem de produção já finalizada.' } };
+
+  const items = await getFormulaItems(order.formula_version_id);
+  const plannedQuantity = Number(order.planned_quantity || approvedQuantity || 1);
+  const factor = approvedQuantity / plannedQuantity;
+
+  for (const item of items) {
+    const requiredQuantity = Number(item.quantity || 0) * factor;
+    const movement = await createInventoryMovement({
+      item_type: item.item_type,
+      item_id: item.item_id,
+      movement_type: 'out',
+      quantity: requiredQuantity,
+      origin: `production:${order.order_number}`,
+      unit_cost_cents: Number(item.cost_cents || 0),
+      notes: `Consumo da ordem ${order.order_number}`
+    }, user);
+
+    if (movement.validationError) return movement;
+  }
+
+  const productMovement = await createInventoryMovement({
+    item_type: 'product',
+    item_id: order.product_id,
+    movement_type: 'in',
+    quantity: approvedQuantity,
+    origin: `production:${order.order_number}`,
+    unit_cost_cents: Number(order.estimated_cost_cents || 0),
+    notes: `Entrada de produto acabado da ordem ${order.order_number}`
+  }, user);
+
+  if (productMovement.validationError) return productMovement;
+
+  const patch = {
+    status: 'finished',
+    produced_quantity: Number(payload.produced_quantity || approvedQuantity),
+    approved_quantity: approvedQuantity,
+    lost_quantity: Number(payload.lost_quantity || 0),
+    loss_reason: payload.loss_reason || null,
+    completed_at: new Date().toISOString(),
+    generated_lot: payload.generated_lot || `LOTE-${order.order_number}`,
+    expires_at: payload.expires_at || null,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data: updatedOrder, error: updateError } = await supabase
+    .from('production_orders')
+    .update(patch)
+    .eq('id', order.id)
+    .select('*')
+    .single();
+
+  if (updateError) return { data: patch, source: 'fallback', supabaseError: publicError(updateError) };
+
+  await writeAuditLog({
+    user,
+    action: 'complete_production_order',
+    table: 'production_orders',
+    recordId: order.id,
+    before: order,
+    after: updatedOrder
+  });
+
+  return { data: updatedOrder, source: 'supabase' };
+}
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -628,6 +771,29 @@ app.get('/api/admin/catalog', requireAdminAuth, async (_req, res) => {
   });
 });
 
+app.get('/api/admin/production', requireAdminAuth, async (_req, res) => {
+  const [formulas, formulaVersions, formulaItems, productionOrders] = await Promise.all([
+    listTable('formulas', 'created_at'),
+    listTable('formula_versions', 'created_at'),
+    listTable('formula_items', 'created_at'),
+    listTable('production_orders', 'created_at')
+  ]);
+
+  res.json({
+    source: productionOrders.source,
+    metrics: {
+      formulas: formulas.data.length,
+      versions: formulaVersions.data.length,
+      openOrders: productionOrders.data.filter((item) => item.status !== 'finished' && item.status !== 'cancelled').length,
+      finishedOrders: productionOrders.data.filter((item) => item.status === 'finished').length
+    },
+    formulas,
+    formulaVersions,
+    formulaItems,
+    productionOrders
+  });
+});
+
 app.get('/api/admin/:table(produtos|clientes|pedidos|estoque|campanhas|financeiro|custos)', requireAdminAuth, async (req, res) => {
   const result = await listTable(req.params.table);
   res.json(result);
@@ -660,6 +826,27 @@ app.post('/api/admin/inventory/movements', requireAdminAuth, async (req, res) =>
     return res.status(result.validationError.status).json({ error: result.validationError.error });
   }
   res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.get('/api/admin/:table(formulas|formula_versions|formula_items|production_orders)', requireAdminAuth, async (req, res) => {
+  const result = await listTable(req.params.table);
+  res.json(result);
+});
+
+app.post('/api/admin/:table(formulas|formula_versions|formula_items|production_orders)', requireAdminAuth, async (req, res) => {
+  const result = await insertIntoTable(req.params.table, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 201 : 202).json(result);
+});
+
+app.post('/api/admin/production/orders/:id/complete', requireAdminAuth, async (req, res) => {
+  const result = await completeProductionOrder(req.params.id, req.body || {}, req.user);
+  if (result.validationError) {
+    return res.status(result.validationError.status).json({ error: result.validationError.error });
+  }
+  res.status(result.source === 'supabase' ? 200 : 202).json(result);
 });
 
 app.get(['/admin', '/admin/*'], (_req, res) => {
