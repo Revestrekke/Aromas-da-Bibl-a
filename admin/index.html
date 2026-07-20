@@ -292,6 +292,7 @@
       session: null,
       page: 'inicio',
       loading: false,
+      health: null,
       data: {
         products: [],
         supplies: [],
@@ -397,24 +398,32 @@
     }
 
     async function saveResource(resource, form) {
-      const payload = formData(form);
-      const id = payload.id;
-      delete payload.id;
-      await api(`/api/admin/simple/${resource}${id ? `/${id}` : ''}`, {
-        method: id ? 'PUT' : 'POST',
-        body: JSON.stringify(payload)
-      });
-      form.reset();
-      form.querySelector('[name="id"]').value = '';
-      toast('Registro salvo com sucesso.');
-      await loadAll();
+      try {
+        const payload = formData(form);
+        const id = payload.id;
+        delete payload.id;
+        await api(`/api/admin/simple/${resource}${id ? `/${id}` : ''}`, {
+          method: id ? 'PUT' : 'POST',
+          body: JSON.stringify(payload)
+        });
+        form.reset();
+        form.querySelector('[name="id"]').value = '';
+        toast('Registro salvo com sucesso.');
+        await loadAll();
+      } catch (error) {
+        toast(error.message, true);
+      }
     }
 
     async function deleteResource(resource, id) {
-      if (!confirm('Confirma excluir este registro?')) return;
-      await api(`/api/admin/simple/${resource}/${id}`, { method: 'DELETE' });
-      toast('Registro excluido.');
-      await loadAll();
+      try {
+        if (!confirm('Confirma excluir este registro?')) return;
+        await api(`/api/admin/simple/${resource}/${id}`, { method: 'DELETE' });
+        toast('Registro excluido.');
+        await loadAll();
+      } catch (error) {
+        toast(error.message, true);
+      }
     }
 
     function fillForm(formId, record) {
@@ -769,7 +778,10 @@
         $('#pageRoot').innerHTML = '<section class="panel"><div class="empty">Carregando dados do Supabase...</div></section>';
       } else {
         const renderers = { inicio: renderInicio, produtos: renderProdutos, insumos: renderInsumos, embalagens: renderEmbalagens, formulas: renderFormulas, compras: renderCompras, financeiro: renderFinanceiro };
-        $('#pageRoot').innerHTML = renderers[page.id]();
+        const warning = state.health && !state.health.supabase
+          ? `<section class="panel"><div class="status bad">Supabase do backend nao configurado</div><p style="margin-top:10px">Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no Render e faca redeploy para liberar cadastros.</p></section>`
+          : '';
+        $('#pageRoot').innerHTML = warning + renderers[page.id]();
         if (page.id === 'compras') syncPurchaseItems($('#purchaseForm [name="item_type"]')?.value || 'supply');
       }
       lucide.createIcons();
@@ -793,11 +805,15 @@
     }
 
     async function moveStock(resource, id, form) {
-      const payload = formData(form);
-      await api(`/api/admin/simple/${resource}/${id}/stock`, { method: 'POST', body: JSON.stringify(payload) });
-      form.reset();
-      toast('Estoque movimentado.');
-      await loadAll();
+      try {
+        const payload = formData(form);
+        await api(`/api/admin/simple/${resource}/${id}/stock`, { method: 'POST', body: JSON.stringify(payload) });
+        form.reset();
+        toast('Estoque movimentado.');
+        await loadAll();
+      } catch (error) {
+        toast(error.message, true);
+      }
     }
 
     function addFormulaRow(kind, item) {
@@ -826,19 +842,23 @@
     }
 
     async function saveFormula(form) {
-      const payload = formData(form);
-      payload.supplies = collectFormulaRows('supply');
-      payload.packaging = collectFormulaRows('packaging');
-      const id = payload.id;
-      delete payload.id;
-      await api(`/api/admin/simple/formulas${id ? `/${id}` : ''}`, {
-        method: id ? 'PUT' : 'POST',
-        body: JSON.stringify(payload)
-      });
-      form.reset();
-      resetFormulaForm();
-      toast('Formula salva com custo calculado.');
-      await loadAll();
+      try {
+        const payload = formData(form);
+        payload.supplies = collectFormulaRows('supply');
+        payload.packaging = collectFormulaRows('packaging');
+        const id = payload.id;
+        delete payload.id;
+        await api(`/api/admin/simple/formulas${id ? `/${id}` : ''}`, {
+          method: id ? 'PUT' : 'POST',
+          body: JSON.stringify(payload)
+        });
+        form.reset();
+        resetFormulaForm();
+        toast('Formula salva com custo calculado.');
+        await loadAll();
+      } catch (error) {
+        toast(error.message, true);
+      }
     }
 
     function editFormula(id) {
@@ -856,10 +876,14 @@
     }
 
     async function deleteFormula(id) {
-      if (!confirm('Confirma excluir esta formula?')) return;
-      await api(`/api/admin/simple/formulas/${id}`, { method: 'DELETE' });
-      toast('Formula excluida.');
-      await loadAll();
+      try {
+        if (!confirm('Confirma excluir esta formula?')) return;
+        await api(`/api/admin/simple/formulas/${id}`, { method: 'DELETE' });
+        toast('Formula excluida.');
+        await loadAll();
+      } catch (error) {
+        toast(error.message, true);
+      }
     }
 
     function syncPurchaseItems(type, selectedId) {
@@ -873,6 +897,10 @@
     async function init() {
       renderNav();
       try {
+        state.health = await fetch('/api/health').then((res) => res.json()).catch(() => null);
+        if (state.health && !state.health.supabase) {
+          toast('Backend sem Supabase configurado. Confira as variaveis do Render.', true);
+        }
         const config = await fetch('/api/config').then((res) => res.json());
         if (!config.supabaseUrl || !config.supabaseAnonKey) throw new Error('Configure SUPABASE_URL e SUPABASE_ANON_KEY no Render.');
         state.client = supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
@@ -916,6 +944,7 @@
     $('#menuToggle').addEventListener('click', () => document.body.classList.toggle('nav-open'));
     window.addEventListener('hashchange', setPageFromHash);
     window.editRecord = editRecord;
+    window.saveResource = saveResource;
     window.deleteResource = deleteResource;
     window.moveStock = moveStock;
     window.addFormulaRow = addFormulaRow;
