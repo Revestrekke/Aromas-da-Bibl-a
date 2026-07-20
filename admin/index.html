@@ -57,6 +57,8 @@
     th, td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
     th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
     td { font-size: 13px; }
+    .table-wrap table { min-width: 760px; }
+    .row-actions { justify-content: flex-end; min-width: 84px; }
     .hidden { display: none !important; }
     .layout { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100vh; }
     .sidebar {
@@ -438,11 +440,31 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    const columnLabels = {
+      actions: 'Acoes',
+      amount: 'Valor',
+      cost: 'Custo',
+      margin: 'Margem',
+      move: 'Movimentar',
+      packaging: 'Embalagens',
+      qty: 'Quantidade',
+      sale: 'Venda',
+      status: 'Status',
+      supplies: 'Insumos',
+      total: 'Total',
+      unit: 'Custo un.'
+    };
+
     function table(rows, headersMap, emptyText = 'Nenhum registro cadastrado.') {
       if (!rows.length) return `<div class="empty">${emptyText}</div>`;
-      const heads = Object.values(headersMap).map((label) => `<th>${label}</th>`).join('');
-      const keys = Object.keys(headersMap);
-      const body = rows.map((row) => `<tr>${keys.map((key) => `<td>${typeof row[key] === 'function' ? row[key](row) : esc(row[key])}</td>`).join('')}</tr>`).join('');
+      const columns = Object.entries(headersMap);
+      const heads = columns
+        .map(([key, value]) => `<th>${typeof value === 'function' ? esc(columnLabels[key] || key) : esc(value)}</th>`)
+        .join('');
+      const body = rows.map((row) => `<tr>${columns.map(([key, renderer]) => {
+        const value = typeof renderer === 'function' ? renderer(row) : row[key];
+        return `<td>${typeof renderer === 'function' ? value : esc(value)}</td>`;
+      }).join('')}</tr>`).join('');
       return `<div class="table-wrap"><table><thead><tr>${heads}</tr></thead><tbody>${body}</tbody></table></div>`;
     }
 
@@ -460,7 +482,7 @@
 
     function resourceActions(resource, formId) {
       return (row) => `
-        <div class="actions nowrap">
+        <div class="actions nowrap row-actions">
           <button class="btn icon" type="button" title="Editar" onclick="editRecord('${resource}','${formId}','${row.id}')">${icon('pencil')}</button>
           <button class="btn icon danger" type="button" title="Excluir" onclick="deleteResource('${resource}','${row.id}')">${icon('trash-2')}</button>
         </div>`;

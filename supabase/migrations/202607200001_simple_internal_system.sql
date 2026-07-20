@@ -247,30 +247,6 @@ create index if not exists idx_financial_entries_date on public.financial_entrie
 create unique index if not exists idx_purchases_simple_duplicate
   on public.purchases(supplier_id, item_type, item_id, purchase_date, quantity, unit_cost_cents);
 
-insert into public.suppliers (name, contact_name, notes)
-values ('Fornecedor inicial', 'Contato comercial', 'Cadastro inicial editavel.')
-on conflict do nothing;
-
-insert into public.products (code, internal_code, sku, name, aroma, volume, category, status, active, sale_price_cents, current_stock, minimum_stock, notes)
-values ('HS-PAZ-200', 'HS-PAZ-200', 'HS-PAZ-200', 'Home Spray Paz 200 ml', 'Paz', 200, 'Home Spray', 'active', true, 6990, 0, 5, 'Produto inicial inspirado em Joao 14:27.')
-on conflict do nothing;
-
-insert into public.supplies (name, category, unit, quantity_on_hand, minimum_stock, unit_cost_cents, supplier_name)
-values
-  ('Essencia Paz', 'Essencia', 'ml', 0, 100, 18, 'Fornecedor inicial'),
-  ('Base para aromatizador', 'Base', 'ml', 0, 500, 8, 'Fornecedor inicial'),
-  ('Alcool de cereais', 'Insumo', 'ml', 0, 500, 6, 'Fornecedor inicial'),
-  ('Agua deionizada', 'Insumo', 'ml', 0, 500, 2, 'Fornecedor inicial')
-on conflict do nothing;
-
-insert into public.packaging (name, type, unit, quantity_on_hand, minimum_stock, unit_cost_cents, supplier_name)
-values
-  ('Frasco ambar 200 ml', 'Frasco', 'un', 0, 20, 320, 'Fornecedor inicial'),
-  ('Valvula spray preta', 'Valvula', 'un', 0, 20, 140, 'Fornecedor inicial'),
-  ('Rotulo Paz 200 ml', 'Rotulo', 'un', 0, 20, 90, 'Fornecedor inicial'),
-  ('Caixa de envio individual', 'Caixa', 'un', 0, 20, 180, 'Fornecedor inicial')
-on conflict do nothing;
-
 insert into public.settings (key, value)
 values
   ('company', '{"name":"Aromas da Biblia","currency":"BRL"}'::jsonb),

@@ -649,23 +649,35 @@ app.get('/api/admin/simple/formulas', requireAdminAuth, async (_req, res) => {
 });
 
 app.post('/api/admin/simple/formulas', requireAdminAuth, async (req, res) => {
-  const result = await saveFormula(req.body || {});
-  if (result.validationError) return res.status(400).json({ error: result.validationError });
-  if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
-  res.status(201).json(result);
+  try {
+    const result = await saveFormula(req.body || {});
+    if (result.validationError) return res.status(400).json({ error: result.validationError });
+    if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
 });
 
 app.put('/api/admin/simple/formulas/:id', requireAdminAuth, async (req, res) => {
-  const result = await saveFormula(req.body || {}, req.params.id);
-  if (result.validationError) return res.status(400).json({ error: result.validationError });
-  if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
-  res.json(result);
+  try {
+    const result = await saveFormula(req.body || {}, req.params.id);
+    if (result.validationError) return res.status(400).json({ error: result.validationError });
+    if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
 });
 
 app.delete('/api/admin/simple/formulas/:id', requireAdminAuth, async (req, res) => {
-  const { error } = await supabase.from('formulas').delete().eq('id', req.params.id);
-  if (error) return res.status(400).json({ error: publicError(error) });
-  res.json({ data: { id: req.params.id } });
+  try {
+    const { error } = await supabase.from('formulas').delete().eq('id', req.params.id);
+    if (error) return res.status(400).json({ error: publicError(error) });
+    res.json({ data: { id: req.params.id } });
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
 });
 
 app.get('/api/admin/simple/:resource', requireAdminAuth, async (req, res) => {
@@ -679,51 +691,67 @@ app.get('/api/admin/simple/:resource', requireAdminAuth, async (req, res) => {
 });
 
 app.post('/api/admin/simple/:resource', requireAdminAuth, async (req, res) => {
-  const resource = req.params.resource;
-  if (!resources[resource]) return res.status(404).json({ error: 'Recurso nao encontrado.' });
-  const result = await createResource(resource, req.body || {}, req.user);
-  if (result.validationError) return res.status(400).json({ error: result.validationError });
-  if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
-  res.status(201).json(result);
+  try {
+    const resource = req.params.resource;
+    if (!resources[resource]) return res.status(404).json({ error: 'Recurso nao encontrado.' });
+    const result = await createResource(resource, req.body || {}, req.user);
+    if (result.validationError) return res.status(400).json({ error: result.validationError });
+    if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
 });
 
 app.put('/api/admin/simple/:resource/:id', requireAdminAuth, async (req, res) => {
-  const resource = req.params.resource;
-  if (!resources[resource]) return res.status(404).json({ error: 'Recurso nao encontrado.' });
-  const result = await updateResource(resource, req.params.id, req.body || {}, req.user);
-  if (result.validationError) return res.status(400).json({ error: result.validationError });
-  if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
-  res.json(result);
+  try {
+    const resource = req.params.resource;
+    if (!resources[resource]) return res.status(404).json({ error: 'Recurso nao encontrado.' });
+    const result = await updateResource(resource, req.params.id, req.body || {}, req.user);
+    if (result.validationError) return res.status(400).json({ error: result.validationError });
+    if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
 });
 
 app.delete('/api/admin/simple/:resource/:id', requireAdminAuth, async (req, res) => {
-  const resource = req.params.resource;
-  if (!resources[resource]) return res.status(404).json({ error: 'Recurso nao encontrado.' });
-  const result = await deleteResource(resource, req.params.id, req.user);
-  if (result.validationError) return res.status(400).json({ error: result.validationError });
-  if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
-  res.json(result);
+  try {
+    const resource = req.params.resource;
+    if (!resources[resource]) return res.status(404).json({ error: 'Recurso nao encontrado.' });
+    const result = await deleteResource(resource, req.params.id, req.user);
+    if (result.validationError) return res.status(400).json({ error: result.validationError });
+    if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
 });
 
 app.post('/api/admin/simple/:resource/:id/stock', requireAdminAuth, async (req, res) => {
-  const itemType = req.params.resource === 'supplies' ? 'supply' : req.params.resource === 'packaging' ? 'packaging' : null;
-  if (!itemType) return res.status(404).json({ error: 'Estoque disponivel apenas para insumos e embalagens.' });
+  try {
+    const itemType = req.params.resource === 'supplies' ? 'supply' : req.params.resource === 'packaging' ? 'packaging' : null;
+    if (!itemType) return res.status(404).json({ error: 'Estoque disponivel apenas para insumos e embalagens.' });
 
-  const movement = await moveInventory({
-    itemType,
-    itemId: req.params.id,
-    quantity: req.body?.quantity,
-    direction: req.body?.direction,
-    reason: req.body?.reason || 'Ajuste manual',
-    referenceType: 'manual',
-    referenceId: null,
-    unitCostCents: req.body?.unit_cost_cents,
-    user: req.user
-  });
+    const movement = await moveInventory({
+      itemType,
+      itemId: req.params.id,
+      quantity: req.body?.quantity,
+      direction: req.body?.direction,
+      reason: req.body?.reason || 'Ajuste manual',
+      referenceType: 'manual',
+      referenceId: null,
+      unitCostCents: req.body?.unit_cost_cents,
+      user: req.user
+    });
 
-  if (movement.validationError) return res.status(400).json({ error: movement.validationError });
-  if (movement.dbError) return res.status(400).json({ error: publicError(movement.dbError) });
-  res.status(201).json(movement);
+    if (movement.validationError) return res.status(400).json({ error: movement.validationError });
+    if (movement.dbError) return res.status(400).json({ error: publicError(movement.dbError) });
+    res.status(201).json(movement);
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
 });
 
 app.get(['/admin', '/admin/*'], (_req, res) => {
