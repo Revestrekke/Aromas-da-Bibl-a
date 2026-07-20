@@ -104,6 +104,35 @@ Ela cria ou ajusta as tabelas:
 - Exclusao de compra reverte estoque e remove lancamento financeiro vinculado.
 - Custos de formula sao calculados no backend.
 
+## Medidas, custos e producao
+
+O estoque trabalha com a unidade cadastrada em cada item:
+
+- Insumos: `ml`, `g`, `kg`, `un`, conforme o cadastro.
+- Embalagens: normalmente `un`.
+- Produtos acabados: normalmente `un`.
+
+Exemplo de compra:
+
+- Item: Essencia
+- Quantidade comprada: `1000`
+- Unidade: `ml`
+- Valor total dos itens: `36,96`
+
+O sistema calcula o custo unitario automaticamente:
+
+```text
+R$ 36,96 / 1000 ml = R$ 0,03696 por ml
+```
+
+Exemplo de formula:
+
+- Produto: Home Spray 200 ml
+- Rendimento em produtos: `1`
+- Insumo usado: `200 ml`
+
+Ao produzir `1` unidade, o sistema baixa `200 ml` do insumo. Ao produzir `3` unidades, baixa `600 ml`. O estoque do produto acabado aumenta na quantidade produzida.
+
 ## Desenvolvimento local
 
 ```bash

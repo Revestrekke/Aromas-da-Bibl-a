@@ -44,6 +44,7 @@ const moneyFields = new Set([
   'unit_cost_total_cents',
   'margin_cents'
 ]);
+const fractionalCostFields = new Set(['unit_cost_cents']);
 
 const resources = {
   products: {
@@ -77,7 +78,7 @@ const resources = {
   purchases: {
     table: 'purchases',
     order: 'purchase_date',
-    required: ['purchase_date', 'supplier_id', 'item_type', 'item_id', 'quantity', 'unit_cost_cents'],
+    required: ['purchase_date', 'supplier_id', 'item_type', 'item_id', 'quantity'],
     numeric: ['quantity', 'unit_cost_cents', 'freight_cents', 'total_cents'],
     searchable: ['supplier_name', 'notes']
   },
@@ -134,6 +135,13 @@ function cents(value) {
   return Math.round(number);
 }
 
+function moneyToCents(value, allowFraction = false) {
+  const number = Number(value || 0);
+  if (Number.isNaN(number) || number < 0) return null;
+  const result = number * 100;
+  return allowFraction ? Number(result.toFixed(6)) : Math.round(result);
+}
+
 function numberValue(value) {
   const number = Number(value || 0);
   if (Number.isNaN(number) || number < 0) return null;
@@ -175,7 +183,9 @@ function cleanPayload(resource, body) {
 
   for (const field of def.numeric) {
     if (payload[field] === undefined || payload[field] === '') continue;
-    const value = moneyFields.has(field) ? cents(payload[field]) : numberValue(payload[field]);
+    const value = moneyFields.has(field)
+      ? moneyToCents(payload[field], fractionalCostFields.has(field))
+      : numberValue(payload[field]);
     if (value === null) return { error: `Valor invalido em ${field}.` };
     payload[field] = value;
   }
@@ -184,6 +194,7 @@ function cleanPayload(resource, body) {
     payload.active = payload.active === true || payload.active === 'true';
     payload.current_stock = Number(payload.current_stock || 0);
     payload.minimum_stock = Number(payload.minimum_stock || 0);
+    payload.unit = payload.unit || 'un';
     payload.internal_code = payload.internal_code || payload.code;
     payload.sku = payload.sku || payload.code;
     payload.category = payload.category || payload.aroma || 'Produto';
@@ -205,17 +216,26 @@ function cleanPayload(resource, body) {
     if (!['supply', 'packaging'].includes(payload.item_type)) return { error: 'Tipo de compra invalido.' };
     if (!['pendente', 'pago'].includes(payload.status || 'pendente')) payload.status = 'pendente';
     payload.freight_cents = Number(payload.freight_cents || 0);
-    payload.total_cents =
-      payload.total_cents || Math.round(Number(payload.quantity || 0) * Number(payload.unit_cost_cents || 0) + payload.freight_cents);
+    payload.total_cents = Number(payload.total_cents || 0) + payload.freight_cents;
+    if (payload.total_cents <= 0 && Number(payload.unit_cost_cents || 0) > 0) {
+      payload.total_cents = Math.round(Number(payload.quantity || 0) * Number(payload.unit_cost_cents || 0) + payload.freight_cents);
+    }
+    if (payload.total_cents <= 0) return { error: 'Informe o valor total da compra.' };
+    payload.unit_cost_cents = Number((payload.total_cents / Number(payload.quantity || 1)).toFixed(6));
   }
 
   return { payload };
 }
 
 function tableForInventoryType(itemType) {
+  if (itemType === 'product') return 'products';
   if (itemType === 'supply') return 'supplies';
   if (itemType === 'packaging') return 'packaging';
   throw new Error('Tipo de item invalido.');
+}
+
+function quantityFieldForInventoryType(itemType) {
+  return itemType === 'product' ? 'current_stock' : 'quantity_on_hand';
 }
 
 async function listResource(resource, query = {}) {
@@ -298,13 +318,17 @@ async function moveInventory({ itemType, itemId, quantity, direction, reason, re
   if (error) return { dbError: error };
   if (!item) return { validationError: 'Item de estoque nao encontrado.' };
 
-  const before = Number(item.quantity_on_hand || 0);
+  const quantityField = quantityFieldForInventoryType(itemType);
+  const before = Number(item[quantityField] || 0);
   const delta = direction === 'in' ? qty : -qty;
   const after = before + delta;
   if (after < 0) return { validationError: 'Movimento geraria estoque negativo.' };
 
-  const patch = { quantity_on_hand: after, updated_at: new Date().toISOString() };
-  if (direction === 'in' && unitCostCents !== undefined) patch.unit_cost_cents = Number(unitCostCents || item.unit_cost_cents || 0);
+  const patch = { [quantityField]: after, updated_at: new Date().toISOString() };
+  if (direction === 'in' && unitCostCents !== undefined) {
+    if (itemType === 'product') patch.current_cost_cents = Number(unitCostCents || item.current_cost_cents || 0);
+    else patch.unit_cost_cents = Number(unitCostCents || item.unit_cost_cents || 0);
+  }
 
   const { error: updateError } = await supabase.from(table).update(patch).eq('id', itemId);
   if (updateError) return { dbError: updateError };
@@ -358,7 +382,7 @@ async function applyPurchaseImpact(purchase, user) {
     quantity: purchase.quantity,
     unit: purchase.unit || null,
     unit_cost_cents: purchase.unit_cost_cents,
-    total_cents: Math.round(Number(purchase.quantity || 0) * Number(purchase.unit_cost_cents || 0))
+    total_cents: purchase.total_cents
   };
 
   const { error: itemError } = await supabase.from('purchase_items').insert(item);
@@ -470,8 +494,8 @@ async function listFormulas() {
       supabase.from('products').select('id,name,sale_price_cents'),
       supabase.from('formula_supplies').select('*'),
       supabase.from('formula_packaging').select('*'),
-      supabase.from('supplies').select('id,name,unit_cost_cents'),
-      supabase.from('packaging').select('id,name,unit_cost_cents')
+      supabase.from('supplies').select('id,name,unit,unit_cost_cents'),
+      supabase.from('packaging').select('id,name,unit,unit_cost_cents')
     ]);
   if (error) throw error;
 
@@ -495,12 +519,16 @@ function calculateFormulaCosts(payload, suppliesCatalog, packagingCatalog) {
   let suppliesCost = 0;
   for (const item of payload.supplies || []) {
     const supply = suppliesCatalog.find((entry) => entry.id === item.supply_id);
+    if (!supply) return { error: 'Insumo da formula nao encontrado.' };
+    if (item.unit && supply.unit && item.unit !== supply.unit) return { error: `Unidade do insumo ${supply.name} deve ser ${supply.unit}.` };
     suppliesCost += Math.round(Number(item.quantity || 0) * Number(supply?.unit_cost_cents || 0));
   }
 
   let packagingCost = 0;
   for (const item of payload.packaging || []) {
     const pack = packagingCatalog.find((entry) => entry.id === item.packaging_id);
+    if (!pack) return { error: 'Embalagem da formula nao encontrada.' };
+    if (item.unit && pack.unit && item.unit !== pack.unit) return { error: `Unidade da embalagem ${pack.name} deve ser ${pack.unit}.` };
     packagingCost += Math.round(Number(item.quantity || 0) * Number(pack?.unit_cost_cents || 0));
   }
 
@@ -558,7 +586,8 @@ async function saveFormula(payload, id = null) {
       supply_id: item.supply_id,
       quantity: Number(item.quantity || 0),
       unit: item.unit || supply?.unit || null,
-      cost_cents: Math.round(Number(item.quantity || 0) * Number(supply?.unit_cost_cents || 0))
+      unit_cost_cents: Number(supply?.unit_cost_cents || 0),
+      total_cost_cents: Math.round(Number(item.quantity || 0) * Number(supply?.unit_cost_cents || 0))
     };
   });
 
@@ -568,7 +597,9 @@ async function saveFormula(payload, id = null) {
       formula_id: formula.id,
       packaging_id: item.packaging_id,
       quantity: Number(item.quantity || 0),
-      cost_cents: Math.round(Number(item.quantity || 0) * Number(pack?.unit_cost_cents || 0))
+      unit: item.unit || pack?.unit || null,
+      unit_cost_cents: Number(pack?.unit_cost_cents || 0),
+      total_cost_cents: Math.round(Number(item.quantity || 0) * Number(pack?.unit_cost_cents || 0))
     };
   });
 
@@ -577,6 +608,109 @@ async function saveFormula(payload, id = null) {
 
   await supabase.from('products').update({ formula_id: formula.id, updated_at: new Date().toISOString() }).eq('id', product.id);
   return { data: formula };
+}
+
+async function produceProduct(productId, payload, user) {
+  const quantity = Number(payload.quantity || 0);
+  if (quantity <= 0) return { validationError: 'Quantidade produzida deve ser maior que zero.' };
+
+  const { data: product, error: productError } = await supabase.from('products').select('*').eq('id', productId).maybeSingle();
+  if (productError) return { dbError: productError };
+  if (!product) return { validationError: 'Produto nao encontrado.' };
+  if (!product.formula_id) return { validationError: 'Produto sem formula vinculada.' };
+
+  const [{ data: formula, error: formulaError }, { data: formulaSupplies }, { data: formulaPackaging }] = await Promise.all([
+    supabase.from('formulas').select('*').eq('id', product.formula_id).maybeSingle(),
+    supabase.from('formula_supplies').select('*').eq('formula_id', product.formula_id),
+    supabase.from('formula_packaging').select('*').eq('formula_id', product.formula_id)
+  ]);
+  if (formulaError) return { dbError: formulaError };
+  if (!formula) return { validationError: 'Formula do produto nao encontrada.' };
+
+  const yieldQuantity = Number(formula.yield_quantity || 0);
+  if (yieldQuantity <= 0) return { validationError: 'Formula sem rendimento valido.' };
+  const multiplier = quantity / yieldQuantity;
+
+  const supplyIds = (formulaSupplies || []).map((item) => item.supply_id);
+  const packagingIds = (formulaPackaging || []).map((item) => item.packaging_id);
+  const [{ data: supplies, error: suppliesError }, { data: packaging, error: packagingError }] = await Promise.all([
+    supplyIds.length ? supabase.from('supplies').select('*').in('id', supplyIds) : { data: [], error: null },
+    packagingIds.length ? supabase.from('packaging').select('*').in('id', packagingIds) : { data: [], error: null }
+  ]);
+  if (suppliesError) return { dbError: suppliesError };
+  if (packagingError) return { dbError: packagingError };
+
+  const requiredSupplies = (formulaSupplies || []).map((item) => {
+    const stock = (supplies || []).find((entry) => entry.id === item.supply_id);
+    return { ...item, stock, required: Number((Number(item.quantity || 0) * multiplier).toFixed(6)) };
+  });
+  const requiredPackaging = (formulaPackaging || []).map((item) => {
+    const stock = (packaging || []).find((entry) => entry.id === item.packaging_id);
+    return { ...item, stock, required: Number((Number(item.quantity || 0) * multiplier).toFixed(6)) };
+  });
+
+  const shortage = [...requiredSupplies, ...requiredPackaging].find((item) => !item.stock || Number(item.stock.quantity_on_hand || 0) < item.required);
+  if (shortage) {
+    const name = shortage.stock?.name || 'item da formula';
+    return { validationError: `Estoque insuficiente para ${name}. Necessario: ${shortage.required}.` };
+  }
+
+  const productionId = randomUUID();
+  const totalCostCents = Math.round(Number(formula.unit_cost_total_cents || 0) * quantity);
+  const { error: runError } = await supabase.from('production_runs').insert({
+    id: productionId,
+    product_id: product.id,
+    formula_id: formula.id,
+    quantity,
+    unit: product.unit || 'un',
+    total_cost_cents: totalCostCents,
+    notes: payload.notes || null,
+    created_by: user?.id || null
+  });
+  if (runError) return { dbError: runError };
+
+  for (const item of requiredSupplies) {
+    const movement = await moveInventory({
+      itemType: 'supply',
+      itemId: item.supply_id,
+      quantity: item.required,
+      direction: 'out',
+      reason: `Producao de ${quantity} ${product.unit || 'un'} - ${product.name}`,
+      referenceType: 'production',
+      referenceId: productionId,
+      user
+    });
+    if (movement.validationError || movement.dbError) return movement;
+  }
+
+  for (const item of requiredPackaging) {
+    const movement = await moveInventory({
+      itemType: 'packaging',
+      itemId: item.packaging_id,
+      quantity: item.required,
+      direction: 'out',
+      reason: `Producao de ${quantity} ${product.unit || 'un'} - ${product.name}`,
+      referenceType: 'production',
+      referenceId: productionId,
+      user
+    });
+    if (movement.validationError || movement.dbError) return movement;
+  }
+
+  const productMovement = await moveInventory({
+    itemType: 'product',
+    itemId: product.id,
+    quantity,
+    direction: 'in',
+    reason: `Producao concluida`,
+    referenceType: 'production',
+    referenceId: productionId,
+    unitCostCents: Number(formula.unit_cost_total_cents || 0),
+    user
+  });
+  if (productMovement.validationError || productMovement.dbError) return productMovement;
+
+  return { data: { id: productionId, product_id: product.id, quantity, total_cost_cents: totalCostCents } };
 }
 
 async function summary() {
@@ -724,6 +858,17 @@ app.delete('/api/admin/simple/:resource/:id', requireAdminAuth, async (req, res)
     if (result.validationError) return res.status(400).json({ error: result.validationError });
     if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
     res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: publicError(error) });
+  }
+});
+
+app.post('/api/admin/simple/products/:id/produce', requireAdminAuth, async (req, res) => {
+  try {
+    const result = await produceProduct(req.params.id, req.body || {}, req.user);
+    if (result.validationError) return res.status(400).json({ error: result.validationError });
+    if (result.dbError) return res.status(400).json({ error: publicError(result.dbError) });
+    res.status(201).json(result);
   } catch (error) {
     res.status(500).json({ error: publicError(error) });
   }

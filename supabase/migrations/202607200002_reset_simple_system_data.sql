@@ -2,6 +2,7 @@ truncate table
   public.formula_supplies,
   public.formula_packaging,
   public.formulas,
+  public.production_runs,
   public.purchase_items,
   public.purchases,
   public.inventory_movements,

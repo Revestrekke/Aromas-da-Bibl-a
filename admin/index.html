@@ -318,20 +318,23 @@
     ];
 
     const moneyKeys = new Set(['sale_price_cents', 'unit_cost_cents', 'freight_cents', 'total_cents', 'amount_cents']);
+    const fractionalMoneyKeys = new Set(['unit_cost_cents']);
     const $ = (selector) => document.querySelector(selector);
     const fmtMoney = (cents) => (Number(cents || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const fmtUnitCost = (cents) => `${(Number(cents || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 4, maximumFractionDigits: 6 })}/un.`;
     const fmtQty = (value) => Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
     const today = () => new Date().toISOString().slice(0, 10);
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
-    function toCents(value) {
+    function toCents(value, allowFraction = false) {
       const normalized = String(value || '0').replace(/\./g, '').replace(',', '.');
       const number = Number(normalized);
-      return Number.isFinite(number) && number >= 0 ? Math.round(number * 100) : 0;
+      const result = number * 100;
+      return Number.isFinite(number) && number >= 0 ? (allowFraction ? Number(result.toFixed(6)) : Math.round(result)) : 0;
     }
 
-    function fromCents(value) {
-      return (Number(value || 0) / 100).toFixed(2);
+    function fromCents(value, allowFraction = false) {
+      return (Number(value || 0) / 100).toFixed(allowFraction ? 6 : 2);
     }
 
     function toast(message, error = false) {
@@ -394,7 +397,7 @@
       const data = Object.fromEntries(new FormData(form).entries());
       form.querySelectorAll('input[type="checkbox"]').forEach((input) => data[input.name] = input.checked);
       Object.keys(data).forEach((key) => {
-        if (moneyKeys.has(key)) data[key] = toCents(data[key]);
+        if (moneyKeys.has(key)) data[key] = toCents(data[key], fractionalMoneyKeys.has(key));
       });
       return data;
     }
@@ -434,7 +437,7 @@
         const input = form.elements[key];
         if (!input) return;
         if (input.type === 'checkbox') input.checked = Boolean(value);
-        else if (moneyKeys.has(key)) input.value = fromCents(value);
+        else if (moneyKeys.has(key)) input.value = fromCents(value, fractionalMoneyKeys.has(key));
         else input.value = value ?? '';
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -447,9 +450,11 @@
       margin: 'Margem',
       move: 'Movimentar',
       packaging: 'Embalagens',
+      produce: 'Produzir',
       qty: 'Quantidade',
       sale: 'Venda',
       status: 'Status',
+      stock: 'Estoque',
       supplies: 'Insumos',
       total: 'Total',
       unit: 'Custo un.'
@@ -526,6 +531,7 @@
               <label>Nome <input name="name" required placeholder="Home Spray Paz 200 ml"></label>
               <label>Aroma <input name="aroma" placeholder="Paz"></label>
               <label>Volume <input name="volume" type="number" min="0" step="0.001" placeholder="200"></label>
+              <label>Unidade do estoque <input name="unit" value="un" required></label>
               <label>Preco de venda <input name="sale_price_cents" inputmode="decimal" placeholder="69,90"></label>
               <label>Estoque minimo <input name="minimum_stock" type="number" min="0" step="0.001"></label>
             </div>
@@ -546,7 +552,10 @@
             name: 'Produto',
             aroma: 'Aroma',
             volume: 'Volume',
+            stock: (r) => `${fmtQty(r.current_stock)} ${esc(r.unit || 'un')}`,
             sale: (r) => fmtMoney(r.sale_price_cents),
+            cost: (r) => fmtUnitCost(r.current_cost_cents),
+            produce: (r) => renderProduceForm(r),
             status: (r) => productStatus(r),
             actions: resourceActions('products', 'productForm')
           })}
@@ -560,6 +569,14 @@
           <select name="direction" style="width:118px"><option value="in">Entrada</option><option value="out">Saida</option></select>
           <input name="reason" placeholder="Motivo" style="width:150px">
           <button class="btn icon" type="submit" title="Movimentar">${icon('plus-minus')}</button>
+        </form>`;
+    }
+
+    function renderProduceForm(product) {
+      return `
+        <form class="actions" onsubmit="event.preventDefault(); produceProduct('${product.id}', this)">
+          <input name="quantity" type="number" min="0.001" step="0.001" placeholder="Qtd." required style="width:96px">
+          <button class="btn icon" type="submit" title="Produzir">${icon('factory')}</button>
         </form>`;
     }
 
@@ -603,7 +620,7 @@
               ${fields}
               <label>Qtd. em estoque <input name="quantity_on_hand" type="number" min="0" step="0.001" value="0"></label>
               <label>Estoque minimo <input name="minimum_stock" type="number" min="0" step="0.001" value="0"></label>
-              <label>Custo unitario <input name="unit_cost_cents" inputmode="decimal" placeholder="0,00"></label>
+              <label>Custo por unidade <input name="unit_cost_cents" inputmode="decimal" placeholder="0,03696"></label>
             </div>
             <div class="grid two" style="margin-top:12px">
               <label>Fornecedor <input name="supplier_name"></label>
@@ -621,7 +638,7 @@
             name: 'Item',
             ...extraHeaders,
             qty: (r) => `${fmtQty(r.quantity_on_hand)} ${esc(r.unit || '')}`,
-            cost: (r) => fmtMoney(r.unit_cost_cents),
+            cost: (r) => fmtUnitCost(r.unit_cost_cents),
             status: (r) => stockStatus(r),
             move: (r) => renderStockForm(resource, r.id),
             actions: resourceActions(resource, formId)
@@ -629,21 +646,23 @@
         </section>`;
     }
 
-    function optionList(rows, labelField = 'name') {
-      return rows.map((row) => `<option value="${row.id}">${esc(row[labelField] || row.name)}</option>`).join('');
+    function optionList(rows, labelField = 'name', selectedId = '') {
+      return rows.map((row) => `<option value="${row.id}"${row.id === selectedId ? ' selected' : ''}>${esc(row[labelField] || row.name)}</option>`).join('');
     }
 
     function formulaItemRow(kind, item = {}) {
       const isSupply = kind === 'supply';
       const collection = isSupply ? state.data.supplies : state.data.packaging;
       const selectName = isSupply ? 'supply_id' : 'packaging_id';
+      const selectedId = item[selectName] || '';
+      const selected = collection.find((entry) => entry.id === selectedId) || collection[0] || {};
       return `
         <div class="formula-row" data-kind="${kind}">
           <label>${isSupply ? 'Insumo' : 'Embalagem'}
-            <select name="${selectName}" required>${optionList(collection)}</select>
+            <select name="${selectName}" required onchange="syncFormulaUnit(this)">${optionList(collection, 'name', selectedId)}</select>
           </label>
-          <label>Qtd. <input name="quantity" type="number" min="0.001" step="0.001" value="${esc(item.quantity || '')}" required></label>
-          <label>Un. <input name="unit" value="${esc(item.unit || (isSupply ? 'ml' : 'un'))}" required></label>
+          <label>Qtd. por rendimento <input name="quantity" type="number" min="0.001" step="0.001" value="${esc(item.quantity || '')}" required></label>
+          <label>Un. <input name="unit" value="${esc(item.unit || selected.unit || (isSupply ? 'ml' : 'un'))}" readonly required></label>
           <button class="btn icon danger" type="button" onclick="this.closest('.formula-row').remove()" title="Remover">${icon('x')}</button>
         </div>`;
     }
@@ -659,11 +678,11 @@
             <div class="grid three">
               <label>Produto <select name="product_id" required>${optionList(state.data.products)}</select></label>
               <label>Nome da formula <input name="name" required placeholder="Formula Paz 200 ml"></label>
-              <label>Rendimento <input name="yield_quantity" type="number" min="0.001" step="0.001" value="1" required></label>
+              <label>Rendimento em produtos <input name="yield_quantity" type="number" min="0.001" step="0.001" value="1" required></label>
             </div>
             <div class="grid two" style="margin-top:14px">
               <div class="panel" style="box-shadow:none">
-                <div class="panel-head"><div><h3>Insumos</h3><p>Adicione um ou mais itens.</p></div><button class="btn" type="button" onclick="addFormulaRow('supply')">${icon('plus')} Adicionar</button></div>
+                <div class="panel-head"><div><h3>Insumos</h3><p>Use a mesma unidade do estoque. Ex.: 200 ml para 1 frasco.</p></div><button class="btn" type="button" onclick="addFormulaRow('supply')">${icon('plus')} Adicionar</button></div>
                 <div id="formulaSupplies" class="row-list">${formulaItemRow('supply')}</div>
               </div>
               <div class="panel" style="box-shadow:none">
@@ -704,9 +723,9 @@
               <label>Fornecedor <select name="supplier_id" required>${optionList(state.data.suppliers)}</select></label>
               <label>Tipo <select name="item_type" required onchange="syncPurchaseItems(this.value)"><option value="supply">Insumo</option><option value="packaging">Embalagem</option></select></label>
               <label>Item <select name="item_id" id="purchaseItem" required></select></label>
-              <label>Quantidade <input name="quantity" type="number" min="0.001" step="0.001" required></label>
-              <label>Unidade <input name="unit" value="un" required></label>
-              <label>Custo unitario <input name="unit_cost_cents" inputmode="decimal" required></label>
+              <label>Quantidade comprada <input name="quantity" type="number" min="0.001" step="0.001" required></label>
+              <label>Unidade <input name="unit" value="ml" required></label>
+              <label>Valor total dos itens <input name="total_cents" inputmode="decimal" required placeholder="36,96"></label>
               <label>Frete <input name="freight_cents" inputmode="decimal" value="0,00"></label>
               <label>Pagamento <input name="payment_method" placeholder="Pix, cartao, boleto"></label>
               <label>Status <select name="status"><option value="pago">Pago</option><option value="pendente">Pendente</option></select></label>
@@ -740,7 +759,8 @@
             purchase_date: 'Data',
             supplier_name: 'Fornecedor',
             item_type: 'Tipo',
-            quantity: 'Qtd.',
+            quantity: (r) => `${fmtQty(r.quantity)} ${esc(r.unit || '')}`,
+            cost: (r) => fmtUnitCost(r.unit_cost_cents),
             total: (r) => fmtMoney(r.total_cents),
             status: (r) => r.status === 'pago' ? '<span class="status ok">Pago</span>' : '<span class="status warn">Pendente</span>',
             actions: resourceActions('purchases', 'purchaseForm')
@@ -871,6 +891,30 @@
       }).filter((row) => row.quantity > 0);
     }
 
+    function syncFormulaUnit(select) {
+      const row = select.closest('.formula-row');
+      const kind = row.dataset.kind;
+      const collection = kind === 'supply' ? state.data.supplies : state.data.packaging;
+      const item = collection.find((entry) => entry.id === select.value);
+      const unit = row.querySelector('[name="unit"]');
+      if (unit && item?.unit) unit.value = item.unit;
+    }
+
+    async function produceProduct(productId, form) {
+      try {
+        const payload = formData(form);
+        await api(`/api/admin/simple/products/${productId}/produce`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        form.reset();
+        toast('Producao registrada e estoque atualizado.');
+        await loadAll();
+      } catch (error) {
+        toast(error.message, true);
+      }
+    }
+
     async function saveFormula(form) {
       try {
         const payload = formData(form);
@@ -979,6 +1023,8 @@
     window.moveStock = moveStock;
     window.addFormulaRow = addFormulaRow;
     window.saveFormula = saveFormula;
+    window.produceProduct = produceProduct;
+    window.syncFormulaUnit = syncFormulaUnit;
     window.editFormula = editFormula;
     window.deleteFormula = deleteFormula;
     window.resetFormulaForm = resetFormulaForm;
