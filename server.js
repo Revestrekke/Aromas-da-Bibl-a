@@ -14,9 +14,12 @@ const port = process.env.PORT || 3000;
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SECRET_KEY ||
+  process.env.SB_SECRET_KEY ||
+  process.env.SUPABASE_SERVICE_KEY;
 const supabaseAnonKey =
-  process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SB_PUBLISHABLE_KEY;
 
 const supabase =
   supabaseUrl && supabaseServiceRoleKey
@@ -89,6 +92,40 @@ const resources = {
 
 function publicError(error) {
   return error?.message || 'Erro inesperado.';
+}
+
+function decodeJwtPayload(token) {
+  try {
+    const payload = String(token || '').split('.')[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(Buffer.from(normalized, 'base64').toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function projectRefFromUrl(url) {
+  const match = String(url || '').match(/^https:\/\/([a-z0-9-]+)\.supabase\.co/i);
+  return match?.[1] || null;
+}
+
+function supabaseDiagnostics() {
+  const urlRef = projectRefFromUrl(supabaseUrl);
+  const anonRef = decodeJwtPayload(supabaseAnonKey)?.ref || null;
+  const serviceRef = decodeJwtPayload(supabaseServiceRoleKey)?.ref || null;
+  return {
+    hasUrl: Boolean(supabaseUrl),
+    hasPublicKey: Boolean(supabaseAnonKey),
+    hasSecretKey: Boolean(supabaseServiceRoleKey),
+    urlProjectRef: urlRef,
+    publicKeyProjectRef: anonRef,
+    secretKeyProjectRef: serviceRef,
+    projectRefMatches:
+      Boolean(urlRef) &&
+      (!anonRef || anonRef === urlRef) &&
+      (!serviceRef || serviceRef === urlRef)
+  };
 }
 
 function cents(value) {
@@ -577,7 +614,13 @@ async function summary() {
 }
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, supabase: Boolean(supabase), scope: 'simple-internal-system' });
+  const diagnostics = supabaseDiagnostics();
+  res.json({
+    ok: true,
+    supabase: Boolean(supabase) && diagnostics.projectRefMatches,
+    scope: 'simple-internal-system',
+    diagnostics
+  });
 });
 
 app.get('/api/config', (_req, res) => {

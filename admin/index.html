@@ -779,7 +779,7 @@
       } else {
         const renderers = { inicio: renderInicio, produtos: renderProdutos, insumos: renderInsumos, embalagens: renderEmbalagens, formulas: renderFormulas, compras: renderCompras, financeiro: renderFinanceiro };
         const warning = state.health && !state.health.supabase
-          ? `<section class="panel"><div class="status bad">Supabase do backend nao configurado</div><p style="margin-top:10px">Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no Render e faca redeploy para liberar cadastros.</p></section>`
+          ? `<section class="panel"><div class="status bad">Supabase do backend nao configurado</div><p style="margin-top:10px">${healthMessage()}</p></section>`
           : '';
         $('#pageRoot').innerHTML = warning + renderers[page.id]();
         if (page.id === 'compras') syncPurchaseItems($('#purchaseForm [name="item_type"]')?.value || 'supply');
@@ -789,6 +789,14 @@
 
     function renderNav() {
       $('#nav').innerHTML = pages.map((page) => `<a href="#${page.id}" data-page="${page.id}">${icon(page.icon)} ${page.label}</a>`).join('');
+    }
+
+    function healthMessage() {
+      const diagnostics = state.health?.diagnostics || {};
+      if (!diagnostics.hasSecretKey) return 'Falta SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_SECRET_KEY no Render. Sem essa chave, nenhum cadastro grava no banco.';
+      if (!diagnostics.hasUrl) return 'Falta SUPABASE_URL no Render.';
+      if (!diagnostics.projectRefMatches) return 'SUPABASE_URL nao pertence ao mesmo projeto das chaves. Confira o project ref da URL no Render.';
+      return 'Confira as variaveis SUPABASE_URL, SUPABASE_ANON_KEY e SUPABASE_SERVICE_ROLE_KEY no Render e faca redeploy.';
     }
 
     function setPageFromHash() {
@@ -899,7 +907,7 @@
       try {
         state.health = await fetch('/api/health').then((res) => res.json()).catch(() => null);
         if (state.health && !state.health.supabase) {
-          toast('Backend sem Supabase configurado. Confira as variaveis do Render.', true);
+          toast(healthMessage(), true);
         }
         const config = await fetch('/api/config').then((res) => res.json());
         if (!config.supabaseUrl || !config.supabaseAnonKey) throw new Error('Configure SUPABASE_URL e SUPABASE_ANON_KEY no Render.');
