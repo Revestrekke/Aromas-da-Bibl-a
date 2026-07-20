@@ -38,6 +38,11 @@ create table if not exists public.products (
 );
 
 alter table public.products add column if not exists code text;
+alter table public.products add column if not exists internal_code text;
+alter table public.products add column if not exists sku text;
+alter table public.products add column if not exists category text;
+alter table public.products add column if not exists status text default 'active';
+alter table public.products add column if not exists active_on_site boolean default true;
 alter table public.products add column if not exists aroma text;
 alter table public.products add column if not exists volume numeric(12,3) default 0;
 alter table public.products add column if not exists sale_price_cents integer default 0;
@@ -69,6 +74,8 @@ create table if not exists public.suppliers (
 );
 
 alter table public.suppliers add column if not exists name text;
+alter table public.suppliers add column if not exists trade_name text;
+alter table public.suppliers add column if not exists status text default 'active';
 alter table public.suppliers add column if not exists contact_name text;
 alter table public.suppliers add column if not exists phone text;
 alter table public.suppliers add column if not exists email text;
